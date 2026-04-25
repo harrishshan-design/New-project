@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Klang Valley AI | Agent Workspace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="./agent.css">
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <div class="workspace">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark"><i class="fa-solid fa-chart-network"></i></div>
+        <div>
+          <div class="eyebrow">Revenue Workspace</div>
+          <h1>Klang Valley AI</h1>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-item active" data-section="overview" type="button">
+          <i class="fa-solid fa-grid-2"></i>
+          <span>Overview</span>
+        </button>
+        <button class="nav-item" data-section="leads" type="button">
+          <i class="fa-solid fa-bullseye-arrow"></i>
+          <span>Lead Desk</span>
+        </button>
+        <button class="nav-item" data-section="clients" type="button">
+          <i class="fa-solid fa-user-group"></i>
+          <span>Clients</span>
+        </button>
+        <button class="nav-item" data-section="commission" type="button">
+          <i class="fa-solid fa-wallet"></i>
+          <span>Commission</span>
+        </button>
+        <button class="nav-item" data-section="listings" type="button">
+          <i class="fa-solid fa-building"></i>
+          <span>Listings</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-card">
+        <div class="eyebrow soft">Today Focus</div>
+        <h3>Close the warm pipeline before opening new tabs.</h3>
+        <p>Fast follow-up, precise lead routing, and clean listing control keep revenue moving.</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">Agent Workspace</div>
+          <h2>Conversion cockpit</h2>
+        </div>
+        <div class="top-actions">
+          <button class="top-action" id="notificationButton" type="button">
+            <i class="fa-solid fa-bell"></i>
+            <span>Alerts</span>
+            <strong id="notificationCount">0</strong>
+          </button>
+          <button class="top-action" id="quickLeadButton" type="button">
+            <i class="fa-solid fa-plus"></i>
+            <span>New Lead</span>
+          </button>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="hero-pill">Built for revenue</div>
+          <h3>See the hottest leads, move clients forward, and protect every ringgit of commission.</h3>
+          <p>Your day is organized around urgency, probability, and payout so the workspace feels like a closer’s desk, not a spreadsheet graveyard.</p>
+        </div>
+
+        <div class="hero-metrics">
+          <article class="metric-card">
+            <span>Hot leads</span>
+            <strong id="hotLeadCount">0</strong>
+            <p>Ready for immediate follow-up</p>
+          </article>
+          <article class="metric-card">
+            <span>Active clients</span>
+            <strong id="clientCount">0</strong>
+            <p>Tracked through your pipeline</p>
+          </article>
+          <article class="metric-card">
+            <span>Pending commission</span>
+            <strong id="pendingCommission">RM 0</strong>
+            <p>Deals that are nearly yours</p>
+          </article>
+          <article class="metric-card">
+            <span>Listings live</span>
+            <strong id="listingCount">0</strong>
+            <p>Inventory under your control</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel-grid">
+        <section class="panel panel-wide" data-panel="overview">
+          <div class="panel-head">
+            <div>
+              <div class="eyebrow">Lead Management</div>
+              <h3>Priority pipeline</h3>
+            </div>
+            <div class="chip-row">
+              <span class="chip chip-hot">Hot first</span>
+              <span class="chip">Action led</span>
+            </div>
+          </div>
+          <div class="pipeline" id="leadPipeline"></div>
+        </section>
+
+        <section class="panel" data-panel="overview">
+          <div class="panel-head">
+            <div>
+              <div class="eyebrow">Revenue Pulse</div>
+              <h3>Commission tracking</h3>
+            </div>
+          </div>
+          <div class="revenue-stack" id="commissionSummary"></div>
+        </section>
+
+        <section class="panel panel-wide hidden-section" data-panel="leads">
+          <div class="panel-head">
+            <div>
+              <div class="eyebrow">Lead Desk</div>
+              <h3>All incoming leads</h3>
+            </div>
+            <div class="lead-filters">
+              <button class="filter-button active" data-lead-filter="all" type="button">All</button>
+              <button class="filter-button" data-lead-filter="hot" type="button">Hot</button>
+              <button class="filter-button" data-lead-filter="warm" type="button">Warm</button>
+              <button class="filter-button" data-lead-filter="cold" type="button">Cold</button>
+            </div>
+          </div>
+          <div class="lead-list" id="leadList"></div>
+        </section>
+
+        <section class="panel hidden-section" data-panel="clients">
+          <div class="panel-head">
+            <div>
+              <div class="eyebrow">Client Tracking</div>
+              <h3>Relationship board</h3>
+            </div>
+          </div>
+          <div class="client-list" id="clientList"></div>
+        </section>
+
+        <section class="panel hidden-section" data-panel="commission">
+          <div class="panel-head">
+            <div>
+              <div class="eyebrow">Commission Tracking</div>
+              <h3>Payout ledger</h3>
+            </div>
+          </div>
+          <div class="commission-table" id="commissionTable"></div>
+        </section>
+
+        <section class="panel panel-wide hidden-section" data-panel="listings">
+          <div class="panel-head">
+            <div>
+              <div class="eyebrow">Property Listing Control</div>
+              <h3>Inventory workspace</h3>
+            </div>
+            <button class="top-action compact" id="openListingComposer" type="button">
+              <i class="fa-solid fa-plus"></i>
+              <span>Add Listing</span>
+            </button>
+          </div>
+          <div class="listing-grid" id="listingGrid"></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <aside class="drawer" id="notificationDrawer" aria-hidden="true">
+    <div class="drawer-head">
+      <div>
+        <div class="eyebrow">Alerts</div>
+        <h3>Workspace updates</h3>
+      </div>
+      <button class="close-button" data-close="notificationDrawer" type="button"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="drawer-list" id="notificationList"></div>
+  </aside>
+
+  <div class="modal-backdrop" id="leadModal" aria-hidden="true">
+    <div class="modal-card modal-card-narrow">
+      <div class="modal-topbar">
+        <div>
+          <div class="eyebrow">Lead Capture</div>
+          <h3>Add lead</h3>
+        </div>
+        <button class="close-button" data-close="leadModal" type="button"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form class="form-grid" id="leadForm">
+        <div class="input-shell">
+          <i class="fa-solid fa-user"></i>
+          <input id="leadName" type="text" placeholder="Client name" required>
+        </div>
+        <div class="input-shell">
+          <i class="fa-brands fa-whatsapp"></i>
+          <input id="leadPhone" type="tel" placeholder="WhatsApp number" required>
+        </div>
+        <div class="input-shell">
+          <i class="fa-solid fa-location-dot"></i>
+          <input id="leadArea" type="text" placeholder="Preferred area" required>
+        </div>
+        <div class="input-shell select-shell">
+          <i class="fa-solid fa-signal"></i>
+          <select id="leadTemperature" required>
+            <option value="Hot">Hot</option>
+            <option value="Warm">Warm</option>
+            <option value="Cold">Cold</option>
+          </select>
+        </div>
+        <button class="primary-button full-width" type="submit">Save Lead</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="listingModal" aria-hidden="true">
+    <div class="modal-card modal-card-narrow">
+      <div class="modal-topbar">
+        <div>
+          <div class="eyebrow">Listing Control</div>
+          <h3>Add listing</h3>
+        </div>
+        <button class="close-button" data-close="listingModal" type="button"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form class="form-grid" id="listingForm">
+        <div class="input-shell">
+          <i class="fa-solid fa-building"></i>
+          <input id="listingTitle" type="text" placeholder="Listing title" required>
+        </div>
+        <div class="input-shell">
+          <i class="fa-solid fa-location-dot"></i>
+          <input id="listingArea" type="text" placeholder="Area" required>
+        </div>
+        <div class="input-shell">
+          <i class="fa-solid fa-money-bill-wave"></i>
+          <input id="listingPrice" type="number" placeholder="Price" required>
+        </div>
+        <div class="input-shell select-shell">
+          <i class="fa-solid fa-toggle-on"></i>
+          <select id="listingStatus" required>
+            <option value="Live">Live</option>
+            <option value="Draft">Draft</option>
+            <option value="Reserved">Reserved</option>
+          </select>
+        </div>
+        <button class="primary-button full-width" type="submit">Save Listing</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="./agent.js"></script>
+</body>
+</html>

@@ -187,8 +187,11 @@ const els = {
   modalSaveAction: document.getElementById("modalSaveAction"),
   modalContactAction: document.getElementById("modalContactAction"),
   toggleArButton: document.getElementById("toggleArButton"),
+  resetArButton: document.getElementById("resetArButton"),
   arViewer: document.getElementById("arViewer"),
   arFallback: document.getElementById("arFallback"),
+  arStatus: document.getElementById("arStatus"),
+  hiddenArLaunch: document.getElementById("hiddenArLaunch"),
   bookingForm: document.getElementById("bookingForm"),
   bookingName: document.getElementById("bookingName"),
   bookingPhone: document.getElementById("bookingPhone"),
@@ -197,6 +200,15 @@ const els = {
   bookingStatus: document.getElementById("bookingStatus"),
   toast: document.getElementById("toast")
 };
+
+const arModule = new window.PropertyARModule({
+  viewer: els.arViewer,
+  fallback: els.arFallback,
+  launchButton: els.toggleArButton,
+  resetButton: els.resetArButton,
+  status: els.arStatus,
+  hiddenLaunch: els.hiddenArLaunch
+});
 
 function readStore(key, fallback) {
   try {
@@ -585,19 +597,12 @@ function closeModal() {
 }
 
 function configureAr(property, reset = false) {
-  if (reset || !property?.modelUrl) {
-    els.arViewer.removeAttribute("src");
-    els.arFallback.hidden = false;
-    els.arFallback.textContent = property && !property.modelUrl
-      ? "This listing does not have a 3D model yet. Use the imagery and AI notes before booking."
-      : "AR preview will appear here for supported listings.";
-    els.toggleArButton.textContent = "Open AR View";
+  if (reset) {
+    arModule.clear();
     return;
   }
 
-  els.arViewer.src = property.modelUrl;
-  els.arFallback.hidden = true;
-  els.toggleArButton.textContent = "Refresh AR View";
+  arModule.setProperty(property);
 }
 
 function submitBooking(event) {
@@ -711,12 +716,6 @@ function bindEvents() {
 
   els.modalSaveAction.addEventListener("click", () => {
     if (state.activePropertyId != null) toggleFavorite(state.activePropertyId);
-  });
-
-  els.toggleArButton.addEventListener("click", () => {
-    const property = properties.find((item) => item.id === state.activePropertyId);
-    configureAr(property);
-    showToast(property?.modelUrl ? "AR preview loaded" : "No AR model for this listing");
   });
 
   els.bookingForm.addEventListener("submit", submitBooking);

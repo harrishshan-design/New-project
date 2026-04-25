@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="./user.css">
+  <link rel="stylesheet" href="./ar-viewer.css">
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 </head>
 <body>
@@ -231,11 +232,38 @@
                 <div class="eyebrow">AR Viewing</div>
                 <h4>Walk the space</h4>
               </div>
-              <button class="ghost-button" id="toggleArButton" type="button">Open AR View</button>
             </div>
-            <div class="ar-shell">
-              <model-viewer id="arViewer" camera-controls ar auto-rotate shadow-intensity="1" exposure="1" interaction-prompt="none"></model-viewer>
-              <div class="ar-fallback" id="arFallback">AR preview will appear here for supported listings.</div>
+            <div class="ar-module" id="arModule">
+              <div class="ar-stage">
+                <model-viewer
+                  id="arViewer"
+                  camera-controls
+                  ar
+                  ar-modes="webxr scene-viewer quick-look"
+                  ar-placement="floor"
+                  auto-rotate
+                  shadow-intensity="1"
+                  exposure="1"
+                  interaction-prompt="none"
+                  touch-action="pan-y"
+                  min-camera-orbit="auto auto 70%"
+                  max-camera-orbit="auto auto 180%"
+                >
+                  <button slot="ar-button" class="ar-hidden-launch" id="hiddenArLaunch" type="button">Launch AR</button>
+                </model-viewer>
+                <div class="ar-fallback" id="arFallback">AR preview will appear here for supported listings.</div>
+              </div>
+              <div class="ar-toolbar">
+                <button class="primary-button" id="toggleArButton" type="button">
+                  <i class="fa-solid fa-camera"></i>
+                  Launch AR
+                </button>
+                <button class="ghost-button" id="resetArButton" type="button">
+                  <i class="fa-solid fa-rotate-left"></i>
+                  Reset View
+                </button>
+                <span class="ar-status" id="arStatus">Waiting for a property model</span>
+              </div>
             </div>
           </section>
 
@@ -279,6 +307,7 @@
 
   <div class="toast" id="toast"></div>
 
+  <script src="./ar-viewer.js"></script>
   <script src="./user.js"></script>
 </body>
 </html>
