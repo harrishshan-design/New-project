@@ -1,0 +1,81 @@
+﻿[
+    {
+        "badge":  "hot",
+        "sqft":  1100,
+        "vibe":  "Expat-friendly, premium, dining-led",
+        "bedrooms":  2,
+        "id":  1,
+        "growth":  18,
+        "location":  "Mont Kiara, Kuala Lumpur",
+        "psf":  755,
+        "mapLink":  "https://www.google.com/maps/search/Mont+Kiara,+Kuala+Lumpur",
+        "title":  "Arcoris Signature Residences",
+        "area":  "Mont Kiara",
+        "type":  "condo",
+        "image":  "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format\u0026fit=crop\u0026w=1200\u0026q=80",
+        "commute":  "8 min to Sri Hartamas",
+        "fit":  "Investor-friendly luxury entry with steady rental demand.",
+        "price":  830000,
+        "yield":  4.1,
+        "tags":  [
+                     "luxury",
+                     "yield",
+                     "mrt"
+                 ],
+        "aiScore":  95,
+        "bathrooms":  2,
+        "verifiedType":  "owner"
+    },
+    {
+        "badge":  "new",
+        "sqft":  800,
+        "vibe":  "Skyline views, prestige, hospitality",
+        "bedrooms":  2,
+        "id":  2,
+        "growth":  9,
+        "location":  "Jalan P Ramlee, KLCC",
+        "psf":  2900,
+        "mapLink":  "https://www.google.com/maps/search/KLCC,+Kuala+Lumpur",
+        "title":  "The CloutHaus KLCC",
+        "area":  "KLCC",
+        "type":  "condo",
+        "image":  "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format\u0026fit=crop\u0026w=1200\u0026q=80",
+        "commute":  "Walkable CBD lifestyle",
+        "fit":  "Best for prestige buyers prioritizing address and lifestyle over yield.",
+        "price":  2320000,
+        "yield":  3.2,
+        "tags":  [
+                     "luxury",
+                     "mrt"
+                 ],
+        "aiScore":  98,
+        "bathrooms":  2,
+        "verifiedType":  "agent"
+    },
+    {
+        "badge":  "new",
+        "sqft":  900,
+        "vibe":  "Lifestyle-led, central, high demand",
+        "bedrooms":  2,
+        "id":  3,
+        "growth":  12,
+        "location":  "Jalan Bangsar, Bangsar",
+        "psf":  1500,
+        "mapLink":  "https://www.google.com/maps/search/Bangsar,+Kuala+Lumpur",
+        "title":  "Setia Federal Hill",
+        "area":  "Bangsar",
+        "type":  "serviced",
+        "image":  "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format\u0026fit=crop\u0026w=1200\u0026q=80",
+        "commute":  "10 min to Mid Valley",
+        "fit":  "A strong central option for professionals who want quality and convenience.",
+        "price":  1350000,
+        "yield":  3.8,
+        "tags":  [
+                     "mrt",
+                     "luxury"
+                 ],
+        "aiScore":  92,
+        "bathrooms":  2,
+        "verifiedType":  "agent"
+    }
+]

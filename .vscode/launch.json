@@ -1,0 +1,44 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Chrome",
+      "request": "launch",
+      "type": "chrome",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/real-estate-ai/frontend"
+    },
+    {
+      "name": "Connect to server",
+      "type": "go",
+      "request": "attach",
+      "mode": "remote",
+      "remotePath": "${workspaceFolder}",
+      "port": 2345,
+      "host": "127.0.0.1"
+    },
+    {
+      "name": "Launch Chrome (Alternate)",
+      "request": "launch",
+      "type": "chrome",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/real-estate-ai/frontend"
+    },
+    {
+      "type": "PowerShell",
+      "request": "launch",
+      "name": "Launch Backend (server.ps1)",
+      "script": "${workspaceFolder}/backend/server.ps1",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "createTemporaryIntegratedConsole": true
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Open http://localhost:5173 in Chrome",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/real-estate-ai/frontend"
+    }
+  ]
+}

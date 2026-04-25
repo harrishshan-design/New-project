@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Klang Valley AI | Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+--ink:#221912;
+--muted:#6e635d;
+--line:rgba(34,25,18,.12);
+--brand:#bb4d2d;
+--brand2:#8a3118;
+--teal:#0f766e;
+--gold:#c7922f;
+--panel:rgba(255,250,245,.84);
+--panel-strong:rgba(255,255,255,.9);
+--shadow:0 24px 60px rgba(59,32,15,.14);
+--shadow-soft:0 18px 40px rgba(59,32,15,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+font-family:Manrope,sans-serif;
+color:var(--ink);
+min-height:100vh;
+background:
+radial-gradient(circle at top left,rgba(212,164,60,.18),transparent 28%),
+radial-gradient(circle at 85% 15%,rgba(15,118,110,.12),transparent 24%),
+radial-gradient(circle at 50% 120%,rgba(187,77,45,.12),transparent 30%),
+linear-gradient(180deg,#fbf5ee 0%,#f6efe6 48%,#f2e7da 100%);
+display:grid;
+place-items:center;
+padding:24px;
+overflow-x:hidden;
+}
+body::before{
+content:"";
+position:fixed;
+inset:0;
+pointer-events:none;
+background:
+linear-gradient(rgba(255,255,255,.16),rgba(255,255,255,0)),
+repeating-linear-gradient(90deg,transparent 0,transparent 79px,rgba(34,25,18,.018) 80px);
+opacity:.45;
+}
+body::after{
+content:"";
+position:fixed;
+inset:0;
+pointer-events:none;
+background:
+radial-gradient(circle at 18% 22%,rgba(15,118,110,.14),transparent 18%),
+radial-gradient(circle at 76% 20%,rgba(187,77,45,.10),transparent 16%),
+radial-gradient(circle at 62% 78%,rgba(199,146,47,.10),transparent 20%);
+opacity:.9;
+}
+.ai-koi{
+position:fixed;
+width:156px;
+height:84px;
+border-radius:60% 40% 55% 45%/55% 50% 50% 45%;
+background:linear-gradient(135deg,rgba(255,255,255,.94),rgba(255,229,202,.98) 44%,rgba(255,182,142,.92));
+border:1px solid rgba(255,255,255,.96);
+box-shadow:0 20px 44px rgba(59,32,15,.14);
+z-index:0;
+pointer-events:none;
+opacity:.98;
+filter:blur(.1px);
+}
+.ai-koi::before{
+content:"";
+position:absolute;
+right:-20px;
+top:29px;
+width:30px;
+height:24px;
+background:linear-gradient(135deg,rgba(15,118,110,.44),rgba(15,118,110,.08));
+clip-path:polygon(0 50%,100% 0,100% 100%);
+border-radius:6px;
+}
+.ai-koi::after{
+content:"";
+position:absolute;
+left:24px;
+top:22px;
+width:56px;
+height:24px;
+border-radius:999px;
+background:linear-gradient(90deg,rgba(187,77,45,.72),rgba(199,146,47,.46),rgba(15,118,110,.28));
+opacity:.96;
+}
+.ai-koi.one{
+top:6%;
+left:4%;
+animation:koiSwimOne 16s ease-in-out infinite;
+}
+.ai-koi.two{
+right:6%;
+bottom:10%;
+transform:scaleX(-1) rotate(-6deg);
+animation:koiSwimTwo 18s ease-in-out infinite;
+}
+.ai-bubble{
+position:fixed;
+width:14px;
+height:14px;
+border-radius:50%;
+background:radial-gradient(circle,rgba(255,255,255,.95),rgba(255,255,255,.08));
+border:1px solid rgba(255,255,255,.55);
+box-shadow:0 10px 18px rgba(15,118,110,.08);
+pointer-events:none;
+z-index:0;
+opacity:.7;
+}
+.ai-bubble.one{left:14%;bottom:10%;animation:bubbleRise 10s linear infinite}
+.ai-bubble.two{left:18%;bottom:4%;width:10px;height:10px;animation:bubbleRise 12s linear infinite 1.8s}
+.ai-bubble.three{right:12%;bottom:16%;animation:bubbleRise 11s linear infinite 2.8s}
+.ai-bubble.four{right:18%;bottom:8%;width:11px;height:11px;animation:bubbleRise 13s linear infinite .9s}
+.page{
+width:min(1220px,100%);
+display:grid;
+grid-template-columns:1.08fr .92fr;
+gap:24px;
+position:relative;
+z-index:1;
+}
+.panel{
+background:var(--panel);
+border:1px solid rgba(255,255,255,.7);
+backdrop-filter:blur(16px);
+box-shadow:var(--shadow);
+border-radius:34px;
+}
+.hero{
+padding:44px;
+position:relative;
+overflow:hidden;
+display:grid;
+gap:22px;
+}
+.hero-koi{
+position:absolute;
+right:28px;
+bottom:28px;
+width:196px;
+height:104px;
+border-radius:60% 40% 54% 46%/58% 52% 48% 42%;
+background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(255,231,208,.98) 42%,rgba(255,170,121,.96));
+border:1px solid rgba(255,255,255,.96);
+box-shadow:0 28px 60px rgba(59,32,15,.18);
+opacity:.98;
+pointer-events:none;
+z-index:1;
+animation:heroKoiFloat 8s ease-in-out infinite;
+}
+.hero-koi::before{
+content:"";
+position:absolute;
+right:-24px;
+top:38px;
+width:38px;
+height:28px;
+clip-path:polygon(0 50%,100% 0,100% 100%);
+background:linear-gradient(135deg,rgba(15,118,110,.62),rgba(15,118,110,.18));
+border-radius:8px;
+}
+.hero-koi::after{
+content:"";
+position:absolute;
+left:42px;
+top:30px;
+width:84px;
+height:28px;
+border-radius:999px;
+background:linear-gradient(90deg,rgba(187,77,45,.84),rgba(199,146,47,.56),rgba(15,118,110,.34));
+box-shadow:24px 14px 0 -8px rgba(187,77,45,.55),8px -12px 0 -10px rgba(15,118,110,.28);
+}
+.hero-koi-eye{
+position:absolute;
+left:32px;
+top:42px;
+width:10px;
+height:10px;
+border-radius:50%;
+background:#231a15;
+box-shadow:0 0 0 3px rgba(255,255,255,.76);
+}
+.hero-koi-label{
+position:absolute;
+right:42px;
+bottom:10px;
+padding:8px 12px;
+border-radius:999px;
+background:rgba(255,255,255,.84);
+border:1px solid rgba(34,25,18,.08);
+font-size:.78rem;
+font-weight:800;
+color:var(--teal);
+box-shadow:var(--shadow-soft);
+z-index:1;
+pointer-events:none;
+}
+.hero::after{
+content:"";
+position:absolute;
+right:-80px;
+top:-90px;
+width:280px;
+height:280px;
+border-radius:50%;
+background:radial-gradient(circle,rgba(187,77,45,.18),transparent 70%);
+}
+.eyebrow,
+.stat,
+.feature-list span,
+.option-btn,
+.login-meta span{
+display:inline-flex;
+align-items:center;
+gap:10px;
+border-radius:999px;
+font-weight:800;
+}
+.eyebrow{
+padding:10px 16px;
+width:max-content;
+background:rgba(255,255,255,.78);
+color:var(--brand2);
+cursor:pointer;
+user-select:none;
+border:1px solid rgba(255,255,255,.8);
+}
+.hero h1{
+font:700 clamp(2.8rem,5vw,5rem) "Space Grotesk",sans-serif;
+line-height:.93;
+letter-spacing:-.07em;
+max-width:10ch;
+}
+.hero h1 span{
+background:linear-gradient(135deg,var(--brand),var(--gold));
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+}
+.hero p,
+.hint,
+.status,
+.showcase p,
+.signal span,
+.small-copy{
+color:var(--muted);
+line-height:1.7;
+}
+.stats{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:14px;
+}
+.stat{
+padding:18px;
+justify-content:flex-start;
+background:rgba(255,255,255,.74);
+border:1px solid var(--line);
+box-shadow:var(--shadow-soft);
+border-radius:22px;
+}
+.stat strong{
+display:block;
+font:700 1.5rem "Space Grotesk",sans-serif;
+margin-bottom:6px;
+}
+.signal-bar{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:14px;
+}
+.signal{
+padding:14px 16px;
+border-radius:20px;
+background:rgba(34,25,18,.04);
+border:1px solid rgba(34,25,18,.06);
+}
+.signal strong{
+display:block;
+font:700 1rem "Space Grotesk",sans-serif;
+margin-bottom:4px;
+}
+.feature-list{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+}
+.feature-list span{
+padding:10px 14px;
+background:rgba(255,255,255,.72);
+border:1px solid var(--line);
+font-size:.9rem;
+color:var(--muted);
+}
+.showcase{
+padding:18px;
+border-radius:24px;
+background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,247,241,.86));
+border:1px solid rgba(187,77,45,.12);
+}
+.showcase-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:14px;
+margin-top:14px;
+}
+.showcase-card{
+padding:16px;
+border-radius:20px;
+background:var(--panel-strong);
+border:1px solid rgba(255,255,255,.82);
+}
+.showcase-card strong{
+display:block;
+font:700 1.05rem "Space Grotesk",sans-serif;
+margin-bottom:4px;
+}
+.trust-marquee{
+position:relative;
+overflow:hidden;
+padding:14px 0;
+border-radius:22px;
+background:rgba(255,255,255,.7);
+border:1px solid rgba(255,255,255,.82);
+}
+.trust-track{
+display:flex;
+align-items:center;
+gap:14px;
+width:max-content;
+animation:trustScroll 22s linear infinite;
+}
+.trust-pill{
+display:inline-flex;
+align-items:center;
+gap:10px;
+padding:10px 14px;
+border-radius:999px;
+background:rgba(255,250,245,.92);
+border:1px solid var(--line);
+box-shadow:var(--shadow-soft);
+white-space:nowrap;
+font-size:.9rem;
+font-weight:800;
+color:var(--ink);
+}
+.trust-pill span{
+color:var(--muted);
+font-weight:700;
+}
+.trust-pill strong{
+font-family:"Space Grotesk",sans-serif;
+}
+.login-shell{
+display:grid;
+gap:18px;
+}
+.card{
+padding:24px;
+position:relative;
+overflow:hidden;
+}
+.card::before{
+content:"";
+position:absolute;
+left:24px;
+right:24px;
+top:0;
+height:1px;
+background:linear-gradient(90deg,rgba(187,77,45,0),rgba(187,77,45,.28),rgba(187,77,45,0));
+}
+.card h2{
+font:700 1.45rem "Space Grotesk",sans-serif;
+letter-spacing:-.03em;
+margin-bottom:8px;
+}
+.option-row{
+display:grid;
+grid-template-columns:repeat(3,minmax(0,1fr));
+gap:10px;
+margin:18px 0 6px;
+}
+.option-btn{
+justify-content:center;
+padding:13px 14px;
+border:none;
+background:rgba(255,255,255,.78);
+border:1px solid var(--line);
+color:var(--muted);
+cursor:pointer;
+transition:.22s ease;
+}
+.option-btn.active{
+background:#201a17;
+color:#fff;
+border-color:#201a17;
+box-shadow:0 14px 30px rgba(34,25,18,.16);
+}
+.option-btn.hidden-master{
+display:none;
+}
+.option-btn.hidden-master.show{
+display:inline-flex;
+}
+.field{
+width:100%;
+padding:15px 16px;
+border-radius:18px;
+border:1px solid var(--line);
+background:rgba(255,255,255,.84);
+font:inherit;
+color:var(--ink);
+margin-top:12px;
+outline:none;
+transition:.2s ease;
+}
+.field:focus{
+border-color:rgba(187,77,45,.32);
+box-shadow:0 0 0 4px rgba(187,77,45,.08);
+background:#fff;
+}
+.btn{
+width:100%;
+padding:15px 18px;
+border:0;
+border-radius:999px;
+font:800 1rem Manrope,sans-serif;
+cursor:pointer;
+margin-top:14px;
+transition:.24s ease;
+background:linear-gradient(135deg,var(--brand),var(--brand2));
+color:#fff;
+box-shadow:0 14px 32px rgba(187,77,45,.22);
+}
+.btn:hover{
+transform:translateY(-2px);
+}
+.hint{
+font-size:.92rem;
+margin-top:10px;
+}
+.status{
+min-height:22px;
+margin-top:8px;
+font-weight:700;
+}
+.master-note{
+padding:14px 16px;
+border-radius:18px;
+background:rgba(15,118,110,.08);
+border:1px solid rgba(15,118,110,.12);
+}
+.login-meta{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+margin-top:14px;
+}
+.login-meta span{
+padding:8px 12px;
+background:rgba(255,255,255,.72);
+border:1px solid var(--line);
+font-size:.84rem;
+color:var(--muted);
+}
+.hidden{
+display:none !important;
+}
+@keyframes trustScroll{
+0%{transform:translateX(0)}
+100%{transform:translateX(-50%)}
+}
+@keyframes koiSwimOne{
+0%,100%{transform:translate3d(0,0,0) rotate(4deg)}
+25%{transform:translate3d(38px,18px,0) rotate(0deg)}
+50%{transform:translate3d(86px,-8px,0) rotate(5deg)}
+75%{transform:translate3d(32px,-20px,0) rotate(-2deg)}
+}
+@keyframes koiSwimTwo{
+0%,100%{transform:scaleX(-1) translate3d(0,0,0) rotate(-6deg)}
+25%{transform:scaleX(-1) translate3d(-34px,-14px,0) rotate(-2deg)}
+50%{transform:scaleX(-1) translate3d(-84px,10px,0) rotate(-8deg)}
+75%{transform:scaleX(-1) translate3d(-24px,20px,0) rotate(-3deg)}
+}
+@keyframes heroKoiFloat{
+0%,100%{transform:translateY(0) rotate(-2deg)}
+50%{transform:translateY(-10px) rotate(2deg)}
+}
+@keyframes bubbleRise{
+0%{transform:translateY(0) scale(.9);opacity:0}
+15%{opacity:.7}
+100%{transform:translateY(-180px) scale(1.2);opacity:0}
+}
+@media (max-width:980px){
+.page{grid-template-columns:1fr}
+.stats,.signal-bar,.showcase-grid,.option-row{grid-template-columns:1fr}
+.trust-track{animation-duration:28s}
+.hero-koi{right:20px;bottom:20px;width:156px;height:84px}
+.hero-koi-label{right:26px}
+}
+</style>
+</head>
+<body>
+<div class="ai-koi one" aria-hidden="true"></div>
+<div class="ai-koi two" aria-hidden="true"></div>
+<div class="ai-bubble one" aria-hidden="true"></div>
+<div class="ai-bubble two" aria-hidden="true"></div>
+<div class="ai-bubble three" aria-hidden="true"></div>
+<div class="ai-bubble four" aria-hidden="true"></div>
+<div class="page">
+<section class="panel hero">
+<div class="eyebrow" id="masterTrigger" title="Creator access">Klang Valley AI</div>
+<div class="hero-koi" aria-hidden="true"><span class="hero-koi-eye"></span></div>
+<div class="hero-koi-label" aria-hidden="true">Live AI koi</div>
+<h1>One login card. <span>Three paths.</span></h1>
+<p>User and agent are visible immediately and clickable from the same standardized login card. Master stays hidden until the creator clicks the Klang Valley AI badge and unlocks it.</p>
+<div class="trust-marquee" aria-label="Trust signals">
+<div class="trust-track">
+<div class="trust-pill"><strong>100+ Agents online</strong><span>ready to respond</span></div>
+<div class="trust-pill"><strong>500+ Listings for now</strong><span>growing inventory</span></div>
+<div class="trust-pill"><strong>AI-powered matching</strong><span>smarter recommendations</span></div>
+<div class="trust-pill"><strong>Verified access flow</strong><span>cleaner trust layer</span></div>
+<div class="trust-pill"><strong>100+ Agents online</strong><span>ready to respond</span></div>
+<div class="trust-pill"><strong>500+ Listings for now</strong><span>growing inventory</span></div>
+<div class="trust-pill"><strong>AI-powered matching</strong><span>smarter recommendations</span></div>
+<div class="trust-pill"><strong>Verified access flow</strong><span>cleaner trust layer</span></div>
+</div>
+</div>
+<div class="stats">
+<div class="stat"><strong>User</strong><span>Browse and explore what is inside</span></div>
+<div class="stat"><strong>Agent</strong><span>Verified operational access</span></div>
+<div class="stat"><strong>Master</strong><span>Hidden creator-only control</span></div>
+</div>
+<div class="signal-bar">
+<div class="signal"><strong>User Path</strong><span>Simple login for property discovery, shortlist viewing, and platform exploration.</span></div>
+<div class="signal"><strong>Agent Path</strong><span>Shared login system for inbox, tenant pipeline, and rent workflow tools.</span></div>
+<div class="signal"><strong>Hidden Master</strong><span>Not shown publicly until the creator intentionally unlocks it.</span></div>
+</div>
+<div class="feature-list">
+<span>One side card</span>
+<span>Two public options</span>
+<span>Hidden master</span>
+<span>Less scrolling</span>
+</div>
+<div class="showcase">
+<p>The login page now works as one compact system instead of separate stacked access cards.</p>
+<div class="showcase-grid">
+<div class="showcase-card"><strong>User View</strong><p>Visitors can click user and log in quickly to see what is inside the platform.</p></div>
+<div class="showcase-card"><strong>Agent View</strong><p>Agents use the same card and same flow, with role-specific access after login.</p></div>
+</div>
+</div>
+</section>
+<section class="login-shell">
+<div class="panel card">
+<h2>Welcome Back</h2>
+<p class="small-copy">Choose your role below, then use the same form. User and agent are public. Master appears only after unlock.</p>
+<div class="option-row">
+<button class="option-btn active" id="optionUser" onclick="switchRole('user')">User</button>
+<button class="option-btn" id="optionAgent" onclick="switchRole('agent')">Agent</button>
+<button class="option-btn hidden-master" id="optionMaster" onclick="switchRole('master')">Master</button>
+<button class="option-btn hidden" id="optionSpacer" aria-hidden="true" tabindex="-1"></button>
+</div>
+<input class="field" id="loginName" placeholder="Your name">
+<input class="field" id="loginId" placeholder="Email or phone">
+<input class="field" id="loginPassword" type="password" placeholder="Password">
+<button class="btn" id="loginButton" onclick="submitActiveLogin()">Login as User</button>
+<div class="login-meta" id="loginMeta">
+<span>Property discovery</span>
+<span>Shortlist</span>
+<span>View inside</span>
+</div>
+<div class="hint" id="loginHint">Demo password: <strong>user123</strong></div>
+<div class="master-note" id="roleNote">User mode is for visitors who want to log in and explore what is inside the platform.</div>
+<div class="status" id="sharedStatus"></div>
+</div>
+</section>
+</div>
+<script>
+let masterTapCount=0;
+let activeRole="user";
+function normalizePhone(value){return String(value||"").replace(/[^\d]/g,"")}
+function readLocalAgents(){return JSON.parse(localStorage.getItem("kvai_local_agents")||'[{"id":1,"name":"Aina Property","phone":"60123456789","password":"agent123","company":"KV Premier Realty","areaFocus":"Mont Kiara","activeToday":true,"verified":true},{"id":2,"name":"Farid Homes","phone":"60129876543","password":"agent456","company":"Urban Valley Estates","areaFocus":"Bangsar","activeToday":true,"verified":true}]')}
+function writeLocalAgents(items){localStorage.setItem("kvai_local_agents",JSON.stringify(items))}
+function ensureLocalSeed(){if(!localStorage.getItem("kvai_local_agents")){writeLocalAgents(readLocalAgents())}if(!localStorage.getItem("kvai_local_leads")){localStorage.setItem("kvai_local_leads","[]")}if(!localStorage.getItem("kvai_rotation_index")){localStorage.setItem("kvai_rotation_index","-1")}}
+function setSharedStatus(message){document.getElementById("sharedStatus").textContent=message}
+function switchRole(role){
+activeRole=role;
+document.querySelectorAll(".option-btn").forEach(button=>button.classList.remove("active"));
+if(role==="user"){
+document.getElementById("optionUser").classList.add("active");
+document.getElementById("loginName").classList.remove("hidden");
+document.getElementById("loginName").placeholder="Your name";
+document.getElementById("loginId").placeholder="Email or phone";
+document.getElementById("loginButton").textContent="Login as User";
+document.getElementById("loginMeta").innerHTML="<span>Property discovery</span><span>Shortlist</span><span>View inside</span>";
+document.getElementById("loginHint").innerHTML='Demo password: <strong>user123</strong>';
+document.getElementById("roleNote").textContent="User mode is for visitors who want to log in and explore what is inside the platform.";
+}
+if(role==="agent"){
+document.getElementById("optionAgent").classList.add("active");
+document.getElementById("loginName").classList.add("hidden");
+document.getElementById("loginId").placeholder="Agent WhatsApp number";
+document.getElementById("loginButton").textContent="Login as Agent";
+document.getElementById("loginMeta").innerHTML="<span>Lead inbox</span><span>Tenant pipeline</span><span>Rent calendar</span>";
+document.getElementById("loginHint").innerHTML='Demo agent login: <strong>60123456789</strong> with password <strong>agent123</strong>';
+document.getElementById("roleNote").textContent="Agent mode is for verified agents using the same login card for operational access.";
+}
+if(role==="master"){
+document.getElementById("optionMaster").classList.add("active");
+document.getElementById("loginName").classList.remove("hidden");
+document.getElementById("loginName").placeholder="Master name";
+document.getElementById("loginId").placeholder="Creator access";
+document.getElementById("loginButton").textContent="Login as Master";
+document.getElementById("loginMeta").innerHTML="<span>Verification</span><span>System control</span><span>Private access</span>";
+document.getElementById("loginHint").innerHTML='Master password for this demo: <strong>KVMASTER2026</strong>';
+document.getElementById("roleNote").textContent="Master mode is hidden by default and only appears after the creator unlocks it from the Klang Valley AI badge.";
+}
+setSharedStatus("");
+}
+async function setSession(role,payload){setSharedStatus("Opening dashboard...");localStorage.removeItem("kvai_token");localStorage.removeItem("kvai_agent_phone");ensureLocalSeed();if(role==="user"){const userName=payload.name||"Guest User";localStorage.setItem("kvai_role","user");localStorage.setItem("kvai_name",userName);localStorage.setItem("kvai_user_account",userName);window.location.href="dashboard/user.html";return}if(role==="master"){localStorage.setItem("kvai_role","master");localStorage.setItem("kvai_name",payload.name||"Master");window.location.href="dashboard/master.html";return}if(role==="agent"){const requestedPhone=normalizePhone(payload.phone);const agent=readLocalAgents().find(item=>normalizePhone(item.phone)===requestedPhone);if(!agent){setSharedStatus("Agent account not found.");return}if(!agent.verified){setSharedStatus("Agent account is awaiting master verification.");return}if(agent.password!==payload.password){setSharedStatus("Agent password is incorrect.");return}localStorage.setItem("kvai_role","agent");localStorage.setItem("kvai_name",agent.name);localStorage.setItem("kvai_agent_phone",normalizePhone(agent.phone));window.location.href="dashboard/agent.html";return}}
+async function submitActiveLogin(){
+const name=document.getElementById("loginName").value.trim();
+const loginId=document.getElementById("loginId").value.trim();
+const password=document.getElementById("loginPassword").value;
+if(activeRole==="user"){
+if(password!=="user123"){setSharedStatus("User password is incorrect.");return}
+await setSession("user",{name:name||"Guest User",password});
+return;
+}
+if(activeRole==="agent"){
+const phone=normalizePhone(loginId);
+if(!phone||!password){setSharedStatus("Enter the agent WhatsApp number and password.");return}
+await setSession("agent",{phone,password});
+return;
+}
+if(activeRole==="master"){
+if(password!=="KVMASTER2026"){setSharedStatus("Master password is incorrect.");return}
+await setSession("master",{name:name||"Master",password});
+}
+}
+document.getElementById("masterTrigger").addEventListener("click",()=>{
+masterTapCount+=1;
+if(masterTapCount>=5){
+document.getElementById("optionMaster").classList.remove("hidden-master");
+document.getElementById("optionMaster").classList.add("show");
+document.getElementById("optionSpacer").classList.add("hidden");
+switchRole("master");
+setSharedStatus("Master option unlocked.");
+masterTapCount=0;
+return;
+}
+setTimeout(()=>{masterTapCount=0},1200);
+});
+</script>
+</body>
+</html>
