@@ -1,0 +1,20 @@
+{
+  "name": "realtygenius-saas",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @realtygenius/web",
+    "dev:api": "npm run dev --workspace @realtygenius/api",
+    "build": "npm run build --workspace @realtygenius/web && npm run build --workspace @realtygenius/api",
+    "typecheck": "npm run typecheck --workspace @realtygenius/web && npm run typecheck --workspace @realtygenius/api"
+  },
+  "overrides": {
+    "postcss": "8.5.13",
+    "next@16.2.4": {
+      "postcss": "8.5.13"
+    }
+  }
+}

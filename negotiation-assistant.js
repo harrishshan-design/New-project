@@ -404,4 +404,3 @@ if (typeof window !== "undefined") {
     negotiationAssistant
   };
 }
-```

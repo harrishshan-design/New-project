@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Klang Valley AI | Agent Workspace</title>
+  <title>RealtyGenius | Agent Workspace</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="./agent.css">
+  <link rel="stylesheet" href="./negotiation-ui.css">
 </head>
 <body>
   <div class="ambient ambient-one"></div>
@@ -20,7 +21,7 @@
         <div class="brand-mark"><i class="fa-solid fa-chart-network"></i></div>
         <div>
           <div class="eyebrow">Revenue Workspace</div>
-          <h1>Klang Valley AI</h1>
+          <h1>RealtyGenius</h1>
         </div>
       </div>
 
@@ -76,8 +77,8 @@
       <section class="hero">
         <div class="hero-copy">
           <div class="hero-pill">Built for revenue</div>
-          <h3>See the hottest leads, move clients forward, and protect every ringgit of commission.</h3>
-          <p>Your day is organized around urgency, probability, and payout so the workspace feels like a closer’s desk, not a spreadsheet graveyard.</p>
+          <h3>Qualify buyers, run smarter viewings, and keep every client for life.</h3>
+          <p>RealtyGenius turns loan paperwork, weekend tour chaos, co-broking matches, viewing prep, and referral follow-up into calm AI workflows agents can trust.</p>
         </div>
 
         <div class="hero-metrics">
@@ -105,6 +106,123 @@
       </section>
 
       <section class="panel-grid">
+        <section class="panel panel-wide" data-panel="overview">
+          <div class="panel-head">
+            <div>
+              <div class="eyebrow">RealtyGenius AI Solutions</div>
+              <h3>Daily agent nightmares, solved before they slow a deal</h3>
+            </div>
+            <div class="chip-row">
+              <span class="chip chip-hot">Lifesaver workflows</span>
+              <span class="chip">Built for KV agents</span>
+            </div>
+          </div>
+          <div class="genius-grid">
+            <article class="genius-card genius-card-clickable" data-action="open-document-vault" role="button" tabindex="0" aria-label="Open AI Document Vault and DSR Calculator">
+              <div class="genius-icon"><i class="fa-solid fa-folder-open"></i></div>
+              <span>Loan Approval Nightmare</span>
+              <h4>AI Document Vault & DSR Calculator</h4>
+              <p>Send a secure magic link, let buyers upload ICs, payslips, EPF, and bank statements, then use OCR to calculate DSR and flag loan readiness instantly.</p>
+              <div class="genius-card-footer">
+                <strong>Open workflow</strong>
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              </div>
+            </article>
+            <article class="genius-card genius-card-clickable" data-action="open-itinerary-builder" role="button" tabindex="0" aria-label="Open Smart Itinerary Builder">
+              <div class="genius-icon"><i class="fa-solid fa-route"></i></div>
+              <span>Weekend Traffic Jam</span>
+              <h4>Smart Itinerary Builder</h4>
+              <p>Select properties, optimize the Klang Valley route, generate a buyer viewing link, and draft landlord WhatsApp messages with confirmation tracking.</p>
+              <div class="genius-card-footer">
+                <strong>Plan route</strong>
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              </div>
+            </article>
+            <article class="genius-card genius-card-clickable" data-action="open-cobroke-matchmaker" role="button" tabindex="0" aria-label="Open Silent Co-Broke Matchmaker">
+              <div class="genius-icon"><i class="fa-solid fa-handshake"></i></div>
+              <span>Agent-to-Agent Drama</span>
+              <h4>Silent Co-Broke Matchmaker</h4>
+              <p>Privately match verified buyer demand with matching listings, invite both agents into a 50/50 co-broke, and prepare the e-sign agreement.</p>
+              <div class="genius-card-footer">
+                <strong>Find matches</strong>
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              </div>
+            </article>
+            <article class="genius-card genius-card-clickable" data-action="open-cheat-sheet" role="button" tabindex="0" aria-label="Open 30-Second AI Cheat Sheet">
+              <div class="genius-icon"><i class="fa-solid fa-bolt"></i></div>
+              <span>Viewing Pressure</span>
+              <h4>30-Second AI Cheat Sheet</h4>
+              <p>Prepare recent transacted prices, asking-price context, selling points, likely objections, and sharp responses before the client asks.</p>
+              <div class="genius-card-footer">
+                <strong>Prepare viewing</strong>
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              </div>
+            </article>
+            <article class="genius-card genius-card-featured genius-card-clickable" data-action="open-referral-autopilot" role="button" tabindex="0" aria-label="Open Referral Autopilot">
+              <div class="genius-icon"><i class="fa-solid fa-rotate"></i></div>
+              <span>Post-Sale Amnesia</span>
+              <h4>Referral Autopilot</h4>
+              <p>Track close dates, create yearly home valuation updates, and draft anniversary WhatsApp or email messages that keep the agent top-of-mind.</p>
+              <div class="genius-card-footer">
+                <strong>Start autopilot</strong>
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel panel-wide" data-panel="overview">
+          <div class="panel-head">
+            <div>
+              <div class="eyebrow">Leak-Proof Deal Control</div>
+              <h3>Escrow, loan vault, and e-sign locks</h3>
+            </div>
+            <div class="chip-row">
+              <span class="chip chip-hot">No commission grab</span>
+              <span class="chip">In-platform paper trail</span>
+            </div>
+          </div>
+          <div class="leakproof-board" id="leakProofDealBoard"></div>
+        </section>
+
+        <section class="panel panel-wide" data-panel="overview">
+          <div class="panel-head">
+            <div>
+              <div class="eyebrow">Morning Command Center</div>
+              <h3>What made you money while you slept</h3>
+            </div>
+            <div class="chip-row">
+              <span class="chip chip-hot">AI first</span>
+              <span class="chip">Morning dopamine</span>
+            </div>
+          </div>
+          <div class="command-hero">
+            <article class="command-brief" id="commandBrief"></article>
+            <div class="command-stats" id="commandCards"></div>
+          </div>
+          <div class="action-queue" id="actionQueue"></div>
+        </section>
+
+        <section class="panel" data-panel="overview">
+          <div class="panel-head">
+            <div>
+              <div class="eyebrow">Automated Grind</div>
+              <h3>Work your agents did without you</h3>
+            </div>
+          </div>
+          <div class="automation-board" id="automationBoard"></div>
+        </section>
+
+        <section class="panel" data-panel="overview">
+          <div class="panel-head">
+            <div>
+              <div class="eyebrow">3-Phase Roadmap</div>
+              <h3>FOMO engine for top agents</h3>
+            </div>
+          </div>
+          <div class="roadmap-board" id="roadmapBoard"></div>
+        </section>
+
         <section class="panel panel-wide" data-panel="overview">
           <div class="panel-head">
             <div>
@@ -145,6 +263,16 @@
           <div class="lead-list" id="leadList"></div>
         </section>
 
+        <section class="panel panel-wide hidden-section" data-panel="leads">
+          <div class="panel-head">
+            <div>
+              <div class="eyebrow">Negotiation Desk</div>
+              <h3>Buyer vs agent negotiation threads</h3>
+            </div>
+          </div>
+          <div class="agent-negotiation-list" id="agentNegotiationList"></div>
+        </section>
+
         <section class="panel hidden-section" data-panel="clients">
           <div class="panel-head">
             <div>
@@ -171,10 +299,16 @@
               <div class="eyebrow">Property Listing Control</div>
               <h3>Inventory workspace</h3>
             </div>
-            <button class="top-action compact" id="openListingComposer" type="button">
-              <i class="fa-solid fa-plus"></i>
-              <span>Add Listing</span>
-            </button>
+            <div class="panel-actions">
+              <button class="top-action compact" id="downloadListingTemplate" type="button">
+                <i class="fa-solid fa-file-excel"></i>
+                <span>Excel Template</span>
+              </button>
+              <button class="top-action compact" id="openListingComposer" type="button">
+                <i class="fa-solid fa-plus"></i>
+                <span>Add / Import</span>
+              </button>
+            </div>
           </div>
           <div class="listing-grid" id="listingGrid"></div>
         </section>
@@ -194,7 +328,7 @@
   </aside>
 
   <div class="modal-backdrop" id="leadModal" aria-hidden="true">
-    <div class="modal-card modal-card-narrow">
+    <div class="modal-card modal-card-wide">
       <div class="modal-topbar">
         <div>
           <div class="eyebrow">Lead Capture</div>
@@ -233,7 +367,7 @@
       <div class="modal-topbar">
         <div>
           <div class="eyebrow">Listing Control</div>
-          <h3>Add listing</h3>
+          <h3>Add listing or import Excel</h3>
         </div>
         <button class="close-button" data-close="listingModal" type="button"><i class="fa-solid fa-xmark"></i></button>
       </div>
@@ -250,6 +384,30 @@
           <i class="fa-solid fa-money-bill-wave"></i>
           <input id="listingPrice" type="number" placeholder="Price" required>
         </div>
+        <div class="input-shell">
+          <i class="fa-solid fa-map-location-dot"></i>
+          <input id="listingAddress" type="text" placeholder="Full address">
+        </div>
+        <div class="input-shell">
+          <i class="fa-solid fa-house-building"></i>
+          <input id="listingPropertyType" type="text" placeholder="Property type e.g. Condo">
+        </div>
+        <div class="input-shell">
+          <i class="fa-solid fa-user-tie"></i>
+          <input id="listingLandlordName" type="text" placeholder="Landlord / co-agent name">
+        </div>
+        <div class="input-shell">
+          <i class="fa-brands fa-whatsapp"></i>
+          <input id="listingLandlordPhone" type="tel" placeholder="Landlord WhatsApp number">
+        </div>
+        <div class="input-shell">
+          <i class="fa-brands fa-google-drive"></i>
+          <input id="listingImageLink" type="url" placeholder="Google Drive image link">
+        </div>
+        <div class="input-shell">
+          <i class="fa-solid fa-cube"></i>
+          <input id="listingArLink" type="url" placeholder="AR model link (.glb/.gltf or Google Drive)">
+        </div>
         <div class="input-shell select-shell">
           <i class="fa-solid fa-toggle-on"></i>
           <select id="listingStatus" required>
@@ -260,11 +418,306 @@
         </div>
         <button class="primary-button full-width" type="submit">Save Listing</button>
       </form>
+
+      <div class="excel-import-box">
+        <div>
+          <div class="eyebrow">Bulk Excel Import</div>
+          <h4>Required columns</h4>
+          <p>title, area, price, status, property_type, address, landlord_name, landlord_phone, image_link, ar_link</p>
+          <p class="subtext">Pictures must be public Google Drive links. AR links can be public Google Drive files or direct .glb/.gltf URLs.</p>
+        </div>
+        <label class="excel-upload">
+          <i class="fa-solid fa-file-arrow-up"></i>
+          <span>Upload .xlsx, .xls, or .csv</span>
+          <input id="listingExcelInput" type="file" accept=".xlsx,.xls,.csv">
+        </label>
+        <div class="excel-import-status" id="listingImportStatus">Waiting for Excel file.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="documentVaultModal" aria-hidden="true">
+    <div class="modal-card modal-card-wide">
+      <div class="modal-topbar">
+        <div>
+          <div class="eyebrow">Loan Approval Nightmare</div>
+          <h3>AI Document Vault & DSR Calculator</h3>
+        </div>
+        <button class="close-button" data-close="documentVaultModal" type="button"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="vault-shell">
+        <form class="vault-form" id="documentVaultForm">
+          <div class="input-shell">
+            <i class="fa-solid fa-user"></i>
+            <input id="vaultBuyerName" type="text" placeholder="Buyer name" required>
+          </div>
+          <div class="input-shell">
+            <i class="fa-brands fa-whatsapp"></i>
+            <input id="vaultBuyerPhone" type="tel" placeholder="WhatsApp number" required>
+          </div>
+          <div class="input-shell">
+            <i class="fa-solid fa-money-bill-wave"></i>
+            <input id="vaultSalary" type="number" min="0" step="100" placeholder="Salary / income (RM)" required>
+          </div>
+          <div class="input-shell">
+            <i class="fa-solid fa-receipt"></i>
+            <input id="vaultCommitments" type="number" min="0" step="100" placeholder="Monthly commitments (RM)" required>
+          </div>
+
+          <label class="vault-upload">
+            <span><i class="fa-solid fa-id-card"></i> IC</span>
+            <input id="vaultIcFile" type="file" accept="image/*,.pdf">
+          </label>
+          <label class="vault-upload">
+            <span><i class="fa-solid fa-file-invoice-dollar"></i> Payslip</span>
+            <input id="vaultPayslipFile" type="file" accept="image/*,.pdf">
+          </label>
+          <label class="vault-upload">
+            <span><i class="fa-solid fa-building-columns"></i> Bank statement</span>
+            <input id="vaultBankFile" type="file" accept="image/*,.pdf">
+          </label>
+
+          <button class="primary-button full-width" type="submit">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            Generate Vault + Calculate DSR
+          </button>
+        </form>
+
+        <div class="vault-results">
+          <div class="vault-link-card">
+            <div>
+              <div class="eyebrow">Magic Upload Link</div>
+              <h4>Client no-login vault</h4>
+            </div>
+            <div class="vault-link-row">
+              <input id="vaultMagicLink" type="text" readonly value="Create a vault to generate link">
+              <button class="ghost-button" data-action="copy-vault-link" type="button">
+                <i class="fa-solid fa-copy"></i>
+                Copy
+              </button>
+            </div>
+          </div>
+
+          <div class="vault-doc-grid" id="vaultDocGrid"></div>
+          <div class="vault-dsr-result" id="vaultDsrResult"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="itineraryModal" aria-hidden="true">
+    <div class="modal-card modal-card-wide">
+      <div class="modal-topbar">
+        <div>
+          <div class="eyebrow">Weekend Traffic Jam</div>
+          <h3>Smart Itinerary Builder</h3>
+        </div>
+        <button class="close-button" data-close="itineraryModal" type="button"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="itinerary-shell">
+        <form class="itinerary-planner" id="itineraryForm">
+          <div class="input-shell">
+            <i class="fa-solid fa-user"></i>
+            <input id="itineraryBuyerName" type="text" placeholder="Buyer name" required>
+          </div>
+          <div class="input-shell">
+            <i class="fa-solid fa-calendar-days"></i>
+            <input id="itineraryDate" type="date" required>
+          </div>
+          <div class="input-shell">
+            <i class="fa-solid fa-clock"></i>
+            <input id="itineraryStartTime" type="time" required>
+          </div>
+          <div class="input-shell">
+            <i class="fa-solid fa-location-crosshairs"></i>
+            <select id="itineraryStartArea" required>
+              <option value="KL Sentral">Start: KL Sentral</option>
+              <option value="Mont Kiara">Start: Mont Kiara</option>
+              <option value="Bangsar">Start: Bangsar</option>
+              <option value="Bukit Jalil">Start: Bukit Jalil</option>
+              <option value="Petaling Jaya">Start: Petaling Jaya</option>
+              <option value="Desa ParkCity">Start: Desa ParkCity</option>
+            </select>
+          </div>
+
+          <div class="itinerary-property-picker full-width">
+            <div class="itinerary-picker-head">
+              <div>
+                <div class="eyebrow">Select Properties</div>
+                <h4>Choose 2 or more viewings</h4>
+              </div>
+              <span id="itinerarySelectedCount">0 selected</span>
+            </div>
+            <div class="itinerary-property-list" id="itineraryPropertyList"></div>
+          </div>
+
+          <button class="primary-button full-width" type="submit">
+            <i class="fa-solid fa-route"></i>
+            Optimize Route + Generate Schedule
+          </button>
+        </form>
+
+        <div class="itinerary-results">
+          <div class="vault-link-card">
+            <div>
+              <div class="eyebrow">Buyer Share Link</div>
+              <h4>Personal viewing itinerary</h4>
+            </div>
+            <div class="vault-link-row">
+              <input id="itineraryShareLink" type="text" readonly value="Generate itinerary to create link">
+              <button class="ghost-button" data-action="copy-itinerary-link" type="button">
+                <i class="fa-solid fa-copy"></i>
+                Copy
+              </button>
+            </div>
+          </div>
+
+          <div class="itinerary-summary" id="itinerarySummary"></div>
+          <div class="itinerary-timeline" id="itineraryTimeline"></div>
+          <div class="landlord-message-list" id="landlordMessageList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="cobrokeModal" aria-hidden="true">
+    <div class="modal-card modal-card-wide">
+      <div class="modal-topbar">
+        <div>
+          <div class="eyebrow">Agent-to-Agent Drama</div>
+          <h3>Silent Co-Broke Matchmaker</h3>
+        </div>
+        <button class="close-button" data-close="cobrokeModal" type="button"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="cobroke-shell">
+        <form class="cobroke-filters" id="cobrokeForm">
+          <div class="input-shell">
+            <i class="fa-solid fa-location-dot"></i>
+            <select id="cobrokeLocation" required>
+              <option value="Bangsar">Bangsar</option>
+              <option value="Mont Kiara">Mont Kiara</option>
+              <option value="Bukit Jalil">Bukit Jalil</option>
+              <option value="Petaling Jaya">Petaling Jaya</option>
+              <option value="Desa ParkCity">Desa ParkCity</option>
+            </select>
+          </div>
+          <div class="input-shell">
+            <i class="fa-solid fa-wallet"></i>
+            <input id="cobrokeBudget" type="number" min="0" step="50000" placeholder="Buyer max budget (RM)" required>
+          </div>
+          <div class="input-shell">
+            <i class="fa-solid fa-building"></i>
+            <select id="cobrokePropertyType" required>
+              <option value="Condo">Condo</option>
+              <option value="Serviced Residence">Serviced Residence</option>
+              <option value="Landed">Landed</option>
+              <option value="Loft">Loft</option>
+            </select>
+          </div>
+          <div class="input-shell">
+            <i class="fa-solid fa-user-tie"></i>
+            <input id="cobrokeBuyerAgent" type="text" placeholder="Buyer agent name" required>
+          </div>
+
+          <button class="primary-button full-width" type="submit">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            Scan Private Matches
+          </button>
+        </form>
+
+        <div class="cobroke-results">
+          <div class="cobroke-summary" id="cobrokeSummary"></div>
+          <div class="cobroke-match-list" id="cobrokeMatchList"></div>
+          <div class="cobroke-agreement" id="cobrokeAgreement"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="cheatSheetModal" aria-hidden="true">
+    <div class="modal-card modal-card-mobile">
+      <div class="modal-topbar">
+        <div>
+          <div class="eyebrow">Viewing Pressure</div>
+          <h3>30-Second AI Cheat Sheet</h3>
+        </div>
+        <button class="close-button" data-close="cheatSheetModal" type="button"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <form class="cheat-form" id="cheatSheetForm">
+        <div class="input-shell">
+          <i class="fa-solid fa-hashtag"></i>
+          <select id="cheatPropertyId" required></select>
+        </div>
+        <button class="primary-button" type="submit">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          Generate AI Cheat Sheet
+        </button>
+      </form>
+
+      <div class="cheat-sheet-phone" id="cheatSheetResult"></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="referralModal" aria-hidden="true">
+    <div class="modal-card modal-card-wide">
+      <div class="modal-topbar">
+        <div>
+          <div class="eyebrow">Post-Sale Amnesia</div>
+          <h3>Referral Autopilot</h3>
+        </div>
+        <button class="close-button" data-close="referralModal" type="button"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="referral-shell">
+        <form class="referral-form" id="referralForm">
+          <div class="input-shell">
+            <i class="fa-solid fa-user"></i>
+            <input id="referralClientName" type="text" placeholder="Client name" required>
+          </div>
+          <div class="input-shell">
+            <i class="fa-solid fa-phone"></i>
+            <input id="referralClientPhone" type="tel" placeholder="WhatsApp number" required>
+          </div>
+          <div class="input-shell">
+            <i class="fa-solid fa-envelope"></i>
+            <input id="referralClientEmail" type="email" placeholder="Client email" required>
+          </div>
+          <div class="input-shell">
+            <i class="fa-solid fa-building"></i>
+            <select id="referralPropertyId" required></select>
+          </div>
+          <div class="input-shell">
+            <i class="fa-solid fa-calendar-check"></i>
+            <input id="referralCloseDate" type="date" required>
+          </div>
+          <div class="input-shell">
+            <i class="fa-solid fa-money-bill-wave"></i>
+            <input id="referralClosedPrice" type="number" min="0" step="5000" placeholder="Closed price (RM)" required>
+          </div>
+          <button class="primary-button full-width" type="submit">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            Create Lifecycle Automation
+          </button>
+        </form>
+
+        <div class="referral-results">
+          <div class="referral-summary" id="referralSummary"></div>
+          <div class="referral-timeline" id="referralTimeline"></div>
+          <div class="referral-drafts" id="referralDrafts"></div>
+        </div>
+      </div>
     </div>
   </div>
 
   <div class="toast" id="toast"></div>
 
+  <script src="./negotiation-store.js"></script>
+  <script src="./negotiation-assistant.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="./agent.js"></script>
 </body>
 </html>

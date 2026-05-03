@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RealtyGenius | Master God Mode</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="./master.css">
+</head>
+<body>
+  <div class="master-alert" id="globalAlertPreview" hidden></div>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <div class="workspace">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark"><i class="fa-solid fa-eye"></i></div>
+        <div>
+          <div class="eyebrow">Platform Owner</div>
+          <h1>God Mode</h1>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Master dashboard sections">
+        <button class="nav-item active" data-section="panopticon" type="button">
+          <i class="fa-solid fa-binoculars"></i>
+          <span>Panopticon</span>
+        </button>
+        <button class="nav-item" data-section="money" type="button">
+          <i class="fa-solid fa-money-bill-transfer"></i>
+          <span>Revenue & Escrow</span>
+        </button>
+        <button class="nav-item" data-section="algorithm" type="button">
+          <i class="fa-solid fa-sliders"></i>
+          <span>AI Algorithm</span>
+        </button>
+        <button class="nav-item" data-section="killswitch" type="button">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>Kill Switches</span>
+        </button>
+        <button class="nav-item" data-section="audit" type="button">
+          <i class="fa-solid fa-lock"></i>
+          <span>Owner Audit</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-card">
+        <div class="eyebrow soft">Owner Doctrine</div>
+        <h3>Read everything. Follow every ringgit. Control every emergency.</h3>
+        <p>The master console is designed for legal disputes, revenue truth, and platform-level intervention.</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">System Override</div>
+          <h2>Global command center</h2>
+        </div>
+        <div class="top-actions">
+          <button class="ghost-button" id="refreshButton" type="button">
+            <i class="fa-solid fa-rotate"></i>
+            Refresh Streams
+          </button>
+          <button class="danger-button" data-section-jump="killswitch" type="button">
+            <i class="fa-solid fa-power-off"></i>
+            Emergency Controls
+          </button>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="hero-pill">God Mode Active</div>
+          <h3>Absolute visibility over conversations, money, AI ranking, and emergency control.</h3>
+          <p>Built for the owner: legal-grade logs, escrow visibility, subscription revenue, bank referral tracking, algorithm dials, and global kill switches.</p>
+        </div>
+
+        <div class="hero-metrics">
+          <article class="metric-card">
+            <span>Live Escrow</span>
+            <strong id="liveEscrowMetric">RM 0</strong>
+            <p>Held booking fees</p>
+          </article>
+          <article class="metric-card">
+            <span>SaaS Revenue Today</span>
+            <strong id="saasMetric">RM 0</strong>
+            <p>RM 299 agent plans</p>
+          </article>
+          <article class="metric-card">
+            <span>Bank Referral Pending</span>
+            <strong id="bankReferralMetric">RM 0</strong>
+            <p>1% loan referral fees</p>
+          </article>
+          <article class="metric-card">
+            <span>Surveillance Logs</span>
+            <strong id="logMetric">0</strong>
+            <p>Searchable interactions</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-panel active" data-panel="panopticon">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">The Panopticon</div>
+            <h3>Search every interaction</h3>
+          </div>
+          <div class="chip-row">
+            <span class="chip">Negotiations</span>
+            <span class="chip">Voice calls</span>
+            <span class="chip">Co-broke agreements</span>
+          </div>
+        </div>
+
+        <div class="panopticon-toolbar">
+          <div class="input-shell">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="searchInput" type="text" placeholder="Search buyer, agent, property, transcript, agreement...">
+          </div>
+          <select id="logTypeFilter" class="select-shell">
+            <option value="all">All streams</option>
+            <option value="negotiation">Negotiations</option>
+            <option value="voice">AI Voice Calls</option>
+            <option value="cobroke">Co-Broke Agreements</option>
+            <option value="escrow">Escrow Events</option>
+          </select>
+        </div>
+
+        <div class="panopticon-layout">
+          <div class="log-list" id="logList"></div>
+          <aside class="log-detail" id="logDetail"></aside>
+        </div>
+      </section>
+
+      <section class="section-panel" data-panel="money">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">Macro Revenue & Escrow Engine</div>
+            <h3>Follow the money in real time</h3>
+          </div>
+          <div class="chip-row">
+            <span class="chip">Holding account</span>
+            <span class="chip">SaaS MRR</span>
+            <span class="chip">Bank referrals</span>
+          </div>
+        </div>
+
+        <div class="money-grid">
+          <article class="money-card">
+            <span>Live escrow balance</span>
+            <strong id="escrowHeldValue">RM 0</strong>
+            <p>Booking fees currently held in company escrow.</p>
+          </article>
+          <article class="money-card">
+            <span>Released escrow</span>
+            <strong id="escrowReleasedValue">RM 0</strong>
+            <p>Deposits released after signed paperwork checkpoint.</p>
+          </article>
+          <article class="money-card">
+            <span>Agent subscriptions today</span>
+            <strong id="subscriptionValue">RM 0</strong>
+            <p id="subscriptionDetail">0 agents paid RM 299 today.</p>
+          </article>
+          <article class="money-card">
+            <span>Bank referral pipeline</span>
+            <strong id="bankPipelineValue">RM 0</strong>
+            <p>Pending 1% commission from submitted loan packs.</p>
+          </article>
+        </div>
+
+        <div class="finance-ledger" id="financeLedger"></div>
+      </section>
+
+      <section class="section-panel" data-panel="algorithm">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">AI Algorithm Control</div>
+            <h3>The Puppet Master</h3>
+          </div>
+          <div class="chip-row">
+            <span class="chip">Feed ranking</span>
+            <span class="chip">Ads visibility</span>
+            <span class="chip">Investor priority</span>
+          </div>
+        </div>
+
+        <div class="algorithm-grid">
+          <article class="dial-card">
+            <div class="dial-head">
+              <div>
+                <span>Dial 1</span>
+                <strong>Developer Paid Ads Visibility</strong>
+              </div>
+              <output id="paidAdsValue">+20%</output>
+            </div>
+            <input id="paidAdsSlider" type="range" min="-50" max="80" step="5">
+            <p>Boost or suppress paid developer inventory in buyer feeds.</p>
+          </article>
+
+          <article class="dial-card">
+            <div class="dial-head">
+              <div>
+                <span>Dial 2</span>
+                <strong>Stale Listing Penalty</strong>
+              </div>
+              <output id="stalePenaltyValue">-50%</output>
+            </div>
+            <input id="stalePenaltySlider" type="range" min="-90" max="0" step="5">
+            <p>Reduce visibility for properties older than 60 days.</p>
+          </article>
+
+          <article class="dial-card">
+            <div class="dial-head">
+              <div>
+                <span>Dial 3</span>
+                <strong>High Yield Investor Priority</strong>
+              </div>
+              <output id="yieldPriorityValue">+35%</output>
+            </div>
+            <input id="yieldPrioritySlider" type="range" min="-30" max="90" step="5">
+            <p>Increase high-yield units for users who clicked Investor in quiz.</p>
+          </article>
+        </div>
+
+        <div class="algorithm-actions">
+          <button class="primary-button" id="saveAlgorithmButton" type="button">
+            <i class="fa-solid fa-floppy-disk"></i>
+            Save Algorithm Controls
+          </button>
+          <button class="ghost-button" id="resetAlgorithmButton" type="button">
+            <i class="fa-solid fa-rotate-left"></i>
+            Reset Defaults
+          </button>
+        </div>
+
+        <div class="algorithm-preview" id="algorithmPreview"></div>
+      </section>
+
+      <section class="section-panel" data-panel="killswitch">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">Global Kill Switches</div>
+            <h3>Emergency platform control</h3>
+          </div>
+          <div class="chip-row">
+            <span class="chip chip-danger">Use carefully</span>
+            <span class="chip">Owner only</span>
+          </div>
+        </div>
+
+        <div class="kill-grid">
+          <article class="kill-card">
+            <span class="kill-icon"><i class="fa-solid fa-building-circle-xmark"></i></span>
+            <h4>Ban Agency</h4>
+            <p>Logs out every agent from an agency and pulls their listings offline.</p>
+            <select id="agencySelect" class="select-shell"></select>
+            <button class="danger-button" id="banAgencyButton" type="button">Ban Agency</button>
+          </article>
+
+          <article class="kill-card">
+            <span class="kill-icon"><i class="fa-solid fa-vault"></i></span>
+            <h4>Freeze Escrow</h4>
+            <p>Halts all money transfers in case of suspected hack or banking error.</p>
+            <button class="danger-button" id="freezeEscrowButton" type="button">Freeze Escrow</button>
+            <button class="ghost-button" id="unfreezeEscrowButton" type="button">Unfreeze Escrow</button>
+          </article>
+
+          <article class="kill-card">
+            <span class="kill-icon"><i class="fa-solid fa-bullhorn"></i></span>
+            <h4>Global Alert</h4>
+            <p>Push a permanent red banner to user.html and agent.html instantly.</p>
+            <textarea id="globalAlertMessage" rows="4" placeholder="Server maintenance in 10 minutes."></textarea>
+            <button class="danger-button" id="pushAlertButton" type="button">Push Global Alert</button>
+            <button class="ghost-button" id="clearAlertButton" type="button">Clear Alert</button>
+          </article>
+        </div>
+
+        <div class="kill-status" id="killStatus"></div>
+      </section>
+
+      <section class="section-panel" data-panel="audit">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">Owner Audit</div>
+            <h3>Immutable command trail</h3>
+          </div>
+        </div>
+        <div class="owner-audit" id="ownerAudit"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="./master.js"></script>
+</body>
+</html>

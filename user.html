@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="./user.css">
   <link rel="stylesheet" href="./ar-viewer.css">
+  <link rel="stylesheet" href="./negotiation-ui.css">
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 </head>
 <body>
@@ -106,6 +107,15 @@
             <p id="recommendationText">
               Open a few properties, save the strong ones, and the recommendation engine will start reading your bias.
             </p>
+            <div class="brain-progress">
+              <div class="brain-progress-topline">
+                <span id="brainProgressLabel">Signal strength: 0%</span>
+                <span id="brainUnlockLabel">Hidden gem locked</span>
+              </div>
+              <div class="brain-progress-track" aria-hidden="true">
+                <div class="brain-progress-fill" id="brainProgressFill"></div>
+              </div>
+            </div>
             <div class="brain-strip" id="recommendationMeta">
               The engine updates from your browsing and saved homes.
             </div>
@@ -137,13 +147,22 @@
             <div class="eyebrow">Property Feed</div>
             <h3>Explore the market</h3>
           </div>
-          <div class="feed-meta">
-            <span class="meta-pill">Save the strongest</span>
-            <span class="meta-pill">Contact in one tap</span>
-            <span class="meta-pill">AR where available</span>
+          <div class="feed-controls">
+            <div class="feed-view-toggle" aria-label="Feed view mode">
+              <button class="view-toggle-button active" id="gridFeedButton" type="button">Grid View</button>
+              <button class="view-toggle-button" id="videoFeedButton" type="button">Video View</button>
+            </div>
+            <div class="feed-meta">
+              <span class="meta-pill">Save the strongest</span>
+              <span class="meta-pill">Contact in one tap</span>
+              <span class="meta-pill">AR where available</span>
+            </div>
           </div>
         </div>
         <div class="property-feed" id="propertyGrid"></div>
+        <div class="video-feed" id="videoFeed" hidden></div>
+        <div class="feed-loading" id="feedLoading" hidden>Loading more properties for your next scroll...</div>
+        <div class="feed-sentinel" id="feedSentinel" aria-hidden="true"></div>
       </section>
 
       <section class="saved-section">
@@ -226,6 +245,125 @@
             </div>
           </section>
 
+          <section class="fun-panel">
+            <div class="section-topline">
+              <div>
+                <div class="eyebrow">Daydream Lab</div>
+                <h4>Play with the fantasy</h4>
+              </div>
+              <div class="fun-actions">
+                <button class="ghost-button" id="timelineButton" type="button">How could I afford this?</button>
+                <button class="ghost-button" id="roastButton" type="button">Roast This House</button>
+              </div>
+            </div>
+            <div class="fun-grid">
+              <article class="fun-card">
+                <span class="fun-tag">Alternative Timeline</span>
+                <p id="timelineOutput">Tap the affordability button and the AI will scheme up a playful path into this lifestyle.</p>
+              </article>
+              <article class="fun-card">
+                <span class="fun-tag">Roast Mode</span>
+                <p id="roastOutput">Flip roast mode on and let the AI lovingly drag the weird layout, pricing, or design choices.</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="negotiation-panel">
+            <div class="section-topline">
+              <div>
+                <div class="eyebrow">AI Negotiation Assistant</div>
+                <h4>Negotiate this property</h4>
+              </div>
+              <span class="negotiation-status open" id="negotiationState">Open</span>
+            </div>
+            <div class="negotiation-stack">
+              <div class="negotiation-suggestion" id="negotiationSuggestion"></div>
+              <div class="negotiation-locked" id="negotiationLocked" hidden>This negotiation has been closed by the agent for this property and buyer profile.</div>
+              <form class="negotiation-form" id="negotiationForm">
+                <div class="negotiation-input">
+                  <i class="fa-solid fa-user"></i>
+                  <input id="negotiationName" type="text" placeholder="Your name" required>
+                </div>
+                <div class="negotiation-input">
+                  <i class="fa-brands fa-whatsapp"></i>
+                  <input id="negotiationPhone" type="tel" placeholder="WhatsApp number" required>
+                </div>
+                <div class="negotiation-input full-span">
+                  <i class="fa-solid fa-money-bill-wave"></i>
+                  <input id="negotiationOffer" type="number" placeholder="Your offer price" required>
+                </div>
+                <div class="negotiation-actions full-span">
+                  <button class="primary-button" id="sendNegotiationButton" type="submit">Send Counter Offer</button>
+                  <button class="ghost-button" id="acceptNegotiationButton" type="button">Accept AI Suggestion</button>
+                  <button class="ghost-button" id="rejectNegotiationButton" type="button">Reject For Now</button>
+                </div>
+              </form>
+              <div class="negotiation-thread" id="negotiationThread"></div>
+            </div>
+          </section>
+
+          <section class="deal-room-panel">
+            <div class="section-topline">
+              <div>
+                <div class="eyebrow">Leak-Proof Deal Room</div>
+                <h4>Escrow, loan discount, and offer paper trail</h4>
+              </div>
+              <span class="deal-room-pill" id="dealRoomStatus">Not started</span>
+            </div>
+
+            <div class="deal-room-grid">
+              <article class="deal-control-card">
+                <div class="deal-control-head">
+                  <span class="deal-control-icon"><i class="fa-solid fa-shield-halved"></i></span>
+                  <div>
+                    <strong>Booking Fee Escrow</strong>
+                    <p id="escrowStatus">No booking fee held yet.</p>
+                  </div>
+                </div>
+                <div class="deal-control-meta">
+                  <span id="escrowAmount">RM 10,000 protected deposit</span>
+                  <span id="escrowReference">Reference pending</span>
+                </div>
+                <button class="primary-button" id="payBookingFeeButton" type="button">Pay Booking Fee</button>
+              </article>
+
+              <article class="deal-control-card">
+                <div class="deal-control-head">
+                  <span class="deal-control-icon"><i class="fa-solid fa-building-columns"></i></span>
+                  <div>
+                    <strong>Partner Bank Loan Path</strong>
+                    <p id="loanStatus">Start the DSR vault to unlock the 0.1% mortgage-rate route.</p>
+                  </div>
+                </div>
+                <div class="deal-control-meta">
+                  <span>AI Document Vault keeps paperwork here</span>
+                  <span>Bank referral monetizes without touching agent commission</span>
+                </div>
+                <div class="deal-control-actions">
+                  <button class="ghost-button" id="startLoanPackButton" type="button">Start Loan Pack</button>
+                  <button class="ghost-button" id="submitPartnerBankButton" type="button">Submit to Partner Bank</button>
+                </div>
+              </article>
+
+              <article class="deal-control-card">
+                <div class="deal-control-head">
+                  <span class="deal-control-icon"><i class="fa-solid fa-file-signature"></i></span>
+                  <div>
+                    <strong>Digital Letter of Offer</strong>
+                    <p id="offerStatus">Accept an offer to generate the e-sign paper trail.</p>
+                  </div>
+                </div>
+                <div class="offer-preview" id="offerPreview">No offer generated yet.</div>
+                <div class="deal-control-actions">
+                  <button class="ghost-button" id="generateOfferButton" type="button">Generate Offer</button>
+                  <button class="ghost-button" id="buyerSignOfferButton" type="button">Buyer E-Sign</button>
+                </div>
+              </article>
+            </div>
+
+            <div class="deal-room-timeline" id="dealRoomTimeline"></div>
+          </section>
+
           <section class="ar-panel">
             <div class="section-topline">
               <div>
@@ -251,6 +389,7 @@
                 >
                   <button slot="ar-button" class="ar-hidden-launch" id="hiddenArLaunch" type="button">Launch AR</button>
                 </model-viewer>
+                <div class="ar-tooltip" id="arTooltip">Drag to look around</div>
                 <div class="ar-fallback" id="arFallback">AR preview will appear here for supported listings.</div>
               </div>
               <div class="ar-toolbar">
@@ -300,6 +439,24 @@
             </form>
             <p class="form-status" id="bookingStatus"></p>
           </section>
+
+          <section class="notes-panel">
+            <div class="section-topline">
+              <div>
+                <div class="eyebrow">Vibe Check</div>
+                <h4>Community notes and condo gossip</h4>
+              </div>
+              <span class="notes-pill">Anonymous and unverified</span>
+            </div>
+            <div class="notes-list" id="notesList"></div>
+            <form class="notes-form" id="notesForm">
+              <div class="input-shell note-input-shell">
+                <i class="fa-regular fa-comments"></i>
+                <textarea id="noteInput" rows="3" placeholder="Drop an anonymous note about the management, view, vibe, lift speed, parking chaos, or hidden upside."></textarea>
+              </div>
+              <button class="primary-button" type="submit">Post Anonymous Note</button>
+            </form>
+          </section>
         </section>
       </div>
     </div>
@@ -307,6 +464,8 @@
 
   <div class="toast" id="toast"></div>
 
+  <script src="./negotiation-store.js"></script>
+  <script src="./negotiation-assistant.js"></script>
   <script src="./ar-viewer.js"></script>
   <script src="./user.js"></script>
 </body>
