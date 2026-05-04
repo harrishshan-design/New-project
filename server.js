@@ -162,7 +162,8 @@ function getMapsUrls(query) {
     const mapsQuery = getMapsQuery(query);
     return {
         searchUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`,
-        embedUrl: `https://www.google.com/maps?q=${encodeURIComponent(mapsQuery)}&output=embed`
+        embedUrl: `https://www.google.com/maps?q=${encodeURIComponent(mapsQuery)}&output=embed`,
+        earthUrl: `https://earth.google.com/web/search/${encodeURIComponent(mapsQuery)}`
     };
 }
 

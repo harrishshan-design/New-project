@@ -324,7 +324,8 @@ const state = {
   guessGame: readStore(STORAGE_KEYS.guessGame, {}),
   communityNotes: readStore(STORAGE_KEYS.communityNotes, seedCommunityNotes()),
   locationFallbacks: {},
-  locationFallbackPending: {}
+  locationFallbackPending: {},
+  locationView: "maps"
 };
 
 const els = {
@@ -564,6 +565,10 @@ function getGoogleMapsSearchUrl(query) {
 
 function getGoogleMapsEmbedUrl(query) {
   return `https://www.google.com/maps?q=${encodeURIComponent(getMapsQuery(query))}&output=embed`;
+}
+
+function getGoogleEarthUrl(query) {
+  return `https://earth.google.com/web/search/${encodeURIComponent(getMapsQuery(query))}`;
 }
 
 function getLocationFallbackCacheKey(query) {
@@ -1245,6 +1250,10 @@ function renderLocationFallback(query) {
   const safeQuery = escapeHtml(query);
   const mapUrl = backendFallback?.maps?.searchUrl || getGoogleMapsSearchUrl(query);
   const mapEmbedUrl = backendFallback?.maps?.embedUrl || getGoogleMapsEmbedUrl(query);
+  const earthUrl = backendFallback?.maps?.earthUrl || getGoogleEarthUrl(query);
+  const locationView = state.locationView === "earth" ? "earth" : "maps";
+  const activeLocationUrl = locationView === "earth" ? earthUrl : mapUrl;
+  const activeLocationLabel = locationView === "earth" ? "Open Google Earth" : "Open Google Maps";
   const insight = backendFallback?.insight || getLocationInsight(query);
   const demandText = backendFallback?.demandSignal?.stored
     ? "Demand saved privately. Exact house-style searches are hashed/redacted before storage."
@@ -1261,9 +1270,9 @@ function renderLocationFallback(query) {
           <h3>No exact RealtyGenius listing for "${safeQuery}" yet</h3>
           <p>${escapeHtml(insight.body)}</p>
         </div>
-        <a class="primary-button" href="${mapUrl}" target="_blank" rel="noopener noreferrer">
+        <a class="primary-button" href="${activeLocationUrl}" target="_blank" rel="noopener noreferrer">
           <i class="fa-solid fa-location-arrow"></i>
-          Open Google Maps
+          ${activeLocationLabel}
         </a>
       </div>
       <div class="location-insight-layout">
@@ -1290,7 +1299,33 @@ function renderLocationFallback(query) {
             </div>
           </div>
         </div>
-        <iframe class="location-map-frame" src="${mapEmbedUrl}" title="Google map for ${escapeAttr(query)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        <div class="location-view-panel">
+          <div class="location-view-toggle" role="tablist" aria-label="Location view">
+            <button class="location-view-button ${locationView === "maps" ? "active" : ""}" data-action="set-location-view" data-view="maps" type="button" role="tab" aria-selected="${locationView === "maps"}">
+              <i class="fa-solid fa-map"></i>
+              Maps
+            </button>
+            <button class="location-view-button ${locationView === "earth" ? "active" : ""}" data-action="set-location-view" data-view="earth" type="button" role="tab" aria-selected="${locationView === "earth"}">
+              <i class="fa-solid fa-earth-asia"></i>
+              Earth
+            </button>
+          </div>
+          ${locationView === "earth" ? `
+            <div class="location-earth-frame">
+              <div class="earth-preview-icon"><i class="fa-solid fa-earth-asia"></i></div>
+              <div>
+                <strong>Open satellite and 3D terrain in Google Earth</strong>
+                <span>Earth opens in a new tab for the searched location, so buyers can inspect terrain, surrounding density, roads, and nearby landmarks.</span>
+              </div>
+              <a class="primary-button" href="${earthUrl}" target="_blank" rel="noopener noreferrer">
+                <i class="fa-solid fa-up-right-from-square"></i>
+                Launch Earth
+              </a>
+            </div>
+          ` : `
+            <iframe class="location-map-frame" src="${mapEmbedUrl}" title="Google map for ${escapeAttr(query)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          `}
+        </div>
       </div>
       <div class="nearby-suggestion-head">
         <span>Nearby verified options</span>
@@ -2302,6 +2337,10 @@ function bindEvents() {
       if (action === "toggle-save") toggleFavorite(id);
       if (action === "open-details") openPropertyModal(id);
       if (action === "guess-price") handleGuessPrice(id, Number(actionTarget.dataset.guess));
+      if (action === "set-location-view") {
+        state.locationView = actionTarget.dataset.view === "earth" ? "earth" : "maps";
+        renderProperties();
+      }
       return;
     }
 
