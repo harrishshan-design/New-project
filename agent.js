@@ -9,8 +9,60 @@ const STORAGE_KEYS = {
   agentCobroke: "kvai_agent_cobroke",
   agentCheatSheet: "kvai_agent_cheat_sheet",
   agentReferral: "kvai_agent_referral_autopilot",
+  agentContentCreator: "kvai_agent_content_creator",
+  agentSubscription: "kvai_agent_subscription",
+  buyerLiveListings: "rg_live_buyer_listings",
+  adminListings: "rg_admin_listings",
+  adminNotifications: "rg_admin_notifications",
   leakProofDeals: "kvai_leak_proof_deals",
   globalAlert: "rg_global_platform_alert"
+};
+
+const AGENT_PLAN_TIERS = [
+  {
+    id: "starter",
+    name: "Starter",
+    price: 29,
+    tagline: "For solo agents starting with clean lead capture.",
+    badge: "Entry",
+    features: ["Basic listing profile", "Manual lead inbox", "AI Content Creator", "Standard dashboard"]
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    price: 59,
+    tagline: "For agents who want faster lead response.",
+    badge: "Recommended",
+    features: ["Instant lead alerts", "Weekly performance report", "Lead tracking", "Follow-up reminders"]
+  },
+  {
+    id: "premium",
+    name: "Premium",
+    price: 99,
+    tagline: "For agents who want the full automation engine.",
+    badge: "Best Value",
+    features: ["Premium listing boost", "Auto marketing captions", "Priority buyer routing", "Advanced reports"]
+  }
+];
+
+const FREE_AGENT_PLAN = {
+  id: "free",
+  name: "Free Agent",
+  price: 0,
+  tagline: "Basic dashboard access",
+  badge: "Free",
+  features: ["Upload listings", "Basic profile", "Normal dashboard"]
+};
+
+const seedSubscription = {
+  planId: "free",
+  planName: "Free Agent",
+  amount: 0,
+  currency: "MYR",
+  status: "free",
+  testMode: true,
+  startedAt: new Date().toISOString(),
+  checkoutId: "free_agent"
 };
 
 const seedLeads = [
@@ -98,70 +150,36 @@ const seedClients = [
   }
 ];
 
-const seedListings = [
-  {
-    id: 201,
-    title: "Skyline Residence",
-    area: "Mont Kiara",
-    price: 1180000,
-    status: "Live",
-    enquiries: 18,
-    propertyType: "Condo",
-    address: "Jalan Kiara, Mont Kiara",
-    landlordName: "Mr Lim",
-    landlordPhone: "60123334455",
-    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=600&q=80",
-    maintenanceFee: "RM 0.38 psf",
-    developer: "Sunrise-style luxury enclave",
-    transactions: [
-      { date: "Jan 2026", price: 1160000, note: "1,050 sqft high floor" },
-      { date: "Nov 2025", price: 1128000, note: "Renovated 2+1 bed" },
-      { date: "Aug 2025", price: 1095000, note: "Mid floor, original condition" }
-    ]
-  },
-  {
-    id: 202,
-    title: "Transit Point Loft",
-    area: "Bukit Jalil",
-    price: 690000,
-    status: "Live",
-    enquiries: 24,
-    propertyType: "Loft",
-    address: "Jalan Jalil Perkasa, Bukit Jalil",
-    landlordName: "Ms Tan",
-    landlordPhone: "60128887766",
-    image: "https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=600&q=80",
-    maintenanceFee: "RM 0.32 psf",
-    developer: "Transit-oriented mixed development",
-    transactions: [
-      { date: "Feb 2026", price: 705000, note: "Fully furnished loft" },
-      { date: "Dec 2025", price: 682000, note: "Vacant possession" },
-      { date: "Sep 2025", price: 668000, note: "Lower floor facing highway" }
-    ]
-  },
-  {
-    id: 203,
-    title: "Bangsar Hill Collection",
-    area: "Bangsar",
-    price: 1430000,
-    status: "Reserved",
-    enquiries: 9,
-    propertyType: "Condo",
-    address: "Jalan Maarof, Bangsar",
-    landlordName: "Pn Aisyah",
-    landlordPhone: "60167779988",
-    image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=600&q=80",
-    maintenanceFee: "RM 0.45 psf",
-    developer: "Boutique low-density project",
-    transactions: [
-      { date: "Mar 2026", price: 1410000, note: "Corner unit, 1,250 sqft" },
-      { date: "Jan 2026", price: 1375000, note: "Similar stack, lower floor" },
-      { date: "Oct 2025", price: 1320000, note: "Owner-occupied unit" }
-    ]
-  }
+const seedListings = window.RealtyGeniusAgentListings || [];
+
+const LISTING_REQUIRED_MEDIA_SLOTS = [
+  { key: "front_view_link", label: "Front View", required: true, aliases: ["image_link", "front_view", "front_image_link"] },
+  { key: "top_view_link", label: "Top View", required: true, aliases: ["top_view", "drone_view_link"] },
+  { key: "room_1_link", label: "Room 1", required: true, aliases: ["room_link", "bedroom_link", "room_1"] },
+  { key: "bathroom_link", label: "Bathroom", required: true, aliases: ["bathroom", "bath_link"] }
 ];
 
-const LISTING_EXCEL_REQUIRED_COLUMNS = [
+const LISTING_OPTIONAL_MEDIA_SLOTS = [
+  { key: "kitchen_link", label: "Kitchen", aliases: ["kitchen", "kitchen_photo_link"] },
+  { key: "photo_6_link", label: "Living Area" },
+  { key: "photo_7_link", label: "Room 2" },
+  { key: "photo_8_link", label: "Facilities" },
+  { key: "photo_9_link", label: "Parking / Lobby" },
+  { key: "photo_10_link", label: "Balcony / View" }
+];
+
+const LISTING_MEDIA_SLOTS = [
+  ...LISTING_REQUIRED_MEDIA_SLOTS,
+  ...LISTING_OPTIONAL_MEDIA_SLOTS
+];
+
+const LISTING_DEVICE_PHOTO_LIMIT = 10;
+const LISTING_MIN_PHOTO_COUNT = 4;
+const LISTING_RECOMMENDED_PHOTO_COUNT = 10;
+const LISTING_DEVICE_IMAGE_MAX_SIZE = 1200;
+const LISTING_DEVICE_IMAGE_QUALITY = 0.64;
+
+const LISTING_EXCEL_BASE_COLUMNS = [
   "title",
   "area",
   "price",
@@ -169,13 +187,22 @@ const LISTING_EXCEL_REQUIRED_COLUMNS = [
   "property_type",
   "address",
   "landlord_name",
-  "landlord_phone",
-  "image_link",
+  "landlord_phone"
+];
+
+const LISTING_EXCEL_REQUIRED_COLUMNS = [
+  ...LISTING_EXCEL_BASE_COLUMNS,
+  ...LISTING_REQUIRED_MEDIA_SLOTS.map((slot) => slot.key)
+];
+
+const LISTING_EXCEL_OPTIONAL_COLUMNS = [
+  ...LISTING_OPTIONAL_MEDIA_SLOTS.map((slot) => slot.key),
   "ar_link"
 ];
 
 const LISTING_EXCEL_HEADERS = [
   ...LISTING_EXCEL_REQUIRED_COLUMNS,
+  ...LISTING_EXCEL_OPTIONAL_COLUMNS,
   "maintenance_fee",
   "developer",
   "enquiries",
@@ -191,31 +218,41 @@ const LISTING_EXCEL_HEADERS = [
 ];
 
 const LISTING_EXCEL_SAMPLE_ROW = {
-  title: "Bangsar South Residence",
-  area: "Bangsar",
-  price: 1200000,
-  status: "Live",
+  title: "Dwi Aurora Residence @ Petaling Jaya",
+  area: "Petaling Jaya",
+  price: 631000,
+  status: "Pending QC",
   property_type: "Condo",
-  address: "Bangsar South, Kuala Lumpur",
-  landlord_name: "Mr Lim",
-  landlord_phone: "60123334455",
-  image_link: "https://drive.google.com/file/d/GOOGLE_DRIVE_IMAGE_FILE_ID/view?usp=sharing",
+  address: "Jalan Sri Manja, Pjs 3, 46000 Petaling Jaya, Selangor",
+  landlord_name: "Arvind Govindasamy",
+  landlord_phone: "60123456789",
+  front_view_link: "https://drive.google.com/file/d/FRONT_VIEW_IMAGE_FILE_ID/view?usp=sharing",
+  top_view_link: "https://drive.google.com/file/d/TOP_VIEW_IMAGE_FILE_ID/view?usp=sharing",
+  room_1_link: "https://drive.google.com/file/d/ROOM_1_IMAGE_FILE_ID/view?usp=sharing",
+  bathroom_link: "https://drive.google.com/file/d/BATHROOM_IMAGE_FILE_ID/view?usp=sharing",
+  kitchen_link: "https://drive.google.com/file/d/KITCHEN_IMAGE_FILE_ID/view?usp=sharing",
+  photo_6_link: "https://drive.google.com/file/d/LIVING_AREA_IMAGE_FILE_ID/view?usp=sharing",
+  photo_7_link: "https://drive.google.com/file/d/ROOM_2_IMAGE_FILE_ID/view?usp=sharing",
+  photo_8_link: "https://drive.google.com/file/d/FACILITIES_IMAGE_FILE_ID/view?usp=sharing",
+  photo_9_link: "https://drive.google.com/file/d/PARKING_LOBBY_IMAGE_FILE_ID/view?usp=sharing",
+  photo_10_link: "https://drive.google.com/file/d/BALCONY_VIEW_IMAGE_FILE_ID/view?usp=sharing",
   ar_link: "https://drive.google.com/file/d/GOOGLE_DRIVE_GLB_FILE_ID/view?usp=sharing",
-  maintenance_fee: "RM 0.38 psf",
-  developer: "UOA Group",
+  maintenance_fee: "Confirm with developer sales package",
+  developer: "IQI Global project listing",
   enquiries: 0,
-  transaction_1_date: "Mar 2026",
-  transaction_1_price: 1160000,
-  transaction_1_note: "1,050 sqft high floor",
-  transaction_2_date: "Jan 2026",
-  transaction_2_price: 1128000,
-  transaction_2_note: "Renovated 2+1 bed",
-  transaction_3_date: "Oct 2025",
-  transaction_3_price: 1095000,
-  transaction_3_note: "Mid floor original condition"
+  transaction_1_date: "Current",
+  transaction_1_price: 631000,
+  transaction_1_note: "Starting from price in uploaded IQI CSV",
+  transaction_2_date: "Benchmark",
+  transaction_2_price: 605760,
+  transaction_2_note: "Internal comparison anchor",
+  transaction_3_date: "Offer guide",
+  transaction_3_price: 580520,
+  transaction_3_note: "Negotiation reference only"
 };
 
 const areaRouteProfiles = {
+  ...(window.RealtyGeniusAreaRouteProfiles || {}),
   "KL Sentral": { lat: 3.134, lng: 101.6869, traffic: 1.18 },
   "Mont Kiara": { lat: 3.1699, lng: 101.6525, traffic: 1.24 },
   "Bukit Jalil": { lat: 3.055, lng: 101.69, traffic: 1.16 },
@@ -224,62 +261,19 @@ const areaRouteProfiles = {
   "Desa ParkCity": { lat: 3.1876, lng: 101.6283, traffic: 1.22 }
 };
 
-const listingRouteEnhancements = {
-  201: {
-    address: "Jalan Kiara, Mont Kiara",
-    landlordName: "Mr Lim",
-    landlordPhone: "60123334455",
-    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=600&q=80",
-    propertyType: "Condo",
-    maintenanceFee: "RM 0.38 psf",
-    developer: "Sunrise-style luxury enclave",
-    transactions: [
-      { date: "Jan 2026", price: 1160000, note: "1,050 sqft high floor" },
-      { date: "Nov 2025", price: 1128000, note: "Renovated 2+1 bed" },
-      { date: "Aug 2025", price: 1095000, note: "Mid floor, original condition" }
-    ]
-  },
-  202: {
-    address: "Jalan Jalil Perkasa, Bukit Jalil",
-    landlordName: "Ms Tan",
-    landlordPhone: "60128887766",
-    image: "https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=600&q=80",
-    propertyType: "Loft",
-    maintenanceFee: "RM 0.32 psf",
-    developer: "Transit-oriented mixed development",
-    transactions: [
-      { date: "Feb 2026", price: 705000, note: "Fully furnished loft" },
-      { date: "Dec 2025", price: 682000, note: "Vacant possession" },
-      { date: "Sep 2025", price: 668000, note: "Lower floor facing highway" }
-    ]
-  },
-  203: {
-    address: "Jalan Maarof, Bangsar",
-    landlordName: "Pn Aisyah",
-    landlordPhone: "60167779988",
-    image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=600&q=80",
-    propertyType: "Condo",
-    maintenanceFee: "RM 0.45 psf",
-    developer: "Boutique low-density project",
-    transactions: [
-      { date: "Mar 2026", price: 1410000, note: "Corner unit, 1,250 sqft" },
-      { date: "Jan 2026", price: 1375000, note: "Similar stack, lower floor" },
-      { date: "Oct 2025", price: 1320000, note: "Owner-occupied unit" }
-    ]
-  }
-};
+const listingRouteEnhancements = {};
 
 const seedNotifications = [
   {
     id: Date.now() - 300000,
-    title: "Hot lead entered the desk",
-    message: "Alya Tan reopened a Mont Kiara unit and is ready for negotiation framing.",
+    title: "IQI project inventory loaded",
+    message: "Your uploaded IQI Global CSV projects are loaded into the listing desk for admin QC control.",
     createdAt: new Date(Date.now() - 300000).toISOString()
   },
   {
     id: Date.now() - 120000,
-    title: "Commission nearing close",
-    message: "Nur Iman’s family deal is moving toward the payout window this week.",
+    title: "Developer package checks needed",
+    message: "Confirm maintenance, rebates, and availability before sending buyer-facing project details.",
     createdAt: new Date(Date.now() - 120000).toISOString()
   }
 ];
@@ -382,6 +376,16 @@ const seedReferral = {
   campaigns: []
 };
 
+const seedContentCreator = {
+  contentType: "Listing Description",
+  output: "",
+  status: "Ready",
+  statusType: "",
+  lastEnhancement: null,
+  photoAnalysis: [],
+  history: []
+};
+
 const state = {
   section: "overview",
   leadFilter: "all",
@@ -394,11 +398,18 @@ const state = {
   itinerary: readStore(STORAGE_KEYS.agentItinerary, seedItinerary),
   cobroke: readStore(STORAGE_KEYS.agentCobroke, seedCobroke),
   cheatSheet: readStore(STORAGE_KEYS.agentCheatSheet, seedCheatSheet),
-  referral: readStore(STORAGE_KEYS.agentReferral, seedReferral)
+  referral: readStore(STORAGE_KEYS.agentReferral, seedReferral),
+  contentCreator: readStore(STORAGE_KEYS.agentContentCreator, seedContentCreator),
+  subscription: readStore(STORAGE_KEYS.agentSubscription, seedSubscription)
 };
+
+let contentHistoryHydrated = false;
+let listingDevicePhotos = [];
+let listingEnhancerPhotos = [];
 
 const els = {
   navItems: [...document.querySelectorAll(".nav-item")],
+  shortcutItems: [...document.querySelectorAll(".shortcut-pill[data-section]")],
   panels: [...document.querySelectorAll("[data-panel]")],
   leadFilters: [...document.querySelectorAll("[data-lead-filter]")],
   hotLeadCount: document.getElementById("hotLeadCount"),
@@ -406,6 +417,10 @@ const els = {
   pendingCommission: document.getElementById("pendingCommission"),
   listingCount: document.getElementById("listingCount"),
   notificationCount: document.getElementById("notificationCount"),
+  liveAgentName: document.getElementById("liveAgentName"),
+  liveAgentAgency: document.getElementById("liveAgentAgency"),
+  liveAgentRen: document.getElementById("liveAgentRen"),
+  liveAgentAvatar: document.querySelector(".live-agent-avatar"),
   commandBrief: document.getElementById("commandBrief"),
   commandCards: document.getElementById("commandCards"),
   actionQueue: document.getElementById("actionQueue"),
@@ -420,7 +435,11 @@ const els = {
   agentNegotiationList: document.getElementById("agentNegotiationList"),
   leakProofDealBoard: document.getElementById("leakProofDealBoard"),
   notificationButton: document.getElementById("notificationButton"),
+  pushPermissionButton: document.getElementById("pushPermissionButton"),
+  pushStatus: document.getElementById("pushStatus"),
   quickLeadButton: document.getElementById("quickLeadButton"),
+  billingButton: document.getElementById("billingButton"),
+  agentBillingStrip: document.getElementById("agentBillingStrip"),
   openListingComposer: document.getElementById("openListingComposer"),
   notificationDrawer: document.getElementById("notificationDrawer"),
   notificationList: document.getElementById("notificationList"),
@@ -431,6 +450,7 @@ const els = {
   cobrokeModal: document.getElementById("cobrokeModal"),
   cheatSheetModal: document.getElementById("cheatSheetModal"),
   referralModal: document.getElementById("referralModal"),
+  billingModal: document.getElementById("billingModal"),
   leadForm: document.getElementById("leadForm"),
   listingForm: document.getElementById("listingForm"),
   documentVaultForm: document.getElementById("documentVaultForm"),
@@ -451,6 +471,16 @@ const els = {
   listingLandlordName: document.getElementById("listingLandlordName"),
   listingLandlordPhone: document.getElementById("listingLandlordPhone"),
   listingImageLink: document.getElementById("listingImageLink"),
+  listingTopViewLink: document.getElementById("listingTopViewLink"),
+  listingRoom1Link: document.getElementById("listingRoom1Link"),
+  listingBathroomLink: document.getElementById("listingBathroomLink"),
+  listingKitchenLink: document.getElementById("listingKitchenLink"),
+  listingExtraPhotoLinks: document.getElementById("listingExtraPhotoLinks"),
+  listingBulkPhotoLinks: document.getElementById("listingBulkPhotoLinks"),
+  autoFillListingPhotos: document.getElementById("autoFillListingPhotos"),
+  listingDevicePhotos: document.getElementById("listingDevicePhotos"),
+  listingDevicePhotoPreview: document.getElementById("listingDevicePhotoPreview"),
+  listingDevicePhotoStatus: document.getElementById("listingDevicePhotoStatus"),
   listingArLink: document.getElementById("listingArLink"),
   listingExcelInput: document.getElementById("listingExcelInput"),
   listingImportStatus: document.getElementById("listingImportStatus"),
@@ -493,6 +523,31 @@ const els = {
   referralSummary: document.getElementById("referralSummary"),
   referralTimeline: document.getElementById("referralTimeline"),
   referralDrafts: document.getElementById("referralDrafts"),
+  contentCreatorForm: document.getElementById("contentCreatorForm"),
+  contentPropertyTitle: document.getElementById("contentPropertyTitle"),
+  contentLocation: document.getElementById("contentLocation"),
+  contentPropertyType: document.getElementById("contentPropertyType"),
+  contentPrice: document.getElementById("contentPrice"),
+  contentBedrooms: document.getElementById("contentBedrooms"),
+  contentBathrooms: document.getElementById("contentBathrooms"),
+  contentHighlights: document.getElementById("contentHighlights"),
+  contentTargetAudience: document.getElementById("contentTargetAudience"),
+  listingEnhancerPhotos: document.getElementById("listingEnhancerPhotos"),
+  listingEnhancerPhotoStatus: document.getElementById("listingEnhancerPhotoStatus"),
+  listingEnhancerPhotoPreview: document.getElementById("listingEnhancerPhotoPreview"),
+  enhancerScoreGrid: document.getElementById("enhancerScoreGrid"),
+  enhancerOriginal: document.getElementById("enhancerOriginal"),
+  enhancerKeywords: document.getElementById("enhancerKeywords"),
+  enhancerPortalOutputs: document.getElementById("enhancerPortalOutputs"),
+  saveEnhancedListingButton: document.getElementById("saveEnhancedListingButton"),
+  submitEnhancedListingButton: document.getElementById("submitEnhancedListingButton"),
+  contentTypeButtons: [...document.querySelectorAll("[data-content-type]")],
+  generateContentButton: document.getElementById("generateContentButton"),
+  contentStatus: document.getElementById("contentStatus"),
+  contentOutput: document.getElementById("contentOutput"),
+  copyContentButton: document.getElementById("copyContentButton"),
+  contentHistory: document.getElementById("contentHistory"),
+  agentTierGrid: document.getElementById("agentTierGrid"),
   toast: document.getElementById("toast")
 };
 
@@ -518,10 +573,22 @@ function normalizeColumnName(value) {
 }
 
 function normalizeStatus(value) {
-  const normalized = String(value || "Live").trim().toLowerCase();
+  const normalized = String(value || "Pending QC").trim().toLowerCase().replace(/[_-]+/g, " ");
+  if (["pending", "pending qc", "pending admin", "pending review", "pending admin review"].includes(normalized)) return "Pending QC";
   if (normalized === "reserved") return "Reserved";
+  if (normalized === "rejected") return "Rejected";
   if (normalized === "draft") return "Draft";
   return "Live";
+}
+
+function isAdminApprovedListing(listing) {
+  const status = String(listing?.approvalStatus || listing?.liveStatus || "").toLowerCase();
+  return Boolean(
+    listing?.adminApproved === true
+    || listing?.verificationSource === "admin_approved"
+    || status === "approved"
+    || status === "approved_live"
+  );
 }
 
 function parseMoneyValue(value) {
@@ -562,6 +629,155 @@ function normalizeGoogleDriveImageLink(value) {
     original,
     display: `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1200`,
     error: ""
+  };
+}
+
+function readAliasedColumn(row, key, aliases = []) {
+  const candidates = [key, ...aliases];
+  for (const candidate of candidates) {
+    const value = row[normalizeColumnName(candidate)];
+    if (String(value || "").trim()) return value;
+  }
+  return "";
+}
+
+function normalizePhotoLink(value, label, required = false) {
+  const original = String(value || "").trim();
+  if (!original) {
+    return {
+      original,
+      display: "",
+      source: "",
+      error: required ? `${label} photo is required` : ""
+    };
+  }
+
+  if (/^data:image\//i.test(original)) {
+    return {
+      original,
+      display: original,
+      label,
+      source: "Agent device upload",
+      error: ""
+    };
+  }
+
+  if (/^https?:\/\/.+\.(jpe?g|png|webp|gif)(\?|#|$)/i.test(original)) {
+    return {
+      original,
+      display: original,
+      label,
+      source: "Direct image URL",
+      error: ""
+    };
+  }
+
+  const normalized = normalizeGoogleDriveImageLink(original);
+  return {
+    ...normalized,
+    label,
+    source: "Agent Google Drive upload",
+    error: normalized.error ? `${label}: ${normalized.error.replace(/image_link/g, "photo link")}` : ""
+  };
+}
+
+function splitPhotoLinks(value) {
+  return String(value || "")
+    .split(/[\n,;]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function buildListingGallery(row) {
+  const errors = [];
+  const gallery = [];
+
+  LISTING_REQUIRED_MEDIA_SLOTS.forEach((slot) => {
+    const photo = normalizePhotoLink(readAliasedColumn(row, slot.key, slot.aliases), slot.label, false);
+    if (photo.error) errors.push(photo.error);
+    if (!photo.error && photo.display) {
+      gallery.push({
+        label: slot.label,
+        required: true,
+        url: photo.display,
+        original: photo.original,
+        source: photo.source || "Agent media upload",
+        status: "verified"
+      });
+    }
+  });
+
+  LISTING_OPTIONAL_MEDIA_SLOTS.forEach((slot) => {
+    const photo = normalizePhotoLink(readAliasedColumn(row, slot.key, slot.aliases), slot.label, false);
+    if (photo.error) errors.push(photo.error);
+    if (!photo.error && photo.display) {
+      gallery.push({
+        label: slot.label,
+        required: false,
+        url: photo.display,
+        original: photo.original,
+        source: photo.source || "Agent media upload",
+        status: "verified"
+      });
+    }
+  });
+
+  splitPhotoLinks(row.extra_photo_links || row.gallery_links || row.additional_photo_links).forEach((link, index) => {
+    const fallbackSlot = LISTING_OPTIONAL_MEDIA_SLOTS[index];
+    const label = fallbackSlot?.label || `Extra Photo ${index + 1}`;
+    const photo = normalizePhotoLink(link, label, false);
+    if (photo.error) errors.push(photo.error);
+    if (!photo.error && photo.display) {
+      gallery.push({
+        label,
+        required: false,
+        url: photo.display,
+        original: photo.original,
+        source: photo.source || "Agent media upload",
+        status: "verified"
+      });
+    }
+  });
+
+  if (gallery.length < LISTING_MIN_PHOTO_COUNT) {
+    errors.push(`At least ${LISTING_MIN_PHOTO_COUNT} property photos are required. Upload from device/gallery or paste Google Drive links. Detected ${gallery.length}/${LISTING_MIN_PHOTO_COUNT}.`);
+  }
+
+  return { gallery, errors };
+}
+
+function ensureListingGallery(listing) {
+  const existingGallery = Array.isArray(listing.gallery) ? listing.gallery : [];
+  if (existingGallery.length >= 10) return existingGallery.map((slot, index) => ({
+    label: slot.label || [...LISTING_REQUIRED_MEDIA_SLOTS, ...LISTING_OPTIONAL_MEDIA_SLOTS][index]?.label || `Photo ${index + 1}`,
+    required: index < LISTING_REQUIRED_MEDIA_SLOTS.length,
+    url: slot.url || slot.display || slot.image || (index === 0 ? listing.image : ""),
+    original: slot.original || slot.imageDriveLink || "",
+    source: slot.source || "Listing media",
+    status: slot.status || (slot.url || slot.display || slot.image ? "verified" : "pending_agent_upload")
+  }));
+
+  return [...LISTING_REQUIRED_MEDIA_SLOTS, ...LISTING_OPTIONAL_MEDIA_SLOTS].map((slot, index) => {
+    const oldSlot = existingGallery[index] || {};
+    const url = oldSlot.url || oldSlot.display || oldSlot.image || (index === 0 ? listing.image : "");
+    return {
+      label: oldSlot.label || slot.label,
+      required: index < LISTING_REQUIRED_MEDIA_SLOTS.length,
+      url,
+      original: oldSlot.original || (index === 0 ? listing.imageDriveLink : ""),
+      source: url ? oldSlot.source || "Existing listing image" : "Agent upload required",
+      status: url ? oldSlot.status || "verified" : "pending_agent_upload"
+    };
+  });
+}
+
+function getGalleryStats(listing) {
+  const gallery = ensureListingGallery(listing);
+  return {
+    gallery,
+    verified: gallery.filter((item) => item.url && item.status !== "pending_agent_upload").length,
+    requiredMissing: gallery.filter((item) => item.required && (!item.url || item.status === "pending_agent_upload")).length,
+    total: gallery.length
   };
 }
 
@@ -613,13 +829,13 @@ function buildListingFromData(data, source = "manual", rowNumber = null) {
   const title = String(row.title || "").trim();
   const area = String(row.area || "").trim();
   const price = parseMoneyValue(row.price);
-  const image = normalizeGoogleDriveImageLink(row.image_link || row.image || row.picture_link || row.photo_link);
+  const media = buildListingGallery(row);
   const ar = normalizeArLink(row.ar_link || row.ar || row.model_url || row.model_link);
 
   if (!title) errors.push("title is required");
   if (!area) errors.push("area is required");
   if (!Number.isFinite(price) || price <= 0) errors.push("price must be a positive number");
-  if (image.error && source === "excel") errors.push(image.error);
+  errors.push(...media.errors);
   if (ar.error) errors.push(ar.error);
 
   if (errors.length) {
@@ -635,14 +851,18 @@ function buildListingFromData(data, source = "manual", rowNumber = null) {
       title,
       area,
       price,
-      status: normalizeStatus(row.status),
+      status: ["manual", "excel"].includes(source) ? "Pending QC" : normalizeStatus(row.status),
       enquiries: Number(row.enquiries || 0),
       propertyType: String(row.property_type || row.propertyType || "Condo").trim() || "Condo",
       address: String(row.address || `${area}, Klang Valley`).trim(),
       landlordName: String(row.landlord_name || row.landlordName || "Landlord / co-agent").trim(),
       landlordPhone: String(row.landlord_phone || row.landlordPhone || "60123456789").replace(/[^\d+]/g, ""),
-      image: image.display || "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=600&q=80",
-      imageDriveLink: image.error ? "" : image.original,
+      image: media.gallery[0]?.url || "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=600&q=80",
+      gallery: media.gallery,
+      galleryCount: media.gallery.length,
+      verifiedPhotoCount: media.gallery.length,
+      requiredPhotoLabels: LISTING_REQUIRED_MEDIA_SLOTS.map((slot) => slot.label),
+      imageDriveLink: media.gallery[0]?.original || "",
       arLink: ar.display,
       arSourceLink: ar.original,
       modelUrl: ar.modelUrl,
@@ -650,10 +870,243 @@ function buildListingFromData(data, source = "manual", rowNumber = null) {
       developer: String(row.developer || "Developer background pending").trim(),
       transactions: parseTransactionColumns(row),
       importSource: source,
-      importedAt: source === "excel" ? new Date().toISOString() : null
+      importedAt: source === "excel" ? new Date().toISOString() : null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      verificationSource: "agent",
+      confidenceScore: 88,
+      freshnessStatus: "fresh"
     },
     errors: []
   };
+}
+
+function slugify(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+function liveBuyerListings() {
+  return readStore(STORAGE_KEYS.buyerLiveListings, []);
+}
+
+function estimateListingBedrooms(listing) {
+  if (Number.isFinite(Number(listing.bedrooms))) return Number(listing.bedrooms);
+  if (/studio|soho|suite/i.test(`${listing.title} ${listing.propertyType}`)) return 1;
+  if (/landed|terrace|semi|bungalow/i.test(`${listing.propertyType} ${listing.title}`)) return 4;
+  return 3;
+}
+
+function estimateListingBathrooms(listing) {
+  const bedrooms = estimateListingBedrooms(listing);
+  return bedrooms >= 4 ? 3 : bedrooms <= 1 ? 1 : 2;
+}
+
+function estimateListingSqft(listing) {
+  if (Number.isFinite(Number(listing.sqft)) && Number(listing.sqft) > 0) return Number(listing.sqft);
+  if (/industrial|warehouse|factory/i.test(`${listing.propertyType} ${listing.title}`)) return 3200;
+  if (/landed|terrace|semi|bungalow/i.test(`${listing.propertyType} ${listing.title}`)) return 2200;
+  return 950;
+}
+
+function listingToBuyerProperty(listing) {
+  const agent = readLiveAgentProfile();
+  const gallery = ensureListingGallery(listing).filter((slot) => slot.url);
+  const sqft = estimateListingSqft(listing);
+  const type = slugify(listing.propertyType || "condo") || "condo";
+  const createdAt = listing.createdAt || listing.importedAt || new Date().toISOString();
+  return {
+    id: Number(listing.id) || Date.now(),
+    agentListingId: listing.id,
+    source: "agent_live_upload",
+    title: listing.title,
+    area: listing.area,
+    location: listing.address || `${listing.area}, Malaysia`,
+    type,
+    intent: /industrial|commercial|shop|office/i.test(`${listing.propertyType} ${listing.title}`) ? "investment" : "family",
+    price: Number(listing.price || 0),
+    bedrooms: estimateListingBedrooms(listing),
+    bathrooms: estimateListingBathrooms(listing),
+    beds: estimateListingBedrooms(listing),
+    baths: estimateListingBathrooms(listing),
+    sqft,
+    psf: sqft ? Math.round(Number(listing.price || 0) / sqft) : 0,
+    image: listing.image,
+    gallery,
+    galleryCount: gallery.length,
+    liveNow: Math.max(3, Number(listing.enquiries || 0) + 3),
+    aiScore: Number(listing.confidenceScore || 88),
+    yield: Number(listing.yield || 4.3),
+    growth: Number(listing.growth || 5.2),
+    summary: `${listing.propertyType || "Property"} in ${listing.area}. Agent-uploaded listing with ${gallery.length}/${LISTING_RECOMMENDED_PHOTO_COUNT} photos ready for admin QC.`,
+    vibe: "Fresh agent-uploaded listing",
+    tags: [type, slugify(listing.area), "agent-live"].filter(Boolean),
+    badge: "live-agent",
+    verifiedType: "agent",
+    verificationSource: "agent",
+    confidenceScore: Number(listing.confidenceScore || 88),
+    freshnessStatus: "fresh",
+    createdAt,
+    updatedAt: new Date().toISOString(),
+    mapLink: `https://www.google.com/maps/search/${encodeURIComponent(listing.address || listing.area || listing.title)}`,
+    modelUrl: listing.modelUrl || listing.arLink || "",
+    arLink: listing.arLink || "",
+    agentId: agent.id || "agent-live",
+    agentName: agent.name || "RealityGenius Agent",
+    agencyName: agent.agencyName || "RealityGenius Agent Network"
+  };
+}
+
+function writeBuyerLiveListing(listing) {
+  if (listing.status !== "Live" || !isAdminApprovedListing(listing)) return null;
+  const buyerListing = {
+    ...listingToBuyerProperty(listing),
+    adminApproved: true,
+    approvalStatus: "approved",
+    liveStatus: "approved_live",
+    verificationSource: "admin_approved",
+    source: "admin_approved_agent_listing"
+  };
+  const existing = liveBuyerListings().filter((item) => String(item.agentListingId || item.id) !== String(listing.id));
+  writeStore(STORAGE_KEYS.buyerLiveListings, [buyerListing, ...existing]);
+  return buyerListing;
+}
+
+function removeBuyerLiveListing(listingId) {
+  writeStore(
+    STORAGE_KEYS.buyerLiveListings,
+    liveBuyerListings().filter((item) => String(item.agentListingId || item.id) !== String(listingId))
+  );
+}
+
+function writeAdminListingFromAgent(listing) {
+  const agent = readLiveAgentProfile();
+  const media = getGalleryStats(listing);
+  const approved = listing.status === "Live" && isAdminApprovedListing(listing);
+  const buyerPayload = listingToBuyerProperty({
+    ...listing,
+    status: "Live",
+    adminApproved: true,
+    approvalStatus: "approved",
+    liveStatus: "approved_live",
+    verificationSource: "admin_approved"
+  });
+  buyerPayload.gallery = buyerPayload.gallery.filter((item) => !String(item.url || "").startsWith("data:image/"));
+  const adminListing = {
+    id: Number(listing.id) || Date.now(),
+    agentListingId: listing.id,
+    agentId: agent.id || "agent-live",
+    agentName: agent.name || "RealityGenius Agent",
+    title: listing.title,
+    price: Number(listing.price || 0),
+    location: listing.address || listing.area,
+    status: approved ? "approved" : listing.status === "Rejected" ? "rejected" : "pending_qc",
+    imageUrl: listing.image,
+    imageResolution: media.verified >= LISTING_MIN_PHOTO_COUNT ? 1280 : 720,
+    imageHash: `agent-${listing.id}-${slugify(listing.title)}`,
+    createdAt: listing.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    buyerPayload,
+    aiFlags: media.verified >= LISTING_RECOMMENDED_PHOTO_COUNT ? [] : [{
+      flag_type: "missing_gallery",
+      severity: "medium",
+      message: `${media.verified}/${LISTING_RECOMMENDED_PHOTO_COUNT} photos detected. Minimum ${LISTING_MIN_PHOTO_COUNT} is accepted; full gallery is recommended.`
+    }]
+  };
+  const existing = readStore(STORAGE_KEYS.adminListings, []).filter((item) => String(item.id) !== String(adminListing.id));
+  writeStore(STORAGE_KEYS.adminListings, [adminListing, ...existing]);
+}
+
+async function syncListingToBackend(listing) {
+  if (listing.status !== "Live") return;
+  try {
+    const buyerListing = listingToBuyerProperty(listing);
+    await fetch(agentApiUrl("/properties"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(buyerListing),
+      keepalive: true
+    });
+  } catch (error) {
+    if (window.RGLogError) window.RGLogError(error, { feature: "live_listing_backend_sync" });
+  }
+}
+
+function publishListingsLive(listings, sourceLabel = "manual upload") {
+  const liveListings = listings.filter((listing) => listing.status === "Live" && isAdminApprovedListing(listing));
+  liveListings.forEach((listing) => {
+    writeBuyerLiveListing(listing);
+    writeAdminListingFromAgent(listing);
+    syncListingToBackend(listing);
+  });
+
+  if (liveListings.length) {
+    pushUserNotification(
+      "New live property added",
+      `${liveListings[0].title}${liveListings.length > 1 ? ` and ${liveListings.length - 1} more listing(s)` : ""} just went live from an agent upload.`
+    );
+    state.notifications = [
+      {
+        id: Date.now() + 2,
+        title: "Listing live in buyer search",
+        message: `${liveListings.length} listing${liveListings.length === 1 ? "" : "s"} published from ${sourceLabel}.`,
+        createdAt: new Date().toISOString()
+      },
+      ...state.notifications
+    ];
+  }
+
+  return liveListings.length;
+}
+
+function pushAdminListingNotification(title, message) {
+  const key = STORAGE_KEYS.adminNotifications;
+  const existing = readStore(key, []);
+  writeStore(key, [
+    {
+      id: Date.now(),
+      title,
+      message,
+      createdAt: new Date().toISOString()
+    },
+    ...existing
+  ]);
+}
+
+function submitListingsForAdminReview(listings, sourceLabel = "manual upload") {
+  const reviewListings = listings.map((listing) => ({
+    ...listing,
+    status: "Pending QC",
+    adminApproved: false,
+    approvalStatus: "pending_qc",
+    liveStatus: "pending_admin_review",
+    verificationSource: "agent"
+  }));
+
+  reviewListings.forEach((listing) => {
+    removeBuyerLiveListing(listing.id);
+    writeAdminListingFromAgent(listing);
+  });
+
+  if (reviewListings.length) {
+    pushAdminListingNotification(
+      "Listing waiting for QC",
+      `${reviewListings[0].title}${reviewListings.length > 1 ? ` and ${reviewListings.length - 1} more listing(s)` : ""} submitted from ${sourceLabel}.`
+    );
+    state.notifications = [
+      {
+        id: Date.now() + 2,
+        title: "Listing sent to admin QC",
+        message: `${reviewListings.length} listing${reviewListings.length === 1 ? "" : "s"} waiting for admin approval before buyer visibility.`,
+        createdAt: new Date().toISOString()
+      },
+      ...state.notifications
+    ];
+  }
+
+  return reviewListings.length;
 }
 
 function renderGlobalPlatformAlert() {
@@ -730,11 +1183,13 @@ function getMorningSnapshot() {
 function goToSection(section) {
   state.section = section;
   syncSectionVisibility();
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  const workArea = document.querySelector(".panel-grid") || document.querySelector(".main");
+  if (workArea) workArea.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function renderWorkspace() {
   renderGlobalPlatformAlert();
+  renderLiveAgentProfile();
   renderMetrics();
   renderCommandCenter();
   renderAutomationBoard();
@@ -753,7 +1208,46 @@ function renderWorkspace() {
   renderCobrokeMatchmaker();
   renderCheatSheet();
   renderReferralAutopilot();
+  renderContentCreator();
+  hydrateGeneratedContentHistory();
   syncSectionVisibility();
+}
+
+function readLiveAgentProfile() {
+  const fallback = {
+    id: "ag-arvind",
+    name: "Arvind Govindasamy",
+    email: "arvind@realtygenius.my",
+    phone: "60123456789",
+    agencyName: "RealtyGenius IQI Project Desk",
+    renNumber: "REN-PENDING",
+    status: "approved"
+  };
+  const session = window.RealtyGeniusSession || readStore("rg_session", null);
+  const stored = readStore("rg_live_agent_profile", null);
+  return {
+    ...fallback,
+    ...(window.RealtyGeniusLiveAgent || {}),
+    ...(stored || {}),
+    name: session?.role === "agent" ? (session.name || stored?.name || fallback.name) : (stored?.name || fallback.name),
+    email: session?.role === "agent" ? (session.email || stored?.email || fallback.email) : (stored?.email || fallback.email),
+    agencyName: session?.agencyName || stored?.agencyName || fallback.agencyName
+  };
+}
+
+function renderLiveAgentProfile() {
+  if (!els.liveAgentName) return;
+  const agent = readLiveAgentProfile();
+  const initials = agent.name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "AG";
+  els.liveAgentName.textContent = agent.name;
+  els.liveAgentAgency.textContent = agent.agencyName;
+  els.liveAgentRen.textContent = agent.renNumber || "REN-PENDING";
+  els.liveAgentAvatar.textContent = initials;
 }
 
 function renderMetrics() {
@@ -942,7 +1436,7 @@ function renderCommissionSummary() {
   `;
 }
 
-function renderLeadList() {
+function renderLeadListLegacy() {
   const leads = leadListForFilter();
   els.leadList.innerHTML = leads.map((lead) => `
     <article class="lead-card">
@@ -1007,11 +1501,47 @@ function renderCommissionTable() {
 }
 
 function renderListingGrid() {
-  els.listingGrid.innerHTML = state.listings.map(getEnhancedListing).map((listing) => `
+  if (!state.listings.length) {
+    els.listingGrid.innerHTML = `
+      <article class="listing-empty-state">
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+        <strong>No listings yet</strong>
+        <p>Submit a listing with at least ${LISTING_MIN_PHOTO_COUNT} photos. It goes to admin QC first, then appears in buyer search after approval.</p>
+        <button class="primary-button" id="emptyPostLiveListing" type="button">
+          <i class="fa-solid fa-plus"></i>
+          Submit First Listing
+        </button>
+      </article>
+    `;
+    document.getElementById("emptyPostLiveListing")?.addEventListener("click", () => openModal("listingModal"));
+    return;
+  }
+
+  els.listingGrid.innerHTML = state.listings.map(getEnhancedListing).map((listing) => {
+    const media = getGalleryStats(listing);
+    const statusAction = listing.status === "Live"
+      ? "Mark Reserved"
+      : listing.status === "Reserved"
+      ? "Move to Draft"
+      : listing.status === "Pending QC"
+      ? "Withdraw to Draft"
+      : listing.status === "Rejected"
+      ? "Move to Draft"
+      : "Submit to Admin";
+    return `
     <article class="listing-card">
       <div class="listing-media">
         <img src="${listing.image}" alt="${listing.title}" loading="lazy">
         <span class="meta-pill">${listing.propertyType}</span>
+        <span class="listing-photo-count">${media.verified}/${media.total} photos</span>
+      </div>
+      <div class="listing-gallery-strip">
+        ${media.gallery.slice(0, 5).map((slot) => `
+          <span class="${slot.url && slot.status !== "pending_agent_upload" ? "" : "is-pending"}">
+            ${slot.url ? `<img src="${slot.url}" alt="${escapeAttr(slot.label)}">` : `<i class="fa-solid fa-image"></i>`}
+            <strong>${escapeHtml(slot.label)}</strong>
+          </span>
+        `).join("")}
       </div>
       <div class="listing-head">
         <div>
@@ -1023,13 +1553,15 @@ function renderListingGrid() {
       <div class="listing-price">${money(listing.price)}</div>
       <div class="meta-row">
         <span class="meta-pill">${listing.enquiries} enquiries</span>
-        ${listing.imageDriveLink ? `<span class="meta-pill"><i class="fa-brands fa-google-drive"></i> Drive image</span>` : `<span class="meta-pill">Image</span>`}
+        ${listing.status === "Live" ? `<span class="meta-pill live-ready-pill"><i class="fa-solid fa-bolt"></i> Live for buyers</span>` : ""}
+        ${listing.status === "Pending QC" ? `<span class="meta-pill live-ready-pill"><i class="fa-solid fa-user-shield"></i> Admin QC pending</span>` : ""}
+        <span class="meta-pill"><i class="fa-solid fa-images"></i> ${media.verified >= LISTING_MIN_PHOTO_COUNT ? "Minimum 4 ready" : `${LISTING_MIN_PHOTO_COUNT - media.verified} photo(s) needed`}</span>
         ${listing.arLink ? `<span class="meta-pill"><i class="fa-solid fa-cube"></i> AR ready</span>` : `<span class="meta-pill">No AR</span>`}
       </div>
       <div class="action-row">
         <button class="ghost-button" data-action="toggle-listing-status" data-id="${listing.id}" type="button">
           <i class="fa-solid fa-repeat"></i>
-          Toggle Status
+          ${statusAction}
         </button>
         ${listing.imageDriveLink ? `<button class="ghost-button" data-action="open-listing-image" data-id="${listing.id}" type="button">
           <i class="fa-brands fa-google-drive"></i>
@@ -1041,7 +1573,8 @@ function renderListingGrid() {
         </button>` : ""}
       </div>
     </article>
-  `).join("");
+  `;
+  }).join("");
 }
 
 function renderNotifications() {
@@ -1068,6 +1601,10 @@ function pushNotifications(title, message) {
     ...readStore(STORAGE_KEYS.agentNotifications, [])
   ];
   writeStore(STORAGE_KEYS.agentNotifications, state.notifications);
+  window.RealtyGeniusPush?.notify(title, message, {
+    tag: `rg-agent-${String(title).toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+    url: new URL("agent.html", location.href).href
+  });
 }
 
 function pushUserNotification(title, message) {
@@ -1083,6 +1620,178 @@ function pushUserNotification(title, message) {
     },
     ...existing
   ]);
+}
+
+function activePlanTier() {
+  if (state.subscription?.planId === "free") return FREE_AGENT_PLAN;
+  return AGENT_PLAN_TIERS.find((plan) => plan.id === state.subscription?.planId) || FREE_AGENT_PLAN;
+}
+
+function billingStatusLabel() {
+  if (state.subscription?.status === "live_active" || state.subscription?.status === "active") return "Stripe active";
+  if (state.subscription?.status === "test_active") return "Test active";
+  if (state.subscription?.status === "test_processing") return "Processing";
+  if (state.subscription?.status === "checkout_processing") return "Opening Stripe";
+  if (state.subscription?.status === "checkout_cancelled") return "Checkout cancelled";
+  return "Free";
+}
+
+function agentApiBaseUrl() {
+  if (window.REALTYGENIUS_API_BASE) return window.REALTYGENIUS_API_BASE.replace(/\/+$/, "");
+  const stored = localStorage.getItem("realtygenius_api_base");
+  if (stored) return stored.replace(/\/+$/, "");
+  if (["realitygenius.company", "www.realitygenius.company"].includes(window.location.hostname)) {
+    return "https://api.realitygenius.company/api";
+  }
+  if (window.location.protocol === "file:") return "http://localhost:3000/api";
+  if (["localhost", "127.0.0.1"].includes(window.location.hostname) && window.location.port !== "3000") {
+    return "http://localhost:3000/api";
+  }
+  return `${window.location.origin}/api`;
+}
+
+function agentApiUrl(path) {
+  const base = agentApiBaseUrl();
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  if (base.endsWith("/api") && normalizedPath.startsWith("/api/")) {
+    return `${base}${normalizedPath.slice(4)}`;
+  }
+  return `${base}${normalizedPath}`;
+}
+
+function renderAgentBilling() {
+  const plan = activePlanTier();
+  const activeAt = state.subscription?.startedAt
+    ? new Date(state.subscription.startedAt).toLocaleString("en-MY", { dateStyle: "medium", timeStyle: "short" })
+    : "Not started";
+
+  if (els.agentBillingStrip) {
+    els.agentBillingStrip.innerHTML = `
+      <div class="billing-strip-copy">
+        <span><i class="fa-solid fa-credit-card"></i> Agent subscription</span>
+        <strong>${escapeHtml(plan.name)} - ${money(plan.price)}/month</strong>
+        <small>${escapeHtml(billingStatusLabel())} - ${escapeHtml(activeAt)} - Premium unlocks lead alerts, captions, reports, and follow-up automation.</small>
+      </div>
+      <button class="primary-button" data-action="open-agent-billing" type="button">
+        <i class="fa-solid fa-gem"></i>
+        Manage Plan
+      </button>
+    `;
+  }
+
+  if (!els.agentTierGrid) return;
+  els.agentTierGrid.innerHTML = AGENT_PLAN_TIERS.map((tier) => {
+    const isActive = tier.id === plan.id && ["test_active", "live_active", "active"].includes(state.subscription?.status);
+    return `
+      <article class="billing-tier-card ${tier.id === "premium" ? "recommended" : ""} ${isActive ? "active" : ""}">
+        <div class="billing-tier-head">
+          <span>${escapeHtml(tier.badge)}</span>
+          ${isActive ? `<strong><i class="fa-solid fa-circle-check"></i> Active</strong>` : ""}
+        </div>
+        <h4>${escapeHtml(tier.name)}</h4>
+        <p>${escapeHtml(tier.tagline)}</p>
+        <div class="billing-price">
+          <strong>${money(tier.price)}</strong>
+          <span>/ month</span>
+        </div>
+        <ul>
+          ${tier.features.map((feature) => `<li><i class="fa-solid fa-check"></i>${escapeHtml(feature)}</li>`).join("")}
+        </ul>
+        <button class="${isActive ? "ghost-button" : "primary-button"} full-width" data-action="select-agent-plan" data-plan-id="${escapeAttr(tier.id)}" type="button">
+          ${isActive ? "Current Plan" : tier.id === "premium" ? "Upgrade to Premium Agent" : `Choose ${escapeHtml(tier.name)}`}
+        </button>
+      </article>
+    `;
+  }).join("");
+}
+
+function readAgentSession() {
+  if (window.RealtyGeniusSession) return window.RealtyGeniusSession;
+  return readStore("rg_session", null);
+}
+
+async function activateAgentPlan(planId) {
+  const plan = AGENT_PLAN_TIERS.find((tier) => tier.id === planId);
+  if (!plan) return;
+  const session = readAgentSession();
+  state.subscription = {
+    ...state.subscription,
+    planId: plan.id,
+    planName: plan.name,
+    amount: plan.price,
+    currency: "MYR",
+    status: "checkout_processing",
+    testMode: false
+  };
+  persistAll();
+  renderAgentBilling();
+  showToast(`Opening ${plan.name} checkout`);
+
+  try {
+    const response = await fetch(agentApiUrl("/api/stripe/create-checkout-session"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(session?.token ? { Authorization: `Bearer ${session.token}` } : {})
+      },
+      body: JSON.stringify({
+        planId: plan.id,
+        email: session?.email || "",
+        testMode: false
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || `Checkout failed with ${response.status}`);
+    }
+
+    if (data.url) {
+      state.subscription = {
+        planId: plan.id,
+        planName: plan.name,
+        amount: plan.price,
+        currency: "MYR",
+        status: "checkout_processing",
+        testMode: false,
+        startedAt: new Date().toISOString(),
+        checkoutId: data.id || ""
+      };
+      persistAll();
+      window.location.assign(data.url);
+      return;
+    }
+
+    if (data.testMode || data.status === "test_active") {
+      state.subscription = {
+        planId: plan.id,
+        planName: plan.name,
+        amount: plan.price,
+        currency: "MYR",
+        status: "test_active",
+        testMode: true,
+        startedAt: new Date().toISOString(),
+        checkoutId: data.checkoutId || `local_test_${Date.now()}`
+      };
+      persistAll();
+      renderAgentBilling();
+      pushNotifications("Agent plan activated", `${plan.name} is active in test mode. No real charge was made.`);
+      renderNotifications();
+      showToast(`${plan.name} test plan active`);
+      return;
+    }
+  } catch (error) {
+    if (window.RGLogError) window.RGLogError(error, { feature: "agent_billing_checkout", planId: plan.id });
+    state.subscription = {
+      ...state.subscription,
+      status: "checkout_cancelled",
+      testMode: true
+    };
+    persistAll();
+    renderAgentBilling();
+    showToast("Checkout could not open");
+    return;
+  }
 }
 
 function readLeakProofDeals() {
@@ -1131,6 +1840,16 @@ function getDealById(id) {
 
 function escapeAttr(value = "") {
   return String(value).replace(/"/g, "&quot;");
+}
+
+function escapeHtml(value = "") {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#039;"
+  }[character]));
 }
 
 function statusCopy(value) {
@@ -1273,7 +1992,7 @@ function releaseEscrow(id) {
   showToast("Escrow released");
 }
 
-function renderNegotiationDesk() {
+function renderNegotiationDeskLegacy() {
   const threads = window.KVNegotiationStore.getAll()
     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
@@ -1446,6 +2165,7 @@ function renderNegotiationDesk() {
 
 function syncSectionVisibility() {
   els.navItems.forEach((item) => item.classList.toggle("active", item.dataset.section === state.section));
+  els.shortcutItems.forEach((item) => item.classList.toggle("active", item.dataset.section === state.section));
   els.panels.forEach((panel) => {
     const show = panel.dataset.panel === state.section;
     panel.classList.toggle("hidden-section", !show);
@@ -1500,17 +2220,35 @@ function toggleListingStatus(id) {
   const cycle = {
     Live: "Reserved",
     Reserved: "Draft",
-    Draft: "Live"
+    Draft: "Pending QC",
+    "Pending QC": "Draft",
+    Rejected: "Draft"
   };
 
   state.listings = state.listings.map((listing) => {
     if (listing.id !== id) return listing;
-    return { ...listing, status: cycle[listing.status] || "Live" };
+    const nextStatus = cycle[listing.status] || "Pending QC";
+    return {
+      ...listing,
+      status: nextStatus,
+      adminApproved: nextStatus === "Live" ? listing.adminApproved : false,
+      approvalStatus: nextStatus === "Pending QC" ? "pending_qc" : nextStatus.toLowerCase(),
+      liveStatus: nextStatus === "Pending QC" ? "pending_admin_review" : "not_live"
+    };
   });
+
+  const updated = state.listings.find((listing) => listing.id === id);
+  if (updated?.status === "Live" && isAdminApprovedListing(updated)) {
+    publishListingsLive([updated], "status update");
+  } else if (updated?.status === "Pending QC") {
+    submitListingsForAdminReview([updated], "status update");
+  } else {
+    removeBuyerLiveListing(id);
+  }
 
   persistAll();
   renderWorkspace();
-  showToast("Listing status updated");
+  showToast(updated?.status === "Pending QC" ? "Sent to admin QC" : updated?.status === "Live" ? "Listing is live for buyers" : "Listing status updated");
 }
 
 function addLead(event) {
@@ -1545,8 +2283,159 @@ function addLead(event) {
   showToast("Lead saved");
 }
 
-function addListing(event) {
+function updateListingDevicePhotoStatus(message, tone = "neutral") {
+  if (!els.listingDevicePhotoStatus) return;
+  els.listingDevicePhotoStatus.className = `device-photo-status ${tone}`;
+  els.listingDevicePhotoStatus.textContent = message;
+}
+
+function renderListingDevicePhotoPreview() {
+  if (!els.listingDevicePhotoPreview) return;
+
+  if (!listingDevicePhotos.length) {
+    els.listingDevicePhotoPreview.innerHTML = "";
+    updateListingDevicePhotoStatus("No device photos selected yet.");
+    return;
+  }
+
+  els.listingDevicePhotoPreview.innerHTML = LISTING_MEDIA_SLOTS.map((slot, index) => {
+    const photo = listingDevicePhotos[index];
+    const slotType = slot.required ? "Required" : "Optional";
+    return `
+      <article class="device-photo-card">
+        <div class="device-photo-thumb">
+          ${photo?.dataUrl
+            ? `<img src="${escapeAttr(photo.dataUrl)}" alt="${escapeAttr(slot.label)} preview">`
+            : `<i class="fa-solid fa-image"></i>`}
+        </div>
+        <div class="device-photo-copy">
+          <strong>${escapeHtml(slot.label)}</strong>
+          <span>${photo ? escapeHtml(photo.fileName) : slotType}</span>
+        </div>
+      </article>
+    `;
+  }).join("");
+
+  const requiredReady = listingDevicePhotos.length >= LISTING_MIN_PHOTO_COUNT;
+  if (listingDevicePhotos.length >= LISTING_DEVICE_PHOTO_LIMIT) {
+    updateListingDevicePhotoStatus("10 photos ready. This listing has a full gallery for admin QC.", "ready");
+    return;
+  }
+
+  updateListingDevicePhotoStatus(
+    requiredReady
+      ? `${listingDevicePhotos.length}/${LISTING_RECOMMENDED_PHOTO_COUNT} photos ready. Minimum passed; add more for a stronger buyer gallery.`
+      : `${listingDevicePhotos.length}/${LISTING_MIN_PHOTO_COUNT} minimum photos ready. Add ${LISTING_MIN_PHOTO_COUNT - listingDevicePhotos.length} more to submit.`,
+    "warning"
+  );
+}
+
+function compressListingDevicePhoto(file, index) {
+  return new Promise((resolve, reject) => {
+    if (!file.type?.startsWith("image/")) {
+      reject(new Error(`${file.name} is not an image file`));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error(`Unable to read ${file.name}`));
+    reader.onload = () => {
+      const originalDataUrl = String(reader.result || "");
+      const image = new Image();
+
+      image.onerror = () => resolve({
+        fileName: file.name,
+        dataUrl: originalDataUrl,
+        size: file.size,
+        width: 0,
+        height: 0,
+        label: LISTING_MEDIA_SLOTS[index]?.label || `Photo ${index + 1}`
+      });
+
+      image.onload = () => {
+        try {
+          const width = image.naturalWidth || image.width || LISTING_DEVICE_IMAGE_MAX_SIZE;
+          const height = image.naturalHeight || image.height || LISTING_DEVICE_IMAGE_MAX_SIZE;
+          const scale = Math.min(1, LISTING_DEVICE_IMAGE_MAX_SIZE / width, LISTING_DEVICE_IMAGE_MAX_SIZE / height);
+          const outputWidth = Math.max(1, Math.round(width * scale));
+          const outputHeight = Math.max(1, Math.round(height * scale));
+          const canvas = document.createElement("canvas");
+          canvas.width = outputWidth;
+          canvas.height = outputHeight;
+          const context = canvas.getContext("2d");
+          if (!context) throw new Error("Canvas compression unavailable");
+          context.fillStyle = "#ffffff";
+          context.fillRect(0, 0, outputWidth, outputHeight);
+          context.drawImage(image, 0, 0, outputWidth, outputHeight);
+
+          resolve({
+            fileName: file.name,
+            dataUrl: canvas.toDataURL("image/jpeg", LISTING_DEVICE_IMAGE_QUALITY),
+            size: file.size,
+            width: outputWidth,
+            height: outputHeight,
+            label: LISTING_MEDIA_SLOTS[index]?.label || `Photo ${index + 1}`
+          });
+        } catch {
+          resolve({
+            fileName: file.name,
+            dataUrl: originalDataUrl,
+            size: file.size,
+            width: image.naturalWidth || 0,
+            height: image.naturalHeight || 0,
+            label: LISTING_MEDIA_SLOTS[index]?.label || `Photo ${index + 1}`
+          });
+        }
+      };
+
+      image.src = originalDataUrl;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleListingDevicePhotos(event) {
+  const files = Array.from(event.target.files || []);
+  const imageFiles = files.filter((file) => file.type?.startsWith("image/"));
+
+  if (!imageFiles.length) {
+    listingDevicePhotos = [];
+    renderListingDevicePhotoPreview();
+    showToast("Please choose image files");
+    return;
+  }
+
+  const selected = imageFiles.slice(0, LISTING_DEVICE_PHOTO_LIMIT);
+  updateListingDevicePhotoStatus(`Preparing ${selected.length} photo${selected.length === 1 ? "" : "s"} for upload...`, "warning");
+
+  try {
+    listingDevicePhotos = await Promise.all(selected.map((file, index) => compressListingDevicePhoto(file, index)));
+    renderListingDevicePhotoPreview();
+    showToast(`${selected.length} photo${selected.length === 1 ? "" : "s"} ready${imageFiles.length > LISTING_DEVICE_PHOTO_LIMIT ? ". First 10 used" : ""}`);
+  } catch (error) {
+    listingDevicePhotos = [];
+    renderListingDevicePhotoPreview();
+    showToast(error.message || "Unable to prepare photos");
+  }
+}
+
+function getListingDevicePhotoPayload() {
+  return listingDevicePhotos.reduce((payload, photo, index) => {
+    const slot = LISTING_MEDIA_SLOTS[index];
+    if (slot && photo?.dataUrl) payload[slot.key] = photo.dataUrl;
+    return payload;
+  }, {});
+}
+
+function resetListingDevicePhotos() {
+  listingDevicePhotos = [];
+  if (els.listingDevicePhotos) els.listingDevicePhotos.value = "";
+  renderListingDevicePhotoPreview();
+}
+
+async function addListing(event) {
   event.preventDefault();
+  const devicePhotos = getListingDevicePhotoPayload();
   const result = buildListingFromData({
     title: els.listingTitle.value.trim(),
     area: els.listingArea.value.trim(),
@@ -1556,7 +2445,17 @@ function addListing(event) {
     address: els.listingAddress.value.trim(),
     landlord_name: els.listingLandlordName.value.trim(),
     landlord_phone: els.listingLandlordPhone.value.trim(),
-    image_link: els.listingImageLink.value.trim(),
+    front_view_link: els.listingImageLink.value.trim() || devicePhotos.front_view_link || "",
+    top_view_link: els.listingTopViewLink.value.trim() || devicePhotos.top_view_link || "",
+    room_1_link: els.listingRoom1Link.value.trim() || devicePhotos.room_1_link || "",
+    bathroom_link: els.listingBathroomLink.value.trim() || devicePhotos.bathroom_link || "",
+    kitchen_link: els.listingKitchenLink.value.trim() || devicePhotos.kitchen_link || "",
+    photo_6_link: devicePhotos.photo_6_link || "",
+    photo_7_link: devicePhotos.photo_7_link || "",
+    photo_8_link: devicePhotos.photo_8_link || "",
+    photo_9_link: devicePhotos.photo_9_link || "",
+    photo_10_link: devicePhotos.photo_10_link || "",
+    extra_photo_links: els.listingExtraPhotoLinks.value.trim(),
     ar_link: els.listingArLink.value.trim(),
     enquiries: 0
   }, "manual");
@@ -1569,21 +2468,47 @@ function addListing(event) {
   const listing = result.listing;
 
   state.listings = [listing, ...state.listings];
+  const reviewCount = submitListingsForAdminReview([listing], "manual upload");
   state.notifications = [
     {
       id: Date.now() + 1,
-      title: "Listing added",
-      message: `${listing.title} is now inside inventory control.`,
+      title: "Listing submitted for QC",
+      message: `${listing.title} is waiting for admin verification before buyer visibility.`,
       createdAt: new Date().toISOString()
     },
     ...state.notifications
   ];
 
   els.listingForm.reset();
+  if (els.listingBulkPhotoLinks) els.listingBulkPhotoLinks.value = "";
+  resetListingDevicePhotos();
   closeModal("listingModal");
   persistAll();
   renderWorkspace();
-  showToast("Listing saved");
+  showToast(reviewCount ? "Sent to admin QC" : "Listing saved");
+}
+
+function autofillListingPhotoLinks() {
+  const links = splitPhotoLinks(els.listingBulkPhotoLinks?.value || "");
+  if (links.length < LISTING_MIN_PHOTO_COUNT) {
+    showToast(`Paste at least ${LISTING_MIN_PHOTO_COUNT} Google Drive photo links. Detected ${links.length}.`);
+    return;
+  }
+
+  const requiredInputs = [
+    els.listingImageLink,
+    els.listingTopViewLink,
+    els.listingRoom1Link,
+    els.listingBathroomLink,
+    els.listingKitchenLink
+  ];
+  requiredInputs.forEach((input, index) => {
+    if (input) input.value = links[index] || "";
+  });
+  if (els.listingExtraPhotoLinks) {
+    els.listingExtraPhotoLinks.value = links.slice(5, 10).join("\n");
+  }
+  showToast(`${Math.min(links.length, LISTING_RECOMMENDED_PHOTO_COUNT)} photo links auto-filled`);
 }
 
 function setImportStatus(message, tone = "neutral") {
@@ -1618,7 +2543,12 @@ function getWorkbookRows(file) {
 function validateListingWorkbookColumns(rows) {
   const first = rows[0] || {};
   const columns = new Set(Object.keys(first).map(normalizeColumnName));
-  return LISTING_EXCEL_REQUIRED_COLUMNS.filter((column) => !columns.has(column));
+  return LISTING_EXCEL_REQUIRED_COLUMNS.filter((column) => {
+    if (columns.has(column)) return false;
+    const mediaSlot = LISTING_REQUIRED_MEDIA_SLOTS.find((slot) => slot.key === column);
+    if (!mediaSlot) return true;
+    return !mediaSlot.aliases.some((alias) => columns.has(normalizeColumnName(alias)));
+  });
 }
 
 async function importListingsFromExcel(event) {
@@ -1639,7 +2569,7 @@ async function importListingsFromExcel(event) {
       setImportStatus(`
         <strong>Excel columns not detected</strong>
         <p>Missing: ${missing.join(", ")}</p>
-        <p>Use the template so the system can detect image_link and ar_link correctly.</p>
+        <p>Use the template so the system can detect the required ${LISTING_MIN_PHOTO_COUNT} photo columns, optional gallery columns, and AR link correctly.</p>
       `, "error");
       return;
     }
@@ -1668,11 +2598,12 @@ async function importListingsFromExcel(event) {
     }
 
     state.listings = [...imported, ...state.listings];
+    const reviewCount = submitListingsForAdminReview(imported, "Excel import");
     state.notifications = [
       {
         id: Date.now() + 1,
-        title: "Excel listings imported",
-        message: `${imported.length} listings imported with Google Drive images${rowErrors.length ? `; ${rowErrors.length} row issue(s) skipped.` : "."}`,
+        title: "Excel listings sent to QC",
+        message: `${imported.length} listings imported with at least ${LISTING_MIN_PHOTO_COUNT} photos. ${reviewCount} waiting for admin approval${rowErrors.length ? `; ${rowErrors.length} row issue(s) skipped.` : "."}`,
         createdAt: new Date().toISOString()
       },
       ...state.notifications
@@ -1681,11 +2612,11 @@ async function importListingsFromExcel(event) {
     persistAll();
     renderWorkspace();
     setImportStatus(`
-      <strong>${imported.length} listings imported</strong>
-      <p>Google Drive images were converted to readable thumbnails. AR links are stored for display.</p>
+      <strong>${imported.length} listings imported - ${reviewCount} pending admin QC</strong>
+      <p>Each listing has the minimum ${LISTING_MIN_PHOTO_COUNT}-photo gallery. Google Drive pictures were converted to readable thumbnails, AR links are stored, and buyer visibility starts only after admin approval.</p>
       ${rowErrors.length ? `<p>${rowErrors.slice(0, 4).join("<br>")}</p>` : ""}
     `, rowErrors.length ? "warning" : "success");
-    showToast(`${imported.length} Excel listings imported`);
+    showToast(`${reviewCount || imported.length} Excel listings sent to QC`);
   } catch (error) {
     setImportStatus(error instanceof Error ? error.message : "Excel import failed", "error");
   } finally {
@@ -1722,7 +2653,9 @@ function downloadListingTemplate() {
 
 function openListingAsset(id, kind) {
   const listing = getEnhancedListing(state.listings.find((item) => item.id === id) || {});
-  const link = kind === "ar" ? listing.arLink : listing.imageDriveLink || listing.image;
+  const media = getGalleryStats(listing);
+  const firstPhoto = media.gallery.find((item) => item.url);
+  const link = kind === "ar" ? listing.arLink : firstPhoto?.original || listing.imageDriveLink || listing.image;
   if (!link) {
     showToast(kind === "ar" ? "No AR link on this listing" : "No image link on this listing");
     return;
@@ -1905,6 +2838,10 @@ function copyVaultLink() {
 function getEnhancedListing(listing) {
   const routeProfile = areaRouteProfiles[listing.area] || areaRouteProfiles["KL Sentral"];
   const enhancement = listingRouteEnhancements[listing.id] || {};
+  const fallbackImage = listing.image || enhancement.image || "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=600&q=80";
+  const gallery = ensureListingGallery({ ...enhancement, ...listing, image: fallbackImage });
+  const verifiedPhotoCount = gallery.filter((item) => item.url && item.status !== "pending_agent_upload").length;
+  const heroImage = gallery.find((item) => item.url)?.url || fallbackImage;
   return {
     ...enhancement,
     ...listing,
@@ -1915,7 +2852,11 @@ function getEnhancedListing(listing) {
     transactions: listing.transactions || enhancement.transactions || [],
     landlordName: listing.landlordName || enhancement.landlordName || "Landlord / co-agent",
     landlordPhone: listing.landlordPhone || enhancement.landlordPhone || "60123456789",
-    image: listing.image || enhancement.image || "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=600&q=80",
+    image: heroImage,
+    gallery,
+    galleryCount: gallery.length,
+    verifiedPhotoCount,
+    requiredPhotoLabels: listing.requiredPhotoLabels || LISTING_REQUIRED_MEDIA_SLOTS.map((slot) => slot.label),
     imageDriveLink: listing.imageDriveLink || enhancement.imageDriveLink || "",
     arLink: listing.arLink || listing.modelUrl || enhancement.arLink || enhancement.modelUrl || "",
     modelUrl: listing.modelUrl || listing.arLink || enhancement.modelUrl || enhancement.arLink || "",
@@ -1950,8 +2891,8 @@ function malaysiaTrafficMultiplier(dateValue, timeValue, fromArea, toArea) {
   if ((hour >= 8 && hour <= 10) || (hour >= 17 && hour <= 20)) multiplier += 0.28;
   if (day === 6 && hour >= 11 && hour <= 16) multiplier += 0.2;
   if (day === 0 && hour >= 12 && hour <= 18) multiplier += 0.12;
-  if ([fromArea, toArea].some((area) => ["Bangsar", "KL Sentral", "Mont Kiara"].includes(area))) multiplier += 0.08;
-  if ([fromArea, toArea].includes("Petaling Jaya") && [fromArea, toArea].includes("Bangsar")) multiplier += 0.1;
+  if ([fromArea, toArea].some((area) => ["Petaling Jaya", "Subang Jaya", "Seri Kembangan", "Bayan Lepas"].includes(area))) multiplier += 0.08;
+  if ([fromArea, toArea].includes("Simpang Ampat") && [fromArea, toArea].includes("Bukit Mertajam")) multiplier += 0.08;
 
   return multiplier;
 }
@@ -2199,11 +3140,12 @@ function copyItineraryLink() {
 
 function nearbyLocationMatch(wanted, listingArea) {
   const nearby = {
-    Bangsar: ["KL Sentral", "Mont Kiara", "Petaling Jaya"],
-    "Mont Kiara": ["Bangsar", "Desa ParkCity", "KL Sentral"],
-    "Bukit Jalil": ["Petaling Jaya", "Bangsar"],
-    "Petaling Jaya": ["Bangsar", "Bukit Jalil"],
-    "Desa ParkCity": ["Mont Kiara"]
+    "Petaling Jaya": ["Subang Jaya", "Seri Kembangan"],
+    "Seri Kembangan": ["Petaling Jaya", "Subang Jaya"],
+    "Subang Jaya": ["Petaling Jaya", "Seri Kembangan"],
+    "Bayan Lepas": ["Pulau Pinang", "Simpang Ampat"],
+    "Simpang Ampat": ["Bukit Mertajam", "Seberang Perai", "Nibong Tebal"],
+    "Bukit Mertajam": ["Simpang Ampat", "Seberang Perai", "Nibong Tebal"]
   };
   return nearby[wanted]?.includes(listingArea);
 }
@@ -2641,13 +3583,18 @@ function formatDate(date) {
 
 function annualGrowthRate(listing) {
   const areaRates = {
-    Bangsar: 0.052,
-    "Mont Kiara": 0.046,
-    "Bukit Jalil": 0.044,
+    "Bagan Serai": 0.036,
+    "Bayan Lepas": 0.044,
     "Petaling Jaya": 0.04,
-    "Desa ParkCity": 0.048
+    "Seri Kembangan": 0.041,
+    "Subang Jaya": 0.043,
+    "Seberang Perai": 0.039,
+    "Simpang Ampat": 0.038,
+    "Pulau Pinang": 0.045,
+    "Bukit Mertajam": 0.039,
+    "Nibong Tebal": 0.037
   };
-  const typeBoost = listing.propertyType === "Landed" ? 0.012 : listing.propertyType === "Condo" ? 0.004 : 0;
+  const typeBoost = listing.propertyType === "Landed" ? 0.012 : listing.propertyType === "Condo" ? 0.004 : ["Industrial", "Commercial"].includes(listing.propertyType) ? 0.008 : 0;
   return (areaRates[listing.area] || 0.042) + typeBoost;
 }
 
@@ -2856,6 +3803,806 @@ function renderReferralAutopilot() {
   ` : `<div class="subtext">Create an automation to generate valuation reports and drafts.</div>`;
 }
 
+function listingEnhancerApiBaseUrl() {
+  if (window.location.protocol === "file:") return agentApiBaseUrl();
+  return `${window.location.origin}/api`;
+}
+
+function contentApiBaseUrl() {
+  return listingEnhancerApiBaseUrl();
+}
+
+function updateListingEnhancerPhotoStatus(message, tone = "neutral") {
+  if (!els.listingEnhancerPhotoStatus) return;
+  els.listingEnhancerPhotoStatus.className = `device-photo-status ${tone}`;
+  els.listingEnhancerPhotoStatus.textContent = message;
+}
+
+function hashString(value) {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = ((hash << 5) - hash) + value.charCodeAt(index);
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
+}
+
+function enhancerPhotoLabel(file, index) {
+  const name = String(file?.name || "").toLowerCase();
+  if (/front|facade|outside|cover/.test(name)) return "Front View";
+  if (/living|hall|lounge/.test(name)) return "Living";
+  if (/room|bed/.test(name)) return index <= 2 ? "Room 1" : "Room";
+  if (/bath|toilet/.test(name)) return "Bathroom";
+  if (/kitchen|dry|wet/.test(name)) return "Kitchen";
+  return LISTING_MEDIA_SLOTS[index]?.label || `Photo ${index + 1}`;
+}
+
+function readEnhancerImage(file, index) {
+  return new Promise((resolve, reject) => {
+    if (!file.type?.startsWith("image/")) {
+      reject(new Error(`${file.name} is not an image`));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error(`Unable to read ${file.name}`));
+    reader.onload = () => {
+      const dataUrl = String(reader.result || "");
+      const image = new Image();
+      image.onerror = () => reject(new Error(`Unable to analyze ${file.name}`));
+      image.onload = () => {
+        try {
+          const canvas = document.createElement("canvas");
+          const maxSide = 240;
+          const scale = Math.min(1, maxSide / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height));
+          canvas.width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale));
+          canvas.height = Math.max(1, Math.round((image.naturalHeight || image.height) * scale));
+          const context = canvas.getContext("2d", { willReadFrequently: true });
+          context.drawImage(image, 0, 0, canvas.width, canvas.height);
+          const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+          let luminanceTotal = 0;
+          let contrastTotal = 0;
+          const small = [];
+
+          for (let offset = 0; offset < pixels.length; offset += 4) {
+            const luminance = (pixels[offset] * 0.299) + (pixels[offset + 1] * 0.587) + (pixels[offset + 2] * 0.114);
+            luminanceTotal += luminance;
+            if (offset >= 4) {
+              const previous = (pixels[offset - 4] * 0.299) + (pixels[offset - 3] * 0.587) + (pixels[offset - 2] * 0.114);
+              contrastTotal += Math.abs(luminance - previous);
+            }
+          }
+
+          const pixelCount = Math.max(pixels.length / 4, 1);
+          const brightness = luminanceTotal / pixelCount;
+          const sharpness = contrastTotal / pixelCount;
+
+          const hashCanvas = document.createElement("canvas");
+          hashCanvas.width = 8;
+          hashCanvas.height = 8;
+          const hashContext = hashCanvas.getContext("2d", { willReadFrequently: true });
+          hashContext.drawImage(image, 0, 0, 8, 8);
+          const hashPixels = hashContext.getImageData(0, 0, 8, 8).data;
+          for (let offset = 0; offset < hashPixels.length; offset += 4) {
+            small.push((hashPixels[offset] * 0.299) + (hashPixels[offset + 1] * 0.587) + (hashPixels[offset + 2] * 0.114));
+          }
+          const average = small.reduce((sum, value) => sum + value, 0) / small.length;
+          const perceptualHash = small.map((value) => value > average ? "1" : "0").join("");
+          const isDark = brightness < 48;
+          const isBlurry = sharpness < 15;
+          const rawScore = 100 - (isDark ? 24 : 0) - (isBlurry ? 24 : 0) - Math.max(0, 10 - sharpness) - Math.max(0, 55 - brightness) * 0.28;
+          const score = Math.max(0, Math.min(100, Math.round(rawScore)));
+
+          resolve({
+            previewUrl: dataUrl,
+            label: enhancerPhotoLabel(file, index),
+            fileName: file.name,
+            brightness: Number(brightness.toFixed(1)),
+            sharpness: Number(sharpness.toFixed(1)),
+            isDark,
+            isBlurry,
+            score,
+            hash: hashString(perceptualHash),
+            width: image.naturalWidth || image.width,
+            height: image.naturalHeight || image.height,
+            duplicateOf: null
+          });
+        } catch (error) {
+          reject(error);
+        }
+      };
+      image.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function markDuplicateEnhancerPhotos(photos) {
+  const seen = new Map();
+  return photos.map((photo, index) => {
+    if (seen.has(photo.hash)) {
+      return {
+        ...photo,
+        duplicateOf: seen.get(photo.hash),
+        score: Math.max(0, photo.score - 35)
+      };
+    }
+    seen.set(photo.hash, index);
+    return photo;
+  });
+}
+
+function renderListingEnhancerPhotoPreview() {
+  if (!els.listingEnhancerPhotoPreview) return;
+  if (!listingEnhancerPhotos.length) {
+    els.listingEnhancerPhotoPreview.innerHTML = "";
+    updateListingEnhancerPhotoStatus("No photos selected yet.");
+    return;
+  }
+
+  els.listingEnhancerPhotoPreview.innerHTML = listingEnhancerPhotos.map((photo, index) => {
+    const flags = [
+      photo.isDark ? "dark" : "",
+      photo.isBlurry ? "blurry" : "",
+      photo.duplicateOf !== null ? `duplicate of #${photo.duplicateOf + 1}` : ""
+    ].filter(Boolean);
+    return `
+      <article class="enhancer-photo-card">
+        <img src="${escapeAttr(photo.previewUrl)}" alt="${escapeAttr(photo.label)} preview">
+        <div>
+          <strong>#${index + 1} ${escapeHtml(photo.label)} - ${photo.score}/100</strong>
+          <span>${flags.length ? escapeHtml(flags.join(", ")) : "clean photo"}</span>
+        </div>
+      </article>
+    `;
+  }).join("");
+
+  const average = Math.round(listingEnhancerPhotos.reduce((sum, photo) => sum + photo.score, 0) / listingEnhancerPhotos.length);
+  const duplicateCount = listingEnhancerPhotos.filter((photo) => photo.duplicateOf !== null).length;
+  updateListingEnhancerPhotoStatus(`${listingEnhancerPhotos.length} photo${listingEnhancerPhotos.length === 1 ? "" : "s"} analyzed. Average image quality ${average}/100${duplicateCount ? `, ${duplicateCount} duplicate flagged` : ""}.`, average >= 72 ? "ready" : "warning");
+}
+
+async function handleListingEnhancerPhotos(event) {
+  const files = Array.from(event.target.files || []).filter((file) => file.type?.startsWith("image/")).slice(0, 12);
+  if (!files.length) {
+    listingEnhancerPhotos = [];
+    state.contentCreator.photoAnalysis = [];
+    renderListingEnhancerPhotoPreview();
+    return;
+  }
+
+  updateListingEnhancerPhotoStatus(`Analyzing ${files.length} photo${files.length === 1 ? "" : "s"}...`, "warning");
+  try {
+    listingEnhancerPhotos = markDuplicateEnhancerPhotos(await Promise.all(files.map(readEnhancerImage)));
+    state.contentCreator.photoAnalysis = listingEnhancerPhotos.map(({ previewUrl, ...photo }) => photo);
+    persistAll();
+    renderListingEnhancerPhotoPreview();
+    showToast("Photo quality analysis complete");
+  } catch (error) {
+    listingEnhancerPhotos = [];
+    state.contentCreator.photoAnalysis = [];
+    renderListingEnhancerPhotoPreview();
+    showToast(error.message || "Unable to analyze photos");
+  }
+}
+
+function collectContentPayload() {
+  return {
+    originalTitle: els.contentPropertyTitle.value.trim(),
+    propertyTitle: els.contentPropertyTitle.value.trim(),
+    location: els.contentLocation.value.trim(),
+    propertyType: els.contentPropertyType?.value.trim() || "Property",
+    price: Number(els.contentPrice.value),
+    bedrooms: Number(els.contentBedrooms.value),
+    bathrooms: Number(els.contentBathrooms.value),
+    originalDescription: els.contentHighlights.value.trim(),
+    highlights: els.contentHighlights.value.trim(),
+    targetAudience: els.contentTargetAudience.value,
+    contentType: "Listing Enhancer",
+    imageAnalysis: listingEnhancerPhotos.map(({ previewUrl, ...photo }) => photo),
+    saveMode: "draft"
+  };
+}
+
+function contentHighlightsList(highlights) {
+  return highlights
+    .split(/\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 5);
+}
+
+function contentRoomCopy(payload) {
+  const bedroomCopy = payload.bedrooms === 1 ? "1 bedroom" : `${payload.bedrooms} bedrooms`;
+  const bathroomCopy = payload.bathrooms === 1 ? "1 bathroom" : `${payload.bathrooms} bathrooms`;
+  return `${bedroomCopy}, ${bathroomCopy}`;
+}
+
+function buildLocalContentPrompt(payload) {
+  return {
+    role: "RealtyGenius AI content co-pilot",
+    tone: "Professional, persuasive, Malaysian property market style, not overpromising",
+    guardrails: [
+      "Use only facts provided by the agent",
+      "No fabricated amenities, distances, returns, discounts, urgency, loan certainty, or legal certainty",
+      "Agent must approve before sending or posting"
+    ],
+    task: payload.contentType,
+    property: payload
+  };
+}
+
+function generateLocalAgentContent(payload) {
+  const prompt = buildLocalContentPrompt(payload);
+  const facts = contentHighlightsList(payload.highlights);
+  const bullets = facts.length
+    ? facts.map((item) => `- ${item}`).join("\n")
+    : "- Practical layout\n- Buyer-friendly location\n- Viewing-ready unit";
+  const price = money(payload.price);
+  const roomCopy = contentRoomCopy(payload);
+
+  if (prompt.task === "TikTok Script") {
+    return [
+      `Hook: Looking for a ${payload.targetAudience.toLowerCase()}-friendly home in ${payload.location}? This ${payload.propertyTitle} is worth a closer look.`,
+      "",
+      "Scene 1: Show the entrance and first impression.",
+      `Voiceover: ${payload.propertyTitle} gives you ${roomCopy} with an asking price of ${price}.`,
+      "",
+      "Scene 2: Walk through the strongest lifestyle or investment angles.",
+      `Voiceover: ${facts.slice(0, 3).join(", ") || "The key details are easy to understand and compare"}.`,
+      "",
+      "Scene 3: End with the buyer next step.",
+      "Voiceover: If this fits your budget and timeline, message me for the full factsheet, viewing slot, and loan pre-check."
+    ].join("\n");
+  }
+
+  if (prompt.task === "Instagram Caption") {
+    return [
+      `${payload.propertyTitle} in ${payload.location}`,
+      "",
+      `${roomCopy} | ${price}`,
+      "",
+      `A practical option for ${payload.targetAudience.toLowerCase()}s who want clear property details before arranging a viewing.`,
+      "",
+      bullets,
+      "",
+      "DM for the factsheet, viewing schedule, and loan readiness check.",
+      "",
+      "#MalaysiaProperty #KLProperty #RealEstateMalaysia #PropertyViewing"
+    ].join("\n");
+  }
+
+  if (prompt.task === "WhatsApp Follow-up Message") {
+    return [
+      `Hi, just following up on ${payload.propertyTitle} in ${payload.location}.`,
+      "",
+      `It is listed at ${price} with ${roomCopy}. The main points worth considering are ${facts.slice(0, 3).join(", ") || "the location, layout, and viewing potential"}.`,
+      "",
+      "Would you like me to send the full details, arrange a viewing slot, or help you do a quick loan/DSR pre-check first?"
+    ].join("\n");
+  }
+
+  return [
+    `${payload.propertyTitle} offers a practical ${payload.location} address for ${payload.targetAudience.toLowerCase()}s who want a clear, viewing-ready option without exaggerated claims. The unit comes with ${roomCopy} and an asking price of ${price}.`,
+    "",
+    `Based on the details provided, the strongest angles to highlight are the property fundamentals and buyer-fit points below. The final decision should still be supported by viewing condition, latest maintenance details, and comparable market checks.`,
+    "",
+    bullets,
+    "",
+    "Contact the agent for the full factsheet, viewing availability, and loan readiness check."
+  ].join("\n");
+}
+
+function summarizeLocalEnhancerImages(payload) {
+  const photos = payload.imageAnalysis || [];
+  const photoCount = photos.length;
+  const duplicatePhotoCount = photos.filter((photo) => photo.duplicateOf !== null).length;
+  const darkPhotoCount = photos.filter((photo) => photo.isDark).length;
+  const blurryPhotoCount = photos.filter((photo) => photo.isBlurry).length;
+  const average = photoCount ? photos.reduce((sum, photo) => sum + Number(photo.score || 0), 0) / photoCount : 0;
+  const labels = photos.map((photo) => `${photo.label} ${photo.fileName}`.toLowerCase()).join(" ");
+  const missingRoomPhotos = ["front view", "living", "room", "bathroom", "kitchen"].filter((label) => !labels.includes(label));
+  return {
+    photos,
+    photoCount,
+    duplicatePhotoCount,
+    darkPhotoCount,
+    blurryPhotoCount,
+    bestCoverImageIndex: photos.length
+      ? photos.reduce((bestIndex, photo, index) => Number(photo.score || 0) > Number(photos[bestIndex]?.score || 0) ? index : bestIndex, 0)
+      : null,
+    missingRoomPhotos,
+    imageScore: Math.max(0, Math.min(100, Math.round(average - duplicatePhotoCount * 4 - darkPhotoCount * 3 - blurryPhotoCount * 3 - missingRoomPhotos.length * 3)))
+  };
+}
+
+function generateLocalListingEnhancement(payload) {
+  const imageAnalysis = summarizeLocalEnhancerImages(payload);
+  const keywords = [
+    payload.originalTitle,
+    payload.location,
+    `${payload.location} property`,
+    `${payload.location} ${payload.propertyType}`,
+    `${payload.propertyType} for sale Malaysia`,
+    "PropertyGuru Malaysia",
+    "iProperty Malaysia",
+    "Malaysia property listing",
+    payload.targetAudience,
+    "real estate Malaysia"
+  ].filter(Boolean).slice(0, 10);
+  const optimizedTitle = `${payload.propertyType} in ${payload.location} | ${payload.originalTitle}`.slice(0, 78);
+  const optimizedDescription = [
+    `${payload.originalTitle} is a ${payload.propertyType.toLowerCase()} in ${payload.location}, written for ${payload.targetAudience.toLowerCase()}s who want clear facts before viewing.`,
+    payload.originalDescription,
+    "Confirm latest availability, maintenance details, viewing condition, and loan readiness before making an offer."
+  ].join("\n\n");
+  const metaDescription = `${payload.propertyType} in ${payload.location}. Review price, photos, key details, and agent-verified facts before booking a viewing.`.slice(0, 158);
+  return {
+    id: `local-${Date.now()}`,
+    originalTitle: payload.originalTitle,
+    originalDescription: payload.originalDescription,
+    optimizedTitle,
+    optimizedDescription,
+    metaDescription,
+    seoKeywords: keywords,
+    seoScore: 78,
+    imageScore: imageAnalysis.imageScore,
+    imageAnalysis,
+    platformOptimizations: {
+      propertyGuruMalaysia: `${optimizedTitle}\n\n${optimizedDescription}`,
+      iPropertyMalaysia: `${payload.location} ${payload.propertyType}\n\n${optimizedDescription}`,
+      facebookMarketplace: `${optimizedTitle}\n\n${payload.originalDescription}\n\nMessage me for viewing slot and factsheet.`,
+      tiktokPropertyPost: `Hook: Looking for a ${payload.propertyType.toLowerCase()} in ${payload.location}?\nShow the best photo, layout, location, and price.\nCTA: Message for the full factsheet.`
+    },
+    status: "draft",
+    liveStatus: "not_live",
+    aiProvider: "Local prompt builder",
+    saved: false,
+    createdAt: new Date().toISOString()
+  };
+}
+
+async function requestAiContentGeneration(payload) {
+  const token = localStorage.getItem("rg_token");
+  if (!token) return null;
+
+  const response = await fetch(`${contentApiBaseUrl()}/listing-enhancer`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || error.error || "AI content API failed");
+  }
+
+  return response.json();
+}
+
+async function hydrateGeneratedContentHistory() {
+  if (contentHistoryHydrated) return;
+  contentHistoryHydrated = true;
+
+  const token = localStorage.getItem("rg_token");
+  if (!token) return;
+
+  try {
+    const response = await fetch(`${contentApiBaseUrl()}/listing-enhancer?scope=agent`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    if (!response.ok) return;
+
+    const result = await response.json();
+    const rows = result.enhancements || [];
+    const remoteHistory = rows.map((row) => ({
+      id: row.id,
+      contentType: "Listing Enhancer",
+      inputJson: {
+        propertyTitle: row.originalTitle,
+        originalTitle: row.originalTitle,
+        originalDescription: row.originalDescription,
+        location: row.location,
+        propertyType: row.propertyType
+      },
+      generatedText: row.optimizedDescription || "",
+      source: row.status === "approved_live" ? "Admin approved" : row.status?.replace(/_/g, " ") || "Saved",
+      createdAt: row.createdAt || new Date().toISOString(),
+      enhancement: row
+    })).filter((row) => row.generatedText);
+
+    const seen = new Set(remoteHistory.map((item) => String(item.id)));
+    const localOnly = (state.contentCreator.history || []).filter((item) => !seen.has(String(item.id)));
+    state.contentCreator.history = [...remoteHistory, ...localOnly].slice(0, 12);
+    persistAll();
+    renderContentCreator();
+  } catch {
+    contentHistoryHydrated = false;
+  }
+}
+
+function setContentStatus(message, type = "") {
+  state.contentCreator.status = message;
+  state.contentCreator.statusType = type;
+  if (!els.contentStatus) return;
+  els.contentStatus.textContent = message;
+  els.contentStatus.className = `content-status ${type}`.trim();
+}
+
+function saveGeneratedContentRecord(payload, generatedText, source, apiResult = {}) {
+  const record = {
+    id: apiResult.id || Date.now(),
+    contentType: "Listing Enhancer",
+    inputJson: payload,
+    generatedText,
+    source,
+    createdAt: apiResult.createdAt || new Date().toISOString(),
+    enhancement: apiResult
+  };
+
+  state.contentCreator = {
+    ...state.contentCreator,
+    contentType: "Listing Enhancer",
+    output: generatedText,
+    lastEnhancement: apiResult,
+    history: [record, ...(state.contentCreator.history || [])].slice(0, 12)
+  };
+
+  return record;
+}
+
+function enhancementToAdminListing(enhancement, payload = {}) {
+  const imageAnalysis = enhancement.imageAnalysis || {};
+  const photos = imageAnalysis.photos || payload.imageAnalysis || [];
+  const bestPhoto = photos[imageAnalysis.bestCoverImageIndex || 0] || {};
+  const statusMap = {
+    pending_admin_review: "pending_qc",
+    approved_live: "approved",
+    rejected: "rejected",
+    draft: "draft"
+  };
+  const flags = [];
+  if ((enhancement.imageScore || 0) < 70) {
+    flags.push({
+      flagType: "image_quality",
+      severity: (enhancement.imageScore || 0) < 50 ? "high" : "medium",
+      message: `Image quality score is ${enhancement.imageScore || 0}/100.`
+    });
+  }
+  if ((enhancement.seoScore || 0) < 70) {
+    flags.push({
+      flagType: "seo_quality",
+      severity: "medium",
+      message: `SEO score is ${enhancement.seoScore || 0}/100.`
+    });
+  }
+  if (imageAnalysis.duplicatePhotoCount) {
+    flags.push({
+      flagType: "duplicate_photos",
+      severity: "medium",
+      message: `${imageAnalysis.duplicatePhotoCount} duplicate photo${imageAnalysis.duplicatePhotoCount === 1 ? "" : "s"} detected.`
+    });
+  }
+
+  return {
+    id: String(enhancement.id || Date.now()),
+    enhancementId: enhancement.id || "",
+    agentId: readLiveAgentProfile().id || "agent-live",
+    agentName: readLiveAgentProfile().name || "RealityGenius Agent",
+    title: enhancement.optimizedTitle || payload.originalTitle,
+    originalTitle: payload.originalTitle || enhancement.originalTitle,
+    price: Number(payload.price || 0),
+    location: payload.location || enhancement.location || "Malaysia",
+    status: statusMap[enhancement.status] || "draft",
+    imageUrl: bestPhoto.previewUrl || "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=900&q=80",
+    imageResolution: bestPhoto.width || 1280,
+    blurScore: Math.max(0, 1 - (Number(bestPhoto.sharpness || 50) / 50)),
+    imageHash: bestPhoto.hash || `enhancer-${enhancement.id || Date.now()}`,
+    seoScore: enhancement.seoScore || 0,
+    imageScore: enhancement.imageScore || 0,
+    optimizedDescription: enhancement.optimizedDescription || "",
+    portalOutputs: enhancement.platformOptimizations || {},
+    aiFlags: flags,
+    createdAt: enhancement.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+}
+
+function pushAdminListingFromEnhancement(enhancement, payload = {}) {
+  if (!enhancement?.id) return;
+  const adminListing = enhancementToAdminListing(enhancement, payload);
+  const existing = readStore(STORAGE_KEYS.adminListings, []).filter((item) => String(item.enhancementId || item.id) !== String(adminListing.enhancementId || adminListing.id));
+  writeStore(STORAGE_KEYS.adminListings, [adminListing, ...existing]);
+}
+
+async function updateSavedEnhancement(action) {
+  const enhancement = state.contentCreator.lastEnhancement;
+  if (!enhancement?.id) {
+    showToast("Enhance a listing first");
+    return null;
+  }
+
+  if (String(enhancement.id).startsWith("local-")) {
+    const status = action === "submit_verification" ? "pending_admin_review" : "draft";
+    const updated = {
+      ...enhancement,
+      status,
+      liveStatus: status === "pending_admin_review" ? "pending_admin_review" : "not_live"
+    };
+    state.contentCreator.lastEnhancement = updated;
+    state.contentCreator.history = (state.contentCreator.history || []).map((item) =>
+      String(item.id) === String(enhancement.id) ? { ...item, enhancement: updated, source: status.replace(/_/g, " ") } : item
+    );
+    pushAdminListingFromEnhancement(updated, collectContentPayload());
+    persistAll();
+    renderContentCreator();
+    return updated;
+  }
+
+  const token = localStorage.getItem("rg_token");
+  if (!token) {
+    showToast("Login session needed");
+    return null;
+  }
+
+  const response = await fetch(`${contentApiBaseUrl()}/listing-enhancer`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ mode: "agent_update", id: enhancement.id, action })
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || "Unable to update listing enhancement");
+  }
+
+  const result = await response.json();
+  const updated = result.enhancement;
+  state.contentCreator.lastEnhancement = updated;
+  state.contentCreator.history = (state.contentCreator.history || []).map((item) =>
+    String(item.id) === String(enhancement.id) ? { ...item, enhancement: updated, source: updated.status?.replace(/_/g, " ") || item.source } : item
+  );
+  pushAdminListingFromEnhancement(updated, collectContentPayload());
+  persistAll();
+  renderContentCreator();
+  return updated;
+}
+
+async function saveEnhancedListingDraft() {
+  try {
+    const updated = await updateSavedEnhancement("save_draft");
+    if (updated) showToast("Enhanced listing saved as draft");
+  } catch (error) {
+    showToast(error.message || "Unable to save draft");
+  }
+}
+
+async function submitEnhancedListingForReview() {
+  try {
+    const updated = await updateSavedEnhancement("submit_verification");
+    if (!updated) return;
+    setContentStatus("Pending admin review", "warning");
+    pushNotifications("Listing sent to admin", `${updated.optimizedTitle || updated.originalTitle} is waiting for QC approval.`);
+    renderNotifications();
+    showToast("Submitted to admin verification");
+  } catch (error) {
+    showToast(error.message || "Unable to submit listing");
+  }
+}
+
+async function generateAgentContent(event) {
+  event.preventDefault();
+
+  const payload = collectContentPayload();
+  if (!payload.originalTitle || !payload.location || !payload.originalDescription || !payload.price) {
+    setContentStatus("Missing details", "error");
+    showToast("Complete the property brief first");
+    return;
+  }
+
+  els.generateContentButton.disabled = true;
+  setContentStatus("Generating...", "warning");
+
+  try {
+    const apiResult = await requestAiContentGeneration(payload);
+    const localResult = apiResult || generateLocalListingEnhancement(payload);
+    const generatedText = localResult.optimizedDescription || generateLocalAgentContent(payload);
+    const source = localResult.saved ? "OpenAI / Supabase" : "Local prompt builder";
+    saveGeneratedContentRecord(payload, generatedText, source, localResult);
+    setContentStatus(localResult.saved ? "Saved draft" : "Local fallback", localResult.saved ? "" : "warning");
+    pushAdminListingFromEnhancement(localResult, payload);
+    pushNotifications("Listing enhanced", `${payload.originalTitle} scored SEO ${localResult.seoScore || "--"}/100.`);
+    renderNotifications();
+    showToast(localResult.saved ? "Listing enhanced and saved" : "Local enhancement generated");
+  } catch {
+    const localResult = generateLocalListingEnhancement(payload);
+    saveGeneratedContentRecord(payload, localResult.optimizedDescription, "Local prompt builder", localResult);
+    setContentStatus("Local fallback", "warning");
+    showToast("API unavailable, local enhancement generated");
+  } finally {
+    els.generateContentButton.disabled = false;
+    persistAll();
+    renderContentCreator();
+  }
+}
+
+function renderContentCreator() {
+  if (!els.contentOutput) return;
+
+  els.contentTypeButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.contentType === state.contentCreator.contentType);
+  });
+
+  const enhancement = state.contentCreator.lastEnhancement;
+  els.contentStatus.textContent = state.contentCreator.status || "Ready";
+  els.contentStatus.className = `content-status ${state.contentCreator.statusType || ""}`.trim();
+  els.contentOutput.textContent = enhancement?.optimizedDescription || state.contentCreator.output || "Your optimized listing will appear here.";
+  if (els.enhancerOriginal) {
+    els.enhancerOriginal.textContent = enhancement?.originalDescription || "Your original listing will appear here.";
+  }
+
+  if (els.enhancerScoreGrid) {
+    const status = enhancement?.status ? enhancement.status.replace(/_/g, " ") : "Draft";
+    els.enhancerScoreGrid.innerHTML = `
+      <article><span>SEO score</span><strong>${enhancement?.seoScore ?? "--"}</strong></article>
+      <article><span>Image score</span><strong>${enhancement?.imageScore ?? "--"}</strong></article>
+      <article><span>Verification</span><strong>${escapeHtml(status)}</strong></article>
+    `;
+  }
+
+  if (els.enhancerKeywords) {
+    const keywords = enhancement?.seoKeywords || [];
+    els.enhancerKeywords.innerHTML = keywords.length
+      ? keywords.map((keyword) => `<span>${escapeHtml(keyword)}</span>`).join("")
+      : `<span>SEO keywords will appear here</span>`;
+  }
+
+  if (els.enhancerPortalOutputs) {
+    const portals = enhancement?.platformOptimizations || {};
+    const portalLabels = [
+      ["propertyGuruMalaysia", "PropertyGuru Malaysia"],
+      ["iPropertyMalaysia", "iProperty Malaysia"],
+      ["facebookMarketplace", "Facebook Marketplace"],
+      ["tiktokPropertyPost", "TikTok Property Post"]
+    ];
+    els.enhancerPortalOutputs.innerHTML = portalLabels.map(([key, label]) => `
+      <article class="enhancer-portal-card">
+        <span>${label}</span>
+        <p>${escapeHtml(portals[key] || "Platform-specific copy will appear after enhancement.")}</p>
+      </article>
+    `).join("");
+  }
+
+  if (els.saveEnhancedListingButton) {
+    els.saveEnhancedListingButton.disabled = !enhancement;
+  }
+  if (els.submitEnhancedListingButton) {
+    els.submitEnhancedListingButton.disabled = !enhancement;
+  }
+
+  const history = state.contentCreator.history || [];
+  if (!history.length) {
+    els.contentHistory.innerHTML = `
+      <div class="excel-import-status">
+        <strong>No enhanced listings yet.</strong>
+        <p>Enhance a listing to save the SEO rewrite, photo score, portal copy, and admin verification status.</p>
+      </div>
+    `;
+    return;
+  }
+
+  els.contentHistory.innerHTML = history.map((item) => `
+    <article class="content-history-card">
+      <div class="content-history-meta">
+        <span>${escapeHtml(item.enhancement?.status?.replace(/_/g, " ") || item.contentType)}</span>
+        <span>${escapeHtml(item.source || "Saved")}</span>
+        <span>SEO ${escapeHtml(item.enhancement?.seoScore ?? "--")}</span>
+      </div>
+      <h4>${escapeHtml(item.enhancement?.optimizedTitle || item.inputJson?.propertyTitle || "Property draft")}</h4>
+      <p>${escapeHtml(item.generatedText)}</p>
+      <div class="action-row">
+        <button class="ghost-button" data-action="use-content-draft" data-id="${escapeAttr(item.id)}" type="button">Open</button>
+        <button class="ghost-button" data-action="copy-content-draft" data-id="${escapeAttr(item.id)}" type="button">Copy</button>
+      </div>
+    </article>
+  `).join("");
+}
+
+function copyTextToClipboard(text, successMessage) {
+  if (!text) {
+    showToast("Nothing to copy yet");
+    return;
+  }
+
+  navigator.clipboard?.writeText(text)
+    .then(() => showToast(successMessage))
+    .catch(() => {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
+      showToast(successMessage);
+    });
+}
+
+function copyContentOutput() {
+  copyTextToClipboard(state.contentCreator.lastEnhancement?.optimizedDescription || state.contentCreator.output, "Enhanced listing copied");
+}
+
+function contentHistoryItem(id) {
+  return (state.contentCreator.history || []).find((item) => String(item.id) === String(id));
+}
+
+function useContentDraft(id) {
+  const item = contentHistoryItem(id);
+  if (!item) return;
+  const input = item.inputJson || {};
+  state.contentCreator.contentType = "Listing Enhancer";
+  state.contentCreator.output = item.generatedText;
+  state.contentCreator.lastEnhancement = item.enhancement || null;
+  state.contentCreator.status = "Loaded";
+  state.contentCreator.statusType = "";
+
+  els.contentPropertyTitle.value = input.propertyTitle || input.originalTitle || item.enhancement?.originalTitle || "";
+  els.contentLocation.value = input.location || item.enhancement?.location || "";
+  if (els.contentPropertyType) els.contentPropertyType.value = input.propertyType || item.enhancement?.propertyType || "";
+  els.contentPrice.value = input.price || "";
+  els.contentBedrooms.value = input.bedrooms || "";
+  els.contentBathrooms.value = input.bathrooms || "";
+  els.contentHighlights.value = input.highlights || input.originalDescription || item.enhancement?.originalDescription || "";
+  els.contentTargetAudience.value = input.targetAudience || "First-time buyer";
+
+  persistAll();
+  renderContentCreator();
+  showToast("Draft loaded");
+}
+
+function copyContentDraft(id) {
+  const item = contentHistoryItem(id);
+  copyTextToClipboard(item?.generatedText, "Draft copied");
+}
+
+function loadContentFromTopListing() {
+  const listing = [...itineraryListings()]
+    .sort((a, b) => Number(b.enquiries || 0) - Number(a.enquiries || 0))[0];
+
+  if (!listing) {
+    showToast("Add a listing first");
+    return;
+  }
+
+  const transaction = transactionFallback(listing)[0];
+  els.contentPropertyTitle.value = listing.title || "";
+  els.contentLocation.value = listing.area || listing.location || "";
+  if (els.contentPropertyType) els.contentPropertyType.value = listing.propertyType || "Condo";
+  els.contentPrice.value = listing.price || "";
+  els.contentBedrooms.value = listing.bedrooms || 3;
+  els.contentBathrooms.value = listing.bathrooms || 2;
+  els.contentTargetAudience.value = listing.propertyType === "Landed" ? "Family upgrader" : "Investor";
+  els.contentHighlights.value = [
+    `${listing.propertyType} in ${listing.area}`,
+    `Asking price ${money(listing.price)}`,
+    `Latest comparable around ${money(transaction.price)}`,
+    `Maintenance fee: ${listing.maintenanceFee}`,
+    `Developer: ${listing.developer}`
+  ].join("\n");
+
+  showToast("Top listing loaded");
+}
+
 function persistAll() {
   writeStore(STORAGE_KEYS.agentLeads, state.leads);
   writeStore(STORAGE_KEYS.agentClients, state.clients);
@@ -2867,6 +4614,8 @@ function persistAll() {
   writeStore(STORAGE_KEYS.agentCobroke, state.cobroke);
   writeStore(STORAGE_KEYS.agentCheatSheet, state.cheatSheet);
   writeStore(STORAGE_KEYS.agentReferral, state.referral);
+  writeStore(STORAGE_KEYS.agentContentCreator, state.contentCreator);
+  writeStore(STORAGE_KEYS.agentSubscription, state.subscription);
 }
 
 function openDrawer(id) {
@@ -2916,9 +4665,17 @@ function bindEvents() {
   });
 
   els.notificationButton.addEventListener("click", () => openDrawer("notificationDrawer"));
+  window.RealtyGeniusPush?.installButton(els.pushPermissionButton, (result) => {
+    if (result === "granted") showToast("Agent push notifications enabled");
+    else if (result === "denied") showToast("Browser blocked push notifications");
+    else showToast("Push notifications are unavailable here");
+  });
   els.quickLeadButton.addEventListener("click", () => openModal("leadModal"));
   els.openListingComposer.addEventListener("click", () => openModal("listingModal"));
   els.downloadListingTemplate.addEventListener("click", downloadListingTemplate);
+  els.autoFillListingPhotos?.addEventListener("click", autofillListingPhotoLinks);
+  els.listingDevicePhotos?.addEventListener("change", handleListingDevicePhotos);
+  els.listingEnhancerPhotos?.addEventListener("change", handleListingEnhancerPhotos);
 
   els.leadForm.addEventListener("submit", addLead);
   els.listingForm.addEventListener("submit", addListing);
@@ -2928,6 +4685,19 @@ function bindEvents() {
   els.cobrokeForm.addEventListener("submit", createCobrokeMatches);
   els.cheatSheetForm.addEventListener("submit", createCheatSheet);
   els.referralForm.addEventListener("submit", createReferralAutomation);
+  els.contentCreatorForm.addEventListener("submit", generateAgentContent);
+  els.contentTypeButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      state.contentCreator.contentType = button.dataset.contentType;
+      state.contentCreator.status = "Ready";
+      state.contentCreator.statusType = "";
+      persistAll();
+      renderContentCreator();
+    });
+  });
+  els.copyContentButton.addEventListener("click", copyContentOutput);
+  els.saveEnhancedListingButton?.addEventListener("click", saveEnhancedListingDraft);
+  els.submitEnhancedListingButton?.addEventListener("click", submitEnhancedListingForReview);
   els.itineraryPropertyList.addEventListener("change", (event) => {
     if (event.target.matches("[data-itinerary-property]")) updateItinerarySelectedCount();
   });
@@ -2991,15 +4761,21 @@ function bindEvents() {
     }
     if (action === "run-referral-cron") runReferralCron();
     if (action === "send-referral-year") markReferralSent(id);
+    if (action === "load-content-from-listing") loadContentFromTopListing();
+    if (action === "use-content-draft") useContentDraft(rawId);
+    if (action === "copy-content-draft") copyContentDraft(rawId);
     if (action === "agent-open-vault-for-deal") openVaultForDeal(rawId);
     if (action === "agent-sign-offer") signDealOffer(rawId);
     if (action === "agent-release-escrow") releaseEscrow(rawId);
   });
 
   document.addEventListener("keydown", (event) => {
-    const actionTarget = event.target.closest?.("[data-action='open-document-vault'], [data-action='open-itinerary-builder'], [data-action='open-cobroke-matchmaker'], [data-action='open-cheat-sheet'], [data-action='open-referral-autopilot']");
+    const actionTarget = event.target.closest?.("[data-action='open-document-vault'], [data-action='open-itinerary-builder'], [data-action='open-cobroke-matchmaker'], [data-action='open-cheat-sheet'], [data-action='open-referral-autopilot'], [data-action='jump-section']");
     if (!actionTarget || !["Enter", " "].includes(event.key)) return;
     event.preventDefault();
+    if (actionTarget.dataset.action === "jump-section") {
+      goToSection(actionTarget.dataset.section);
+    }
     if (actionTarget.dataset.action === "open-document-vault") {
       renderDocumentVault();
       openModal("documentVaultModal");
@@ -3034,11 +4810,54 @@ function bindEvents() {
   });
 
   [els.leadModal, els.listingModal, els.documentVaultModal, els.itineraryModal, els.cobrokeModal, els.cheatSheetModal, els.referralModal].forEach((modal) => {
+    if (!modal) return;
     modal.addEventListener("click", (event) => {
       if (event.target === modal) closeModal(modal.id);
     });
   });
 }
 
+function applyBillingReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const billing = params.get("billing");
+  if (!billing) return;
+
+  const plan = AGENT_PLAN_TIERS.find((tier) => tier.id === params.get("plan")) || AGENT_PLAN_TIERS.find((tier) => tier.id === state.subscription?.planId) || AGENT_PLAN_TIERS[2];
+
+  if (billing === "success") {
+    state.subscription = {
+      planId: plan.id,
+      planName: plan.name,
+      amount: plan.price,
+      currency: "MYR",
+      status: "live_active",
+      testMode: false,
+      startedAt: new Date().toISOString(),
+      checkoutId: params.get("session_id") || state.subscription?.checkoutId || ""
+    };
+    persistAll();
+    pushNotifications("Premium agent activated", `${plan.name} is active. Stripe confirmed your checkout and automation features are unlocked.`);
+    showToast(`${plan.name} active`);
+  }
+
+  if (billing === "cancelled") {
+    state.subscription = {
+      ...state.subscription,
+      status: "checkout_cancelled"
+    };
+    persistAll();
+    showToast("Stripe checkout cancelled");
+  }
+
+  params.delete("billing");
+  params.delete("plan");
+  params.delete("session_id");
+  const cleanUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}${window.location.hash || ""}`;
+  window.history.replaceState({}, document.title, cleanUrl);
+}
+
+applyBillingReturn();
 bindEvents();
+renderListingDevicePhotoPreview();
+renderListingEnhancerPhotoPreview();
 renderWorkspace();

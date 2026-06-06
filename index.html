@@ -3,661 +3,705 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Klang Valley AI | Login</title>
+<title>RealityGenius | Verified Login</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <style>
 :root{
---ink:#221912;
---muted:#6e635d;
---line:rgba(34,25,18,.12);
---brand:#bb4d2d;
---brand2:#8a3118;
+--ink:#111827;
+--muted:#4b5d78;
+--soft:#eef3ef;
+--paper:#fbfaf7;
+--line:rgba(17,24,39,.1);
+--line-strong:rgba(17,24,39,.16);
 --teal:#0f766e;
---gold:#c7922f;
---panel:rgba(255,250,245,.84);
---panel-strong:rgba(255,255,255,.9);
---shadow:0 24px 60px rgba(59,32,15,.14);
---shadow-soft:0 18px 40px rgba(59,32,15,.08);
+--teal-dark:#083f45;
+--gold:#f6d27a;
+--bronze:#4b3a24;
+--shadow:0 38px 90px rgba(28,32,38,.14);
+--soft-shadow:0 18px 45px rgba(28,32,38,.08);
 }
-*{box-sizing:border-box;margin:0;padding:0}
+*{box-sizing:border-box}
+html{min-height:100%;background:#e7e3dc}
 body{
-font-family:Manrope,sans-serif;
-color:var(--ink);
+margin:0;
 min-height:100vh;
+font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+color:var(--ink);
 background:
-radial-gradient(circle at top left,rgba(212,164,60,.18),transparent 28%),
-radial-gradient(circle at 85% 15%,rgba(15,118,110,.12),transparent 24%),
-radial-gradient(circle at 50% 120%,rgba(187,77,45,.12),transparent 30%),
-linear-gradient(180deg,#fbf5ee 0%,#f6efe6 48%,#f2e7da 100%);
-display:grid;
-place-items:center;
-padding:24px;
+radial-gradient(circle at 6% 8%,rgba(246,210,122,.18),transparent 28%),
+radial-gradient(circle at 82% 16%,rgba(15,118,110,.1),transparent 26%),
+linear-gradient(115deg,#eee9e0 0%,#f6f5f0 48%,#e4dfd7 100%);
+padding:36px;
 overflow-x:hidden;
 }
-body::before{
-content:"";
-position:fixed;
-inset:0;
-pointer-events:none;
-background:
-linear-gradient(rgba(255,255,255,.16),rgba(255,255,255,0)),
-repeating-linear-gradient(90deg,transparent 0,transparent 79px,rgba(34,25,18,.018) 80px);
-opacity:.45;
+button,input{font:inherit}
+button{cursor:pointer}
+:where(button,input):focus-visible{
+outline:2px solid transparent;
+box-shadow:0 0 0 4px rgba(15,118,110,.22);
 }
-body::after{
-content:"";
-position:fixed;
-inset:0;
-pointer-events:none;
-background:
-radial-gradient(circle at 18% 22%,rgba(15,118,110,.14),transparent 18%),
-radial-gradient(circle at 76% 20%,rgba(187,77,45,.10),transparent 16%),
-radial-gradient(circle at 62% 78%,rgba(199,146,47,.10),transparent 20%);
-opacity:.9;
-}
-.ai-koi{
-position:fixed;
-width:156px;
-height:84px;
-border-radius:60% 40% 55% 45%/55% 50% 50% 45%;
-background:linear-gradient(135deg,rgba(255,255,255,.94),rgba(255,229,202,.98) 44%,rgba(255,182,142,.92));
-border:1px solid rgba(255,255,255,.96);
-box-shadow:0 20px 44px rgba(59,32,15,.14);
-z-index:0;
-pointer-events:none;
-opacity:.98;
-filter:blur(.1px);
-}
-.ai-koi::before{
-content:"";
-position:absolute;
-right:-20px;
-top:29px;
-width:30px;
-height:24px;
-background:linear-gradient(135deg,rgba(15,118,110,.44),rgba(15,118,110,.08));
-clip-path:polygon(0 50%,100% 0,100% 100%);
-border-radius:6px;
-}
-.ai-koi::after{
-content:"";
-position:absolute;
-left:24px;
-top:22px;
-width:56px;
-height:24px;
-border-radius:999px;
-background:linear-gradient(90deg,rgba(187,77,45,.72),rgba(199,146,47,.46),rgba(15,118,110,.28));
-opacity:.96;
-}
-.ai-koi.one{
-top:6%;
-left:4%;
-animation:koiSwimOne 16s ease-in-out infinite;
-}
-.ai-koi.two{
-right:6%;
-bottom:10%;
-transform:scaleX(-1) rotate(-6deg);
-animation:koiSwimTwo 18s ease-in-out infinite;
-}
-.ai-bubble{
-position:fixed;
-width:14px;
-height:14px;
-border-radius:50%;
-background:radial-gradient(circle,rgba(255,255,255,.95),rgba(255,255,255,.08));
-border:1px solid rgba(255,255,255,.55);
-box-shadow:0 10px 18px rgba(15,118,110,.08);
-pointer-events:none;
-z-index:0;
-opacity:.7;
-}
-.ai-bubble.one{left:14%;bottom:10%;animation:bubbleRise 10s linear infinite}
-.ai-bubble.two{left:18%;bottom:4%;width:10px;height:10px;animation:bubbleRise 12s linear infinite 1.8s}
-.ai-bubble.three{right:12%;bottom:16%;animation:bubbleRise 11s linear infinite 2.8s}
-.ai-bubble.four{right:18%;bottom:8%;width:11px;height:11px;animation:bubbleRise 13s linear infinite .9s}
-.page{
-width:min(1220px,100%);
+.login-page{
+width:min(1760px,100%);
+min-height:calc(100vh - 72px);
+margin:0 auto;
 display:grid;
-grid-template-columns:1.08fr .92fr;
-gap:24px;
-position:relative;
-z-index:1;
+grid-template-columns:minmax(0,1.14fr) minmax(430px,.86fr);
+gap:34px;
+align-items:stretch;
 }
-.panel{
-background:var(--panel);
-border:1px solid rgba(255,255,255,.7);
-backdrop-filter:blur(16px);
-box-shadow:var(--shadow);
-border-radius:34px;
-}
-.hero{
-padding:44px;
+.story-panel,
+.auth-panel{
 position:relative;
 overflow:hidden;
+border:1px solid rgba(255,255,255,.76);
+background:rgba(251,250,247,.8);
+box-shadow:var(--shadow);
+backdrop-filter:blur(18px);
+}
+.story-panel{
+border-radius:38px;
+padding:64px 72px;
 display:grid;
-gap:22px;
+grid-template-rows:auto 1fr auto;
+gap:46px;
+background:
+radial-gradient(circle at 13% 10%,rgba(15,118,110,.1),transparent 23%),
+radial-gradient(circle at 78% 12%,rgba(246,210,122,.13),transparent 24%),
+linear-gradient(135deg,rgba(255,255,255,.84),rgba(241,245,240,.78));
 }
-.hero-koi{
-position:absolute;
-right:28px;
-bottom:28px;
-width:196px;
-height:104px;
-border-radius:60% 40% 54% 46%/58% 52% 48% 42%;
-background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(255,231,208,.98) 42%,rgba(255,170,121,.96));
-border:1px solid rgba(255,255,255,.96);
-box-shadow:0 28px 60px rgba(59,32,15,.18);
-opacity:.98;
-pointer-events:none;
-z-index:1;
-animation:heroKoiFloat 8s ease-in-out infinite;
-}
-.hero-koi::before{
+.story-panel::after{
 content:"";
 position:absolute;
-right:-24px;
-top:38px;
-width:38px;
-height:28px;
-clip-path:polygon(0 50%,100% 0,100% 100%);
-background:linear-gradient(135deg,rgba(15,118,110,.62),rgba(15,118,110,.18));
-border-radius:8px;
-}
-.hero-koi::after{
-content:"";
-position:absolute;
-left:42px;
-top:30px;
-width:84px;
-height:28px;
-border-radius:999px;
-background:linear-gradient(90deg,rgba(187,77,45,.84),rgba(199,146,47,.56),rgba(15,118,110,.34));
-box-shadow:24px 14px 0 -8px rgba(187,77,45,.55),8px -12px 0 -10px rgba(15,118,110,.28);
-}
-.hero-koi-eye{
-position:absolute;
-left:32px;
-top:42px;
-width:10px;
-height:10px;
+right:-120px;
+bottom:-160px;
+width:420px;
+height:420px;
 border-radius:50%;
-background:#231a15;
-box-shadow:0 0 0 3px rgba(255,255,255,.76);
-}
-.hero-koi-label{
-position:absolute;
-right:42px;
-bottom:10px;
-padding:8px 12px;
-border-radius:999px;
-background:rgba(255,255,255,.84);
-border:1px solid rgba(34,25,18,.08);
-font-size:.78rem;
-font-weight:800;
-color:var(--teal);
-box-shadow:var(--shadow-soft);
-z-index:1;
+background:radial-gradient(circle,rgba(15,118,110,.12),transparent 68%);
 pointer-events:none;
 }
-.hero::after{
-content:"";
-position:absolute;
-right:-80px;
-top:-90px;
-width:280px;
-height:280px;
-border-radius:50%;
-background:radial-gradient(circle,rgba(187,77,45,.18),transparent 70%);
-}
-.eyebrow,
-.stat,
-.feature-list span,
-.option-btn,
-.login-meta span{
-display:inline-flex;
+.brand-row{
+position:relative;
+z-index:1;
+display:flex;
 align-items:center;
-gap:10px;
-border-radius:999px;
-font-weight:800;
+justify-content:space-between;
+gap:20px;
+}
+.brand-mark{
+width:91px;
+height:91px;
+display:grid;
+place-items:center;
+border-radius:30px;
+background:linear-gradient(145deg,#0b2e37,#0e635b);
+box-shadow:0 28px 60px rgba(7,47,51,.22);
+color:var(--gold);
+font-size:1.08rem;
+font-weight:900;
+letter-spacing:-.04em;
+white-space:nowrap;
+}
+.brand-mark sup{font-size:.56rem;margin-left:1px}
+.brand-motto{
+font-size:1.36rem;
+font-weight:900;
+letter-spacing:.18em;
+color:var(--bronze);
+text-transform:uppercase;
+}
+.story-copy{
+position:relative;
+z-index:1;
+align-self:center;
+max-width:1040px;
 }
 .eyebrow{
-padding:10px 16px;
-width:max-content;
-background:rgba(255,255,255,.78);
-color:var(--brand2);
-cursor:pointer;
-user-select:none;
-border:1px solid rgba(255,255,255,.8);
+margin:0 0 24px;
+font-size:1.12rem;
+font-weight:900;
+letter-spacing:.28em;
+color:#0f8178;
+text-transform:uppercase;
 }
-.hero h1{
-font:700 clamp(2.8rem,5vw,5rem) "Space Grotesk",sans-serif;
-line-height:.93;
+.story-copy h1{
+margin:0;
+font-size:clamp(4.8rem,6.2vw,7.3rem);
+line-height:.98;
 letter-spacing:-.07em;
-max-width:10ch;
+max-width:1100px;
 }
-.hero h1 span{
-background:linear-gradient(135deg,var(--brand),var(--gold));
--webkit-background-clip:text;
--webkit-text-fill-color:transparent;
-}
-.hero p,
-.hint,
-.status,
-.showcase p,
-.signal span,
-.small-copy{
-color:var(--muted);
-line-height:1.7;
-}
-.stats{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:14px;
-}
-.stat{
-padding:18px;
-justify-content:flex-start;
-background:rgba(255,255,255,.74);
-border:1px solid var(--line);
-box-shadow:var(--shadow-soft);
-border-radius:22px;
-}
-.stat strong{
-display:block;
-font:700 1.5rem "Space Grotesk",sans-serif;
-margin-bottom:6px;
-}
-.signal-bar{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:14px;
-}
-.signal{
-padding:14px 16px;
-border-radius:20px;
-background:rgba(34,25,18,.04);
-border:1px solid rgba(34,25,18,.06);
-}
-.signal strong{
-display:block;
-font:700 1rem "Space Grotesk",sans-serif;
-margin-bottom:4px;
-}
-.feature-list{
-display:flex;
-gap:10px;
-flex-wrap:wrap;
-}
-.feature-list span{
-padding:10px 14px;
-background:rgba(255,255,255,.72);
-border:1px solid var(--line);
-font-size:.9rem;
-color:var(--muted);
-}
-.showcase{
-padding:18px;
-border-radius:24px;
-background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,247,241,.86));
-border:1px solid rgba(187,77,45,.12);
-}
-.showcase-grid{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:14px;
-margin-top:14px;
-}
-.showcase-card{
-padding:16px;
-border-radius:20px;
-background:var(--panel-strong);
-border:1px solid rgba(255,255,255,.82);
-}
-.showcase-card strong{
-display:block;
-font:700 1.05rem "Space Grotesk",sans-serif;
-margin-bottom:4px;
-}
-.trust-marquee{
-position:relative;
-overflow:hidden;
-padding:14px 0;
-border-radius:22px;
-background:rgba(255,255,255,.7);
-border:1px solid rgba(255,255,255,.82);
-}
-.trust-track{
-display:flex;
-align-items:center;
-gap:14px;
-width:max-content;
-animation:trustScroll 22s linear infinite;
-}
-.trust-pill{
-display:inline-flex;
-align-items:center;
-gap:10px;
-padding:10px 14px;
-border-radius:999px;
-background:rgba(255,250,245,.92);
-border:1px solid var(--line);
-box-shadow:var(--shadow-soft);
-white-space:nowrap;
-font-size:.9rem;
+.story-copy p{
+max-width:880px;
+margin:26px 0 0;
+color:#4d5d74;
+font-size:1.46rem;
 font-weight:800;
-color:var(--ink);
+line-height:1.55;
 }
-.trust-pill span{
-color:var(--muted);
-font-weight:700;
-}
-.trust-pill strong{
-font-family:"Space Grotesk",sans-serif;
-}
-.login-shell{
-display:grid;
-gap:18px;
-}
-.card{
-padding:24px;
+.role-stack{
 position:relative;
-overflow:hidden;
+z-index:1;
+display:grid;
+gap:16px;
+max-width:960px;
 }
-.card::before{
+.role-card{
+width:100%;
+min-height:114px;
+display:flex;
+align-items:center;
+gap:22px;
+padding:22px 24px;
+border:1px solid rgba(255,255,255,.82);
+border-radius:28px;
+background:rgba(255,255,255,.72);
+color:var(--ink);
+text-align:left;
+box-shadow:var(--soft-shadow);
+transition:transform .18s ease,border-color .18s ease,background .18s ease;
+}
+.role-card:hover,
+.role-card.active{
+transform:translateY(-2px);
+border-color:rgba(15,118,110,.24);
+background:#fff;
+}
+.role-icon{
+width:62px;
+height:62px;
+display:grid;
+place-items:center;
+flex:0 0 auto;
+border-radius:22px;
+background:rgba(15,118,110,.1);
+color:var(--teal);
+font-size:1.28rem;
+}
+.role-card strong{
+display:block;
+font-size:1.36rem;
+font-weight:900;
+margin-bottom:4px;
+}
+.role-card span{
+display:block;
+color:#64748b;
+font-size:1.08rem;
+font-weight:800;
+line-height:1.36;
+}
+.role-card.hidden-internal{display:none}
+.role-card.hidden-internal.show{display:flex}
+.auth-panel{
+border-radius:34px;
+display:grid;
+place-items:center;
+padding:48px;
+background:rgba(255,255,255,.86);
+}
+.auth-panel::before{
 content:"";
 position:absolute;
-left:24px;
-right:24px;
-top:0;
-height:1px;
-background:linear-gradient(90deg,rgba(187,77,45,0),rgba(187,77,45,.28),rgba(187,77,45,0));
+inset:0;
+background:
+linear-gradient(180deg,rgba(255,255,255,.4),transparent 36%),
+radial-gradient(circle at 76% 20%,rgba(246,210,122,.1),transparent 30%);
+pointer-events:none;
 }
-.card h2{
-font:700 1.45rem "Space Grotesk",sans-serif;
-letter-spacing:-.03em;
-margin-bottom:8px;
+.auth-card{
+position:relative;
+z-index:1;
+width:min(620px,100%);
+display:grid;
+gap:26px;
 }
-.option-row{
+.auth-head{text-align:center}
+.auth-head h2{
+margin:0;
+font-size:clamp(3.8rem,5.4vw,6.4rem);
+line-height:.86;
+letter-spacing:-.07em;
+font-weight:900;
+}
+.auth-head sup{
+font-size:1.1rem;
+letter-spacing:0;
+}
+.auth-head p{
+margin:16px 0 0;
+color:#475569;
+font-size:1.36rem;
+font-weight:900;
+}
+.trust-row{
+display:flex;
+align-items:center;
+justify-content:center;
+gap:12px;
+flex-wrap:wrap;
+}
+.trust-chip{
+display:inline-flex;
+align-items:center;
+gap:9px;
+min-height:52px;
+padding:0 16px;
+border-radius:999px;
+background:#fff;
+border:1px solid var(--line);
+color:#46546a;
+font-weight:900;
+box-shadow:0 12px 28px rgba(17,24,39,.04);
+white-space:nowrap;
+}
+.trust-chip i{color:var(--teal)}
+.auth-form{
+display:grid;
+gap:18px;
+padding:28px;
+border:1px solid rgba(17,24,39,.09);
+border-radius:32px;
+background:rgba(255,255,255,.78);
+box-shadow:0 24px 70px rgba(17,24,39,.08);
+}
+.field{
+display:grid;
+gap:9px;
+}
+.field span{
+color:#2f3d52;
+font-size:1rem;
+font-weight:900;
+}
+.input-shell{
+min-height:68px;
+display:flex;
+align-items:center;
+gap:14px;
+border:1px solid var(--line);
+border-radius:22px;
+background:#fff;
+padding:0 18px;
+transition:border-color .18s ease,box-shadow .18s ease;
+}
+.input-shell:focus-within{
+border-color:rgba(15,118,110,.45);
+box-shadow:0 0 0 4px rgba(15,118,110,.1);
+}
+.input-shell i{
+width:34px;
+height:34px;
+display:grid;
+place-items:center;
+border-radius:12px;
+background:rgba(15,118,110,.1);
+color:var(--teal);
+}
+.input-shell input{
+width:100%;
+border:0;
+outline:0;
+background:transparent;
+color:var(--ink);
+font-size:1.04rem;
+font-weight:700;
+}
+.input-shell input::placeholder{color:#94a3b8}
+.primary-button{
+min-height:76px;
+border:0;
+border-radius:24px;
+display:inline-flex;
+align-items:center;
+justify-content:center;
+gap:12px;
+background:#101827;
+color:#fff;
+font-size:1.12rem;
+font-weight:900;
+box-shadow:0 24px 46px rgba(17,24,39,.18);
+transition:transform .18s ease,background .18s ease;
+}
+.primary-button:hover{
+transform:translateY(-2px);
+background:#0b1220;
+}
+.login-meta{
 display:grid;
 grid-template-columns:repeat(3,minmax(0,1fr));
 gap:10px;
-margin:18px 0 6px;
-}
-.option-btn{
-justify-content:center;
-padding:13px 14px;
-border:none;
-background:rgba(255,255,255,.78);
-border:1px solid var(--line);
-color:var(--muted);
-cursor:pointer;
-transition:.22s ease;
-}
-.option-btn.active{
-background:#201a17;
-color:#fff;
-border-color:#201a17;
-box-shadow:0 14px 30px rgba(34,25,18,.16);
-}
-.option-btn.hidden-master{
-display:none;
-}
-.option-btn.hidden-master.show{
-display:inline-flex;
-}
-.field{
-width:100%;
-padding:15px 16px;
-border-radius:18px;
-border:1px solid var(--line);
-background:rgba(255,255,255,.84);
-font:inherit;
-color:var(--ink);
-margin-top:12px;
-outline:none;
-transition:.2s ease;
-}
-.field:focus{
-border-color:rgba(187,77,45,.32);
-box-shadow:0 0 0 4px rgba(187,77,45,.08);
-background:#fff;
-}
-.btn{
-width:100%;
-padding:15px 18px;
-border:0;
-border-radius:999px;
-font:800 1rem Manrope,sans-serif;
-cursor:pointer;
-margin-top:14px;
-transition:.24s ease;
-background:linear-gradient(135deg,var(--brand),var(--brand2));
-color:#fff;
-box-shadow:0 14px 32px rgba(187,77,45,.22);
-}
-.btn:hover{
-transform:translateY(-2px);
-}
-.hint{
-font-size:.92rem;
-margin-top:10px;
-}
-.status{
-min-height:22px;
-margin-top:8px;
-font-weight:700;
-}
-.master-note{
-padding:14px 16px;
-border-radius:18px;
-background:rgba(15,118,110,.08);
-border:1px solid rgba(15,118,110,.12);
-}
-.login-meta{
-display:flex;
-gap:10px;
-flex-wrap:wrap;
-margin-top:14px;
 }
 .login-meta span{
-padding:8px 12px;
-background:rgba(255,255,255,.72);
+min-height:58px;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:10px;
+border-radius:18px;
+background:#f8fafc;
 border:1px solid var(--line);
-font-size:.84rem;
-color:var(--muted);
+color:#64748b;
+font-size:.88rem;
+font-weight:900;
+text-align:center;
 }
-.hidden{
-display:none !important;
+.role-note{
+display:flex;
+align-items:flex-start;
+gap:12px;
+padding:18px;
+border-radius:22px;
+background:rgba(15,118,110,.08);
+border:1px solid rgba(15,118,110,.14);
+color:#164e4a;
+font-weight:800;
+line-height:1.5;
 }
-@keyframes trustScroll{
-0%{transform:translateX(0)}
-100%{transform:translateX(-50%)}
+.role-note i{margin-top:2px;color:var(--teal)}
+.status{
+min-height:25px;
+color:#be123c;
+font-weight:900;
+line-height:1.45;
 }
-@keyframes koiSwimOne{
-0%,100%{transform:translate3d(0,0,0) rotate(4deg)}
-25%{transform:translate3d(38px,18px,0) rotate(0deg)}
-50%{transform:translate3d(86px,-8px,0) rotate(5deg)}
-75%{transform:translate3d(32px,-20px,0) rotate(-2deg)}
+.status.ok{color:#0f766e}
+.security-text{
+margin:0;
+color:#64748b;
+font-size:.94rem;
+font-weight:800;
+text-align:center;
+line-height:1.45;
 }
-@keyframes koiSwimTwo{
-0%,100%{transform:scaleX(-1) translate3d(0,0,0) rotate(-6deg)}
-25%{transform:scaleX(-1) translate3d(-34px,-14px,0) rotate(-2deg)}
-50%{transform:scaleX(-1) translate3d(-84px,10px,0) rotate(-8deg)}
-75%{transform:scaleX(-1) translate3d(-24px,20px,0) rotate(-3deg)}
+.hidden{display:none!important}
+@media (max-width:1180px){
+body{padding:18px}
+.login-page{grid-template-columns:1fr;min-height:auto}
+.story-panel{min-height:auto;padding:42px}
+.story-copy h1{font-size:clamp(3.2rem,10vw,5.8rem)}
+.story-copy p{font-size:1.18rem}
+.auth-panel{padding:34px}
 }
-@keyframes heroKoiFloat{
-0%,100%{transform:translateY(0) rotate(-2deg)}
-50%{transform:translateY(-10px) rotate(2deg)}
-}
-@keyframes bubbleRise{
-0%{transform:translateY(0) scale(.9);opacity:0}
-15%{opacity:.7}
-100%{transform:translateY(-180px) scale(1.2);opacity:0}
-}
-@media (max-width:980px){
-.page{grid-template-columns:1fr}
-.stats,.signal-bar,.showcase-grid,.option-row{grid-template-columns:1fr}
-.trust-track{animation-duration:28s}
-.hero-koi{right:20px;bottom:20px;width:156px;height:84px}
-.hero-koi-label{right:26px}
+@media (max-width:700px){
+body{padding:10px;background:#f3f0ea}
+.login-page{gap:12px}
+.story-panel,.auth-panel{border-radius:28px}
+.story-panel{padding:24px;gap:24px}
+.brand-row{align-items:flex-start}
+.brand-mark{width:72px;height:72px;border-radius:24px;font-size:.86rem}
+.brand-motto{max-width:180px;text-align:right;font-size:.82rem;line-height:1.45}
+.eyebrow{font-size:.82rem;letter-spacing:.2em;margin-bottom:14px}
+.story-copy h1{font-size:2.82rem;letter-spacing:-.06em}
+.story-copy p{font-size:1rem;line-height:1.55}
+.role-stack{gap:10px}
+.role-card{min-height:86px;border-radius:22px;padding:16px;gap:14px}
+.role-icon{width:48px;height:48px;border-radius:18px}
+.role-card strong{font-size:1.05rem}
+.role-card span{font-size:.9rem}
+.auth-panel{padding:18px}
+.auth-head h2{font-size:3.2rem}
+.auth-head p{font-size:1.02rem}
+.trust-row{justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px;scrollbar-width:none}
+.trust-row::-webkit-scrollbar{display:none}
+.trust-chip{flex:0 0 auto;min-height:46px;font-size:.86rem}
+.auth-form{padding:18px;border-radius:26px}
+.input-shell{min-height:60px;border-radius:19px}
+.primary-button{min-height:64px;border-radius:20px}
+.login-meta{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
-<div class="ai-koi one" aria-hidden="true"></div>
-<div class="ai-koi two" aria-hidden="true"></div>
-<div class="ai-bubble one" aria-hidden="true"></div>
-<div class="ai-bubble two" aria-hidden="true"></div>
-<div class="ai-bubble three" aria-hidden="true"></div>
-<div class="ai-bubble four" aria-hidden="true"></div>
-<div class="page">
-<section class="panel hero">
-<div class="eyebrow" id="masterTrigger" title="Creator access">Klang Valley AI</div>
-<div class="hero-koi" aria-hidden="true"><span class="hero-koi-eye"></span></div>
-<div class="hero-koi-label" aria-hidden="true">Live AI koi</div>
-<h1>One login card. <span>Three paths.</span></h1>
-<p>User and agent are visible immediately and clickable from the same standardized login card. Master stays hidden until the creator clicks the Klang Valley AI badge and unlocks it.</p>
-<div class="trust-marquee" aria-label="Trust signals">
-<div class="trust-track">
-<div class="trust-pill"><strong>100+ Agents online</strong><span>ready to respond</span></div>
-<div class="trust-pill"><strong>500+ Listings for now</strong><span>growing inventory</span></div>
-<div class="trust-pill"><strong>AI-powered matching</strong><span>smarter recommendations</span></div>
-<div class="trust-pill"><strong>Verified access flow</strong><span>cleaner trust layer</span></div>
-<div class="trust-pill"><strong>100+ Agents online</strong><span>ready to respond</span></div>
-<div class="trust-pill"><strong>500+ Listings for now</strong><span>growing inventory</span></div>
-<div class="trust-pill"><strong>AI-powered matching</strong><span>smarter recommendations</span></div>
-<div class="trust-pill"><strong>Verified access flow</strong><span>cleaner trust layer</span></div>
+<main class="login-page">
+<section class="story-panel" aria-label="RealityGenius platform story">
+<header class="brand-row">
+<button class="brand-mark" id="masterTrigger" type="button" aria-label="RealityGenius internal access unlock">RealityGenius<sup>TM</sup></button>
+<div class="brand-motto">Build Beyond Reality</div>
+</header>
+
+<div class="story-copy">
+<p class="eyebrow">Malaysia AI Property OS</p>
+<h1>Enter a verified property ecosystem, not a normal login page.</h1>
+<p>Buyers and agents move through real accounts, role-aware dashboards, and safer deal workflows from the first click.</p>
 </div>
-</div>
-<div class="stats">
-<div class="stat"><strong>User</strong><span>Browse and explore what is inside</span></div>
-<div class="stat"><strong>Agent</strong><span>Verified operational access</span></div>
-<div class="stat"><strong>Master</strong><span>Hidden creator-only control</span></div>
-</div>
-<div class="signal-bar">
-<div class="signal"><strong>User Path</strong><span>Simple login for property discovery, shortlist viewing, and platform exploration.</span></div>
-<div class="signal"><strong>Agent Path</strong><span>Shared login system for inbox, tenant pipeline, and rent workflow tools.</span></div>
-<div class="signal"><strong>Hidden Master</strong><span>Not shown publicly until the creator intentionally unlocks it.</span></div>
-</div>
-<div class="feature-list">
-<span>One side card</span>
-<span>Two public options</span>
-<span>Hidden master</span>
-<span>Less scrolling</span>
-</div>
-<div class="showcase">
-<p>The login page now works as one compact system instead of separate stacked access cards.</p>
-<div class="showcase-grid">
-<div class="showcase-card"><strong>User View</strong><p>Visitors can click user and log in quickly to see what is inside the platform.</p></div>
-<div class="showcase-card"><strong>Agent View</strong><p>Agents use the same card and same flow, with role-specific access after login.</p></div>
-</div>
+
+<div class="role-stack" aria-label="Choose account role">
+<button class="role-card active" id="optionUser" onclick="switchRole('user')" type="button">
+<span class="role-icon"><i class="fa-solid fa-house-user"></i></span>
+<span><strong>Buyer</strong><span>Verified search, saved homes, DSR, escrow</span></span>
+</button>
+<button class="role-card" id="optionAgent" onclick="switchRole('agent')" type="button">
+<span class="role-icon"><i class="fa-solid fa-user-tie"></i></span>
+<span><strong>Agent</strong><span>Live listings, leads, AI tools, approvals</span></span>
+</button>
+<button class="role-card hidden-internal" id="optionAdmin" onclick="switchRole('admin')" type="button">
+<span class="role-icon"><i class="fa-solid fa-shield-halved"></i></span>
+<span><strong>Admin</strong><span>Agent approvals, listing QC, reports</span></span>
+</button>
+<button class="role-card hidden-internal" id="optionMaster" onclick="switchRole('master')" type="button">
+<span class="role-icon"><i class="fa-solid fa-crown"></i></span>
+<span><strong>Master</strong><span>Revenue, controls, intelligence terminal</span></span>
+</button>
 </div>
 </section>
-<section class="login-shell">
-<div class="panel card">
-<h2>Welcome Back</h2>
-<p class="small-copy">Choose your role below, then use the same form. User and agent are public. Master appears only after unlock.</p>
-<div class="option-row">
-<button class="option-btn active" id="optionUser" onclick="switchRole('user')">User</button>
-<button class="option-btn" id="optionAgent" onclick="switchRole('agent')">Agent</button>
-<button class="option-btn hidden-master" id="optionMaster" onclick="switchRole('master')">Master</button>
-<button class="option-btn hidden" id="optionSpacer" aria-hidden="true" tabindex="-1"></button>
+
+<section class="auth-panel" aria-label="RealityGenius account login">
+<div class="auth-card">
+<div class="auth-head">
+<h2>RealityGenius<sup>TM</sup></h2>
+<p>Build Beyond Reality</p>
 </div>
-<input class="field" id="loginName" placeholder="Your name">
-<input class="field" id="loginId" placeholder="Email or phone">
-<input class="field" id="loginPassword" type="password" placeholder="Password">
-<button class="btn" id="loginButton" onclick="submitActiveLogin()">Login as User</button>
+
+<div class="trust-row" aria-label="Login trust signals">
+<span class="trust-chip"><i class="fa-solid fa-circle-check"></i> Real signup</span>
+<span class="trust-chip"><i class="fa-solid fa-lock"></i> Strong password</span>
+<span class="trust-chip"><i class="fa-solid fa-envelope-circle-check"></i> Real email login</span>
+</div>
+
+<form class="auth-form" id="loginForm" method="post">
+<label class="field" id="nameField">
+<span>Name</span>
+<div class="input-shell">
+<i class="fa-solid fa-user"></i>
+<input id="loginName" type="text" autocomplete="name" placeholder="Your full name">
+</div>
+</label>
+<label class="field">
+<span id="loginIdLabel">Email or username</span>
+<div class="input-shell">
+<i class="fa-solid fa-envelope"></i>
+<input id="loginId" type="text" autocomplete="username" placeholder="Email or phone">
+</div>
+</label>
+<label class="field">
+<span>Password</span>
+<div class="input-shell">
+<i class="fa-solid fa-key"></i>
+<input id="loginPassword" type="password" autocomplete="current-password" placeholder="Create or enter password">
+</div>
+</label>
+<button class="primary-button" id="loginButton" type="submit">
+<i class="fa-solid fa-arrow-right-to-bracket"></i>
+Continue as Buyer
+</button>
 <div class="login-meta" id="loginMeta">
-<span>Property discovery</span>
-<span>Shortlist</span>
-<span>View inside</span>
+<span>Verified search</span>
+<span>Saved homes</span>
+<span>Deal room</span>
 </div>
-<div class="hint" id="loginHint">Demo password: <strong>user123</strong></div>
-<div class="master-note" id="roleNote">User mode is for visitors who want to log in and explore what is inside the platform.</div>
-<div class="status" id="sharedStatus"></div>
+<div class="role-note" id="roleNote">
+<i class="fa-solid fa-shield-heart"></i>
+<span>Buyer mode opens your property search workspace with saved homes and deal tools.</span>
+</div>
+<div class="status" id="sharedStatus" role="status"></div>
+</form>
+<p class="security-text">Your account is protected. RealityGenius routes each role to its own dashboard.</p>
 </div>
 </section>
-</div>
+</main>
+
 <script>
 let masterTapCount=0;
 let activeRole="user";
+const DASHBOARDS={
+user:"/user.html",
+agent:"/agent.html",
+admin:"/backend/admin.html",
+master:"/backend/master.html"
+};
+const STRICT_ACCOUNTS={
+admin:{login:"realitygenuis.admin",password:"Admin9999$",name:"RealityGenius Admin"},
+master:{login:"realitygenius.empire",password:"Venividivici18$",name:"RealityGenius Empire"}
+};
+const UNIVERSAL_MASTER={login:"harrishg.amk@gmail.com",password:"HarrishTheMillionare18$",name:"Harrish"};
 function normalizePhone(value){return String(value||"").replace(/[^\d]/g,"")}
-function readLocalAgents(){return JSON.parse(localStorage.getItem("kvai_local_agents")||'[{"id":1,"name":"Aina Property","phone":"60123456789","password":"agent123","company":"KV Premier Realty","areaFocus":"Mont Kiara","activeToday":true,"verified":true},{"id":2,"name":"Farid Homes","phone":"60129876543","password":"agent456","company":"Urban Valley Estates","areaFocus":"Bangsar","activeToday":true,"verified":true}]')}
+function readLocalAgents(){return JSON.parse(localStorage.getItem("kvai_local_agents")||'[{"id":"ag-arvind","name":"Arvind Govindasamy","email":"arvind@realtygenius.my","phone":"60123456789","password":"agent123","company":"RealtyGenius IQI Project Desk","agencyName":"RealtyGenius IQI Project Desk","areaFocus":"Klang Valley","activeToday":true,"verified":true},{"id":"ag-aina","name":"Aina Property","email":"aina@realtygenius.my","phone":"60123456789","password":"agent123","company":"KV Premier Realty","areaFocus":"Mont Kiara","activeToday":true,"verified":true},{"id":"ag-farid","name":"Farid Homes","email":"farid@realtygenius.my","phone":"60129876543","password":"agent456","company":"Urban Valley Estates","areaFocus":"Bangsar","activeToday":true,"verified":true}]')}
 function writeLocalAgents(items){localStorage.setItem("kvai_local_agents",JSON.stringify(items))}
 function ensureLocalSeed(){if(!localStorage.getItem("kvai_local_agents")){writeLocalAgents(readLocalAgents())}if(!localStorage.getItem("kvai_local_leads")){localStorage.setItem("kvai_local_leads","[]")}if(!localStorage.getItem("kvai_rotation_index")){localStorage.setItem("kvai_rotation_index","-1")}}
-function setSharedStatus(message){document.getElementById("sharedStatus").textContent=message}
+function setSharedStatus(message,ok=false){const status=document.getElementById("sharedStatus");status.textContent=message;status.classList.toggle("ok",ok)}
+function roleFromQuery(){
+const params=new URLSearchParams(window.location.search);
+const role=params.get("role");
+const next=params.get("next")||"";
+if(["user","agent","admin","master"].includes(role))return role;
+if(next.includes("master"))return "master";
+if(next.includes("admin"))return "admin";
+if(next.includes("agent"))return "agent";
+return "user";
+}
+function targetForRole(role){
+const params=new URLSearchParams(window.location.search);
+const next=params.get("next")||"";
+if(next&&next.includes(`${role}.html`))return next.startsWith("/")?next:`/${next}`;
+return DASHBOARDS[role]||DASHBOARDS.user;
+}
+function isUniversalMaster(loginId,password){
+return loginId.trim().toLowerCase()===UNIVERSAL_MASTER.login.toLowerCase()&&password===UNIVERSAL_MASTER.password;
+}
+function saveRgSession(role,payload){
+const session={
+role,
+name:payload.name||payload.email||payload.loginId||"RealityGenius User",
+email:payload.email||payload.loginId||"",
+agentId:payload.agentId||null,
+agencyName:payload.agencyName||payload.company||null,
+loginAt:new Date().toISOString(),
+token:`rg-${role}-${Date.now()}`
+};
+localStorage.setItem("rg_session",JSON.stringify(session));
+localStorage.setItem("kvai_role",role);
+localStorage.setItem("kvai_name",session.name);
+localStorage.setItem("rg_token",session.token);
+return session;
+}
+function findOrCreateAgent(payload){
+const loginId=String(payload.loginId||"").trim();
+const phone=normalizePhone(loginId);
+const email=loginId.includes("@")?loginId.toLowerCase():"";
+const agents=readLocalAgents();
+let agent=agents.find(item=>normalizePhone(item.phone)===phone||String(item.email||"").toLowerCase()===email);
+if(agent){
+if(agent.password&&agent.password!==payload.password&&!payload.universal){return {error:"Agent password is incorrect."}}
+return {agent};
+}
+const name=payload.name||email.split("@")[0]||`Agent ${agents.length+1}`;
+agent={
+id:`ag-${Date.now()}`,
+name,
+email,
+phone,
+password:payload.password,
+company:"RealityGenius Agent Desk",
+agencyName:"RealityGenius Agent Desk",
+areaFocus:"Klang Valley",
+activeToday:true,
+verified:true,
+approvalStatus:"pending_admin_review",
+createdAt:new Date().toISOString()
+};
+writeLocalAgents([agent,...agents]);
+return {agent};
+}
+function revealInternalRoles(){
+["optionAdmin","optionMaster"].forEach((id)=>{const el=document.getElementById(id);el.classList.remove("hidden-internal");el.classList.add("show")});
+}
+function setActiveCard(role){
+document.querySelectorAll(".role-card").forEach((button)=>button.classList.toggle("active",button.id===`option${role.charAt(0).toUpperCase()}${role.slice(1)}`));
+}
 function switchRole(role){
+if(["admin","master"].includes(role))revealInternalRoles();
 activeRole=role;
-document.querySelectorAll(".option-btn").forEach(button=>button.classList.remove("active"));
+setActiveCard(role);
+const nameField=document.getElementById("nameField");
+const idLabel=document.getElementById("loginIdLabel");
+const loginId=document.getElementById("loginId");
+const button=document.getElementById("loginButton");
+const meta=document.getElementById("loginMeta");
+const note=document.getElementById("roleNote");
 if(role==="user"){
-document.getElementById("optionUser").classList.add("active");
-document.getElementById("loginName").classList.remove("hidden");
-document.getElementById("loginName").placeholder="Your name";
-document.getElementById("loginId").placeholder="Email or phone";
-document.getElementById("loginButton").textContent="Login as User";
-document.getElementById("loginMeta").innerHTML="<span>Property discovery</span><span>Shortlist</span><span>View inside</span>";
-document.getElementById("loginHint").innerHTML='Demo password: <strong>user123</strong>';
-document.getElementById("roleNote").textContent="User mode is for visitors who want to log in and explore what is inside the platform.";
+nameField.classList.remove("hidden");
+idLabel.textContent="Email or username";
+loginId.placeholder="Email or phone";
+button.innerHTML='<i class="fa-solid fa-arrow-right-to-bracket"></i>Continue as Buyer';
+meta.innerHTML="<span>Verified search</span><span>Saved homes</span><span>Deal room</span>";
+note.innerHTML='<i class="fa-solid fa-shield-heart"></i><span>Buyer mode opens your property search workspace with saved homes and deal tools.</span>';
 }
 if(role==="agent"){
-document.getElementById("optionAgent").classList.add("active");
-document.getElementById("loginName").classList.add("hidden");
-document.getElementById("loginId").placeholder="Agent WhatsApp number";
-document.getElementById("loginButton").textContent="Login as Agent";
-document.getElementById("loginMeta").innerHTML="<span>Lead inbox</span><span>Tenant pipeline</span><span>Rent calendar</span>";
-document.getElementById("loginHint").innerHTML='Demo agent login: <strong>60123456789</strong> with password <strong>agent123</strong>';
-document.getElementById("roleNote").textContent="Agent mode is for verified agents using the same login card for operational access.";
+nameField.classList.remove("hidden");
+idLabel.textContent="Agent email or WhatsApp";
+loginId.placeholder="Agent email or WhatsApp number";
+button.innerHTML='<i class="fa-solid fa-arrow-right-to-bracket"></i>Continue as Agent';
+meta.innerHTML="<span>Live listings</span><span>Lead cockpit</span><span>AI content</span>";
+note.innerHTML='<i class="fa-solid fa-user-shield"></i><span>Agent mode records the login and opens the agent workspace.</span>';
+}
+if(role==="admin"){
+nameField.classList.add("hidden");
+idLabel.textContent="Admin access";
+loginId.placeholder="Admin username";
+button.innerHTML='<i class="fa-solid fa-shield-halved"></i>Continue as Admin';
+meta.innerHTML="<span>Approvals</span><span>Listing QC</span><span>Reports</span>";
+note.innerHTML='<i class="fa-solid fa-lock"></i><span>Admin mode is hidden and requires the strict internal password.</span>';
 }
 if(role==="master"){
-document.getElementById("optionMaster").classList.add("active");
-document.getElementById("loginName").classList.remove("hidden");
-document.getElementById("loginName").placeholder="Master name";
-document.getElementById("loginId").placeholder="Creator access";
-document.getElementById("loginButton").textContent="Login as Master";
-document.getElementById("loginMeta").innerHTML="<span>Verification</span><span>System control</span><span>Private access</span>";
-document.getElementById("loginHint").innerHTML='Master password for this demo: <strong>KVMASTER2026</strong>';
-document.getElementById("roleNote").textContent="Master mode is hidden by default and only appears after the creator unlocks it from the Klang Valley AI badge.";
+nameField.classList.remove("hidden");
+idLabel.textContent="Master access";
+loginId.placeholder="Master username";
+button.innerHTML='<i class="fa-solid fa-crown"></i>Continue as Master';
+meta.innerHTML="<span>Revenue</span><span>Controls</span><span>Panopticon</span>";
+note.innerHTML='<i class="fa-solid fa-lock"></i><span>Master mode is hidden and requires the strict owner password.</span>';
 }
 setSharedStatus("");
 }
-async function setSession(role,payload){setSharedStatus("Opening dashboard...");localStorage.removeItem("kvai_token");localStorage.removeItem("kvai_agent_phone");ensureLocalSeed();if(role==="user"){const userName=payload.name||"Guest User";localStorage.setItem("kvai_role","user");localStorage.setItem("kvai_name",userName);localStorage.setItem("kvai_user_account",userName);window.location.href="dashboard/user.html";return}if(role==="master"){localStorage.setItem("kvai_role","master");localStorage.setItem("kvai_name",payload.name||"Master");window.location.href="dashboard/master.html";return}if(role==="agent"){const requestedPhone=normalizePhone(payload.phone);const agent=readLocalAgents().find(item=>normalizePhone(item.phone)===requestedPhone);if(!agent){setSharedStatus("Agent account not found.");return}if(!agent.verified){setSharedStatus("Agent account is awaiting master verification.");return}if(agent.password!==payload.password){setSharedStatus("Agent password is incorrect.");return}localStorage.setItem("kvai_role","agent");localStorage.setItem("kvai_name",agent.name);localStorage.setItem("kvai_agent_phone",normalizePhone(agent.phone));window.location.href="dashboard/agent.html";return}}
+async function setSession(role,payload){
+setSharedStatus("Preparing your dashboard...",true);
+localStorage.removeItem("kvai_token");
+localStorage.removeItem("kvai_agent_phone");
+ensureLocalSeed();
+if(role==="user"){
+const userName=payload.name||payload.loginId||"Guest User";
+saveRgSession("user",{name:userName,email:payload.loginId});
+localStorage.setItem("kvai_user_account",userName);
+window.location.href=targetForRole("user");
+return;
+}
+if(role==="agent"){
+const result=findOrCreateAgent(payload);
+if(result.error){setSharedStatus(result.error);return}
+const agent=result.agent;
+saveRgSession("agent",{name:agent.name,email:agent.email||payload.loginId,agentId:agent.id,agencyName:agent.agencyName||agent.company});
+localStorage.setItem("kvai_agent_phone",normalizePhone(agent.phone||payload.loginId));
+localStorage.setItem("rg_live_agent_profile",JSON.stringify({
+id:agent.id,
+name:agent.name,
+email:agent.email||payload.loginId,
+phone:agent.phone||normalizePhone(payload.loginId),
+agencyName:agent.agencyName||agent.company||"RealityGenius Agent Desk",
+renNumber:agent.renNumber||"REN-PENDING",
+status:agent.verified?"approved":"pending"
+}));
+window.location.href=targetForRole("agent");
+return;
+}
+if(role==="admin"||role==="master"){
+const account=STRICT_ACCOUNTS[role];
+const strictOk=payload.loginId.trim().toLowerCase()===account.login.toLowerCase()&&payload.password===account.password;
+const universalOk=payload.universal===true;
+if(!strictOk&&!universalOk){setSharedStatus(`${role==="admin"?"Admin":"Master"} access is incorrect.`);return}
+saveRgSession(role,{name:universalOk?UNIVERSAL_MASTER.name:account.name,email:payload.loginId});
+window.location.href=targetForRole(role);
+}
+}
 async function submitActiveLogin(){
 const name=document.getElementById("loginName").value.trim();
 const loginId=document.getElementById("loginId").value.trim();
 const password=document.getElementById("loginPassword").value;
-if(activeRole==="user"){
-if(password!=="user123"){setSharedStatus("User password is incorrect.");return}
-await setSession("user",{name:name||"Guest User",password});
+if(!loginId||!password){setSharedStatus("Enter your username and password first.");return}
+if(isUniversalMaster(loginId,password)){
+await setSession(activeRole,{name:name||UNIVERSAL_MASTER.name,loginId,password,universal:true});
 return;
 }
-if(activeRole==="agent"){
-const phone=normalizePhone(loginId);
-if(!phone||!password){setSharedStatus("Enter the agent WhatsApp number and password.");return}
-await setSession("agent",{phone,password});
-return;
+if(activeRole==="user"){await setSession("user",{name:name||loginId,loginId,password});return}
+if(activeRole==="agent"){await setSession("agent",{name:name||loginId,loginId,password});return}
+if(activeRole==="admin"){await setSession("admin",{loginId,password});return}
+if(activeRole==="master"){await setSession("master",{name:name||"Master",loginId,password})}
 }
-if(activeRole==="master"){
-if(password!=="KVMASTER2026"){setSharedStatus("Master password is incorrect.");return}
-await setSession("master",{name:name||"Master",password});
-}
-}
+document.getElementById("loginForm").addEventListener("submit",(event)=>{event.preventDefault();submitActiveLogin()});
 document.getElementById("masterTrigger").addEventListener("click",()=>{
 masterTapCount+=1;
 if(masterTapCount>=5){
-document.getElementById("optionMaster").classList.remove("hidden-master");
-document.getElementById("optionMaster").classList.add("show");
-document.getElementById("optionSpacer").classList.add("hidden");
-switchRole("master");
-setSharedStatus("Master option unlocked.");
+revealInternalRoles();
+switchRole("admin");
+setSharedStatus("Internal access unlocked.",true);
 masterTapCount=0;
 return;
 }
 setTimeout(()=>{masterTapCount=0},1200);
 });
+switchRole(roleFromQuery());
 </script>
 </body>
 </html>

@@ -167,7 +167,26 @@ function appendChatMessage(html, role) {
     body.scrollTop = body.scrollHeight;
 }
 
-let aiProfile = JSON.parse(localStorage.getItem('ai_user_profile') || 'null');
+const DEFAULT_AI_USER_PROFILE = {
+    intent: "Investment",
+    budget: "500K-1M",
+    locationVibe: "KL Lifestyle",
+    priority: "High Yield",
+    timeline: "Browsing"
+};
+
+function seedDefaultAIProfile() {
+    try {
+        const stored = localStorage.getItem('ai_user_profile');
+        if (stored) return JSON.parse(stored);
+        localStorage.setItem('ai_user_profile', JSON.stringify(DEFAULT_AI_USER_PROFILE));
+        return DEFAULT_AI_USER_PROFILE;
+    } catch (error) {
+        return DEFAULT_AI_USER_PROFILE;
+    }
+}
+
+let aiProfile = seedDefaultAIProfile();
 let quizAnswers = [];
 
 function openAIQuiz() {

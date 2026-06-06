@@ -1,0 +1,49 @@
+{
+  "name": "RealityGenius Malaysia",
+  "short_name": "RealityGenius",
+  "description": "AI property search, agent trust, document workflows, and live marketplace dashboards for Malaysia.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#071629",
+  "theme_color": "#071629",
+  "categories": ["business", "finance", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Buyer Search",
+      "short_name": "Search",
+      "description": "Open the buyer property search.",
+      "url": "/user.html",
+      "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Agent Dashboard",
+      "short_name": "Agent",
+      "description": "Open live agent tools.",
+      "url": "/agent.html",
+      "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Backend Console",
+      "short_name": "Backend",
+      "description": "Open the internal admin and owner console.",
+      "url": "/backend",
+      "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

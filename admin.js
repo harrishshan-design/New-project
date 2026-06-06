@@ -4,156 +4,33 @@ const STORAGE_KEYS = {
   listings: "rg_admin_listings",
   reports: "rg_admin_reports",
   auditLogs: "rg_admin_audit_logs",
-  notifications: "rg_admin_notifications"
+  notifications: "rg_admin_notifications",
+  agentListings: "kvai_agent_listings",
+  buyerLiveListings: "rg_live_buyer_listings"
 };
 
 const ADMIN_ID = "admin-gatekeeper-01";
 
-const marketAverages = {
-  "Mont Kiara": 1180000,
-  Bangsar: 1420000,
-  "Bukit Jalil": 710000,
-  "Petaling Jaya": 780000,
-  "Desa ParkCity": 1650000
-};
+const marketAverages = window.RealtyGeniusMarketAverages || {};
 
 const seedAgents = [
   {
-    id: "ag-100",
-    name: "Alex Wong",
-    email: "alex@agency.my",
-    renNumber: "REN12345",
-    agencyName: "PrimeNest Realty",
-    icDocumentUrl: "s3://agent-kyc/alex-wong-ic.pdf",
-    icHash: "ic-700101-14-5512",
+    id: "ag-arvind",
+    name: "Arvind Govindasamy",
+    email: "arvind@realtygenius.my",
+    renNumber: "REN-PENDING",
+    agencyName: "RealtyGenius IQI Project Desk",
+    icDocumentUrl: "profile://owner-agent/arvind-govindasamy",
+    icHash: "owner-agent-arvind-govindasamy",
     status: "approved",
     strikes: 0,
-    createdAt: "2026-04-18T09:15:00+08:00"
-  },
-  {
-    id: "ag-101",
-    name: "Sarah Lee",
-    email: "sarah.lee@agency.my",
-    renNumber: "REN88421",
-    agencyName: "PrimeNest Realty",
-    icDocumentUrl: "s3://agent-kyc/sarah-lee-ic.pdf",
-    icHash: "ic-880412-10-1098",
-    status: "pending",
-    strikes: 0,
-    createdAt: "2026-05-01T10:30:00+08:00"
-  },
-  {
-    id: "ag-102",
-    name: "Darren Lim",
-    email: "darren.lim@fastmail.my",
-    renNumber: "REN12345",
-    agencyName: "Metro Axis Realty",
-    icDocumentUrl: "s3://agent-kyc/darren-lim-ic.pdf",
-    icHash: "ic-850909-14-6220",
-    status: "pending",
-    strikes: 0,
-    createdAt: "2026-05-01T11:45:00+08:00"
-  },
-  {
-    id: "ag-103",
-    name: "Maya Tan",
-    email: "maya.tan@agency.my",
-    renNumber: "REN77200",
-    agencyName: "PrimeNest Realty",
-    icDocumentUrl: "s3://agent-kyc/maya-tan-ic.pdf",
-    icHash: "ic-880412-10-1098",
-    status: "pending",
-    strikes: 0,
-    createdAt: "2026-05-02T08:20:00+08:00"
-  },
-  {
-    id: "ag-104",
-    name: "Ben Tan",
-    email: "ben@agency.my",
-    renNumber: "REN67890",
-    agencyName: "PrimeNest Realty",
-    icDocumentUrl: "s3://agent-kyc/ben-tan-ic.pdf",
-    icHash: "ic-780222-10-4450",
-    status: "approved",
-    strikes: 2,
-    createdAt: "2026-04-10T15:10:00+08:00"
+    createdAt: "2026-05-16T09:00:00+08:00"
   }
 ];
 
-const seedListings = [
-  {
-    id: "ls-201",
-    agentId: "ag-101",
-    title: "Skyline Residence Below Market",
-    price: 790000,
-    location: "Mont Kiara",
-    status: "pending_qc",
-    imageUrl: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=80",
-    imageResolution: 680,
-    blurScore: 0.42,
-    imageHash: "img-skyline-a",
-    createdAt: "2026-05-02T09:10:00+08:00"
-  },
-  {
-    id: "ls-202",
-    agentId: "ag-100",
-    title: "Bangsar Hill Collection",
-    price: 1410000,
-    location: "Bangsar",
-    status: "pending_qc",
-    imageUrl: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=80",
-    imageResolution: 1280,
-    blurScore: 0.08,
-    imageHash: "img-bangsar-1",
-    createdAt: "2026-05-01T17:30:00+08:00"
-  },
-  {
-    id: "ls-203",
-    agentId: "ag-102",
-    title: "Skyline Residence Duplicate",
-    price: 800000,
-    location: "Mont Kiara",
-    status: "pending_qc",
-    imageUrl: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=80",
-    imageResolution: 640,
-    blurScore: 0.51,
-    imageHash: "img-skyline-a",
-    createdAt: "2026-05-02T10:05:00+08:00"
-  }
-];
+const seedListings = window.RealtyGeniusAdminListings || [];
 
-const seedReports = [
-  {
-    id: "rp-301",
-    userId: "usr-9001",
-    listingId: "ls-201",
-    agentId: "ag-101",
-    type: "fake_listing",
-    description: "Buyer says the unit photos were reused from another portal and price looked too low.",
-    status: "open",
-    createdAt: "2026-05-02T12:15:00+08:00"
-  },
-  {
-    id: "rp-302",
-    userId: "usr-9002",
-    listingId: "ls-203",
-    agentId: "ag-102",
-    type: "scam",
-    description: "Agent asked for direct booking fee outside RealtyGenius escrow.",
-    status: "investigating",
-    createdAt: "2026-05-02T14:45:00+08:00"
-  },
-  {
-    id: "rp-303",
-    userId: "usr-9003",
-    listingId: "ls-202",
-    agentId: "ag-104",
-    type: "unresponsive",
-    description: "Agent missed two confirmed viewing windows.",
-    status: "open",
-    createdAt: "2026-05-03T09:00:00+08:00"
-  }
-];
+const seedReports = window.RealtyGeniusAdminReports || [];
 
 const seedAuditLogs = [
   {
@@ -170,15 +47,16 @@ const seedAuditLogs = [
 const seedNotifications = [
   {
     id: "nt-1",
-    title: "High risk listing detected",
-    message: "Skyline Residence Below Market has price and image-quality flags.",
-    createdAt: "2026-05-03T09:10:00+08:00"
+    title: "IQI project import ready",
+    message: `${seedListings.length} uploaded IQI Global projects are waiting in the Listing QC desk.`,
+    createdAt: new Date().toISOString()
   }
 ];
 
 const state = {
   section: "agents",
   activeListingId: null,
+  enhancerHydrated: false,
   agents: readStore(STORAGE_KEYS.agents, seedAgents),
   verificationLogs: readStore(STORAGE_KEYS.verificationLogs, []),
   listings: readStore(STORAGE_KEYS.listings, seedListings),
@@ -196,6 +74,8 @@ const els = {
   suspendedCount: document.getElementById("suspendedCount"),
   runScanButton: document.getElementById("runScanButton"),
   resetDemoButton: document.getElementById("resetDemoButton"),
+  pushPermissionButton: document.getElementById("pushPermissionButton"),
+  pushStatus: document.getElementById("pushStatus"),
   agentQueue: document.getElementById("agentQueue"),
   agentRiskList: document.getElementById("agentRiskList"),
   listingQueue: document.getElementById("listingQueue"),
@@ -227,6 +107,258 @@ function readStore(key, fallback) {
 
 function writeStore(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function slugify(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+function adminApiBaseUrl() {
+  if (window.location.protocol === "file:") return "http://localhost:3000/api";
+  return `${window.location.origin}/api`;
+}
+
+function adminToken() {
+  return localStorage.getItem("rg_token") || "";
+}
+
+function listingKey(listing) {
+  return String(listing?.agentListingId || listing?.id || listing?.enhancementId || "");
+}
+
+function estimateBedrooms(listing) {
+  if (Number.isFinite(Number(listing?.bedrooms))) return Number(listing.bedrooms);
+  if (/studio|soho|suite/i.test(`${listing?.title || ""} ${listing?.propertyType || ""}`)) return 1;
+  if (/landed|terrace|semi|bungalow/i.test(`${listing?.propertyType || ""} ${listing?.title || ""}`)) return 4;
+  return 3;
+}
+
+function estimateBathrooms(listing) {
+  const bedrooms = estimateBedrooms(listing);
+  return bedrooms >= 4 ? 3 : bedrooms <= 1 ? 1 : 2;
+}
+
+function estimateSqft(listing) {
+  if (Number.isFinite(Number(listing?.sqft)) && Number(listing.sqft) > 0) return Number(listing.sqft);
+  if (/industrial|warehouse|factory/i.test(`${listing?.propertyType || ""} ${listing?.title || ""}`)) return 3200;
+  if (/landed|terrace|semi|bungalow/i.test(`${listing?.propertyType || ""} ${listing?.title || ""}`)) return 2200;
+  return 950;
+}
+
+function findAgentListing(adminListing) {
+  const key = listingKey(adminListing);
+  return readStore(STORAGE_KEYS.agentListings, []).find((item) => String(item.id) === key) || null;
+}
+
+function updateAgentListingAfterReview(adminListing, status, extras = {}) {
+  const key = listingKey(adminListing);
+  const listings = readStore(STORAGE_KEYS.agentListings, []);
+  writeStore(
+    STORAGE_KEYS.agentListings,
+    listings.map((listing) => String(listing.id) === key ? {
+      ...listing,
+      status,
+      ...extras,
+      updatedAt: new Date().toISOString()
+    } : listing)
+  );
+}
+
+function buildBuyerListingFromApproved(adminListing) {
+  const agentListing = findAgentListing(adminListing);
+  const storedPayload = adminListing.buyerPayload || {};
+  const source = {
+    ...storedPayload,
+    ...(agentListing || {})
+  };
+  const sqft = estimateSqft(source);
+  const propertyType = source.propertyType || source.type || "Condo";
+  const type = slugify(propertyType) || "condo";
+  const image = source.image || adminListing.imageUrl || "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=900&q=80";
+  const gallery = Array.isArray(source.gallery) && source.gallery.length
+    ? source.gallery.filter((item) => item?.url || item?.image || item?.display).map((item) => ({
+      ...item,
+      url: item.url || item.image || item.display
+    }))
+    : [{ label: "Front View", required: true, url: image, status: "verified" }];
+
+  return {
+    ...storedPayload,
+    id: Number(source.id || adminListing.agentListingId || adminListing.id) || Date.now(),
+    agentListingId: source.id || adminListing.agentListingId || adminListing.id,
+    source: "admin_approved_agent_listing",
+    title: source.title || adminListing.title,
+    area: source.area || adminListing.location || "Malaysia",
+    location: source.address || adminListing.location || source.area || "Malaysia",
+    type,
+    intent: /industrial|commercial|shop|office/i.test(`${propertyType} ${source.title || ""}`) ? "investment" : "family",
+    price: Number(source.price || adminListing.price || 0),
+    bedrooms: estimateBedrooms(source),
+    bathrooms: estimateBathrooms(source),
+    beds: estimateBedrooms(source),
+    baths: estimateBathrooms(source),
+    sqft,
+    psf: sqft ? Math.round(Number(source.price || adminListing.price || 0) / sqft) : 0,
+    image,
+    gallery,
+    galleryCount: gallery.length,
+    liveNow: Math.max(3, Number(source.enquiries || 0) + 3),
+    aiScore: Number(source.confidenceScore || storedPayload.confidenceScore || 92),
+    yield: Number(source.yield || 4.3),
+    growth: Number(source.growth || 5.2),
+    summary: source.summary || `${propertyType} in ${source.area || adminListing.location}. Approved by RealityGenius admin QC before buyer visibility.`,
+    vibe: source.vibe || "Admin-approved agent listing",
+    tags: [type, slugify(source.area || adminListing.location), "admin-approved"].filter(Boolean),
+    badge: "admin-approved",
+    verifiedType: "agent",
+    verificationSource: "admin_approved",
+    adminApproved: true,
+    approvalStatus: "approved",
+    liveStatus: "approved_live",
+    confidenceScore: Number(source.confidenceScore || storedPayload.confidenceScore || 92),
+    freshnessStatus: "fresh",
+    createdAt: source.createdAt || adminListing.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    mapLink: `https://www.google.com/maps/search/${encodeURIComponent(source.address || adminListing.location || source.area || source.title || "")}`,
+    modelUrl: source.modelUrl || source.arLink || "",
+    arLink: source.arLink || "",
+    agentId: adminListing.agentId || source.agentId || "agent-live",
+    agentName: adminListing.agentName || source.agentName || "RealityGenius Agent",
+    agencyName: source.agencyName || "RealityGenius Agent Network"
+  };
+}
+
+function publishApprovedListingToBuyer(adminListing) {
+  const buyerListing = buildBuyerListingFromApproved(adminListing);
+  const key = String(buyerListing.agentListingId || buyerListing.id);
+  const existing = readStore(STORAGE_KEYS.buyerLiveListings, [])
+    .filter((item) => String(item.agentListingId || item.id) !== key);
+  writeStore(STORAGE_KEYS.buyerLiveListings, [buyerListing, ...existing]);
+}
+
+function removeBuyerListing(adminListing) {
+  const key = listingKey(adminListing);
+  writeStore(
+    STORAGE_KEYS.buyerLiveListings,
+    readStore(STORAGE_KEYS.buyerLiveListings, []).filter((item) => String(item.agentListingId || item.id) !== key)
+  );
+}
+
+function enhancementStatusToListingStatus(status) {
+  if (status === "approved_live") return "approved";
+  if (status === "rejected") return "rejected";
+  if (status === "pending_admin_review") return "pending_qc";
+  return "draft";
+}
+
+function mapEnhancementToAdminListing(enhancement) {
+  const image = enhancement.imageAnalysis || {};
+  const flags = [];
+  if ((enhancement.imageScore || 0) < 70) {
+    flags.push({
+      flagType: "image_quality",
+      severity: (enhancement.imageScore || 0) < 50 ? "high" : "medium",
+      message: `Image quality score is ${enhancement.imageScore || 0}/100.`
+    });
+  }
+  if ((enhancement.seoScore || 0) < 70) {
+    flags.push({
+      flagType: "seo_quality",
+      severity: "medium",
+      message: `SEO score is ${enhancement.seoScore || 0}/100.`
+    });
+  }
+  if (image.duplicatePhotoCount) {
+    flags.push({
+      flagType: "duplicate_photos",
+      severity: "medium",
+      message: `${image.duplicatePhotoCount} duplicate photo${image.duplicatePhotoCount === 1 ? "" : "s"} detected.`
+    });
+  }
+  if (Array.isArray(image.missingRoomPhotos) && image.missingRoomPhotos.length) {
+    flags.push({
+      flagType: "missing_room_photos",
+      severity: "medium",
+      message: `Missing room photos: ${image.missingRoomPhotos.join(", ")}.`
+    });
+  }
+
+  return {
+    id: enhancement.id,
+    enhancementId: enhancement.id,
+    agentId: enhancement.agentId || "agent-live",
+    agentName: enhancement.agentEmail || "RealityGenius Agent",
+    title: enhancement.optimizedTitle || enhancement.originalTitle,
+    originalTitle: enhancement.originalTitle,
+    price: 0,
+    location: enhancement.location || "Malaysia",
+    status: enhancementStatusToListingStatus(enhancement.status),
+    imageUrl: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=900&q=80",
+    imageResolution: enhancement.imageScore >= 70 ? 1280 : 640,
+    blurScore: enhancement.imageScore >= 70 ? 0.1 : 0.5,
+    imageHash: `enhancer-${enhancement.id}`,
+    seoScore: enhancement.seoScore,
+    imageScore: enhancement.imageScore,
+    optimizedDescription: enhancement.optimizedDescription,
+    originalDescription: enhancement.originalDescription,
+    portalOutputs: enhancement.platformOptimizations || {},
+    adminNotes: enhancement.adminNotes || "",
+    aiFlags: flags,
+    createdAt: enhancement.createdAt || new Date().toISOString(),
+    updatedAt: enhancement.updatedAt || new Date().toISOString()
+  };
+}
+
+async function hydrateListingEnhancements() {
+  if (state.enhancerHydrated) return;
+  const token = adminToken();
+  if (!token) return;
+  state.enhancerHydrated = true;
+
+  try {
+    const response = await fetch(`${adminApiBaseUrl()}/listing-enhancer?scope=admin`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) return;
+    const result = await response.json();
+    const remoteListings = (result.enhancements || []).map(mapEnhancementToAdminListing);
+    const remoteIds = new Set(remoteListings.map((listing) => String(listing.enhancementId || listing.id)));
+    state.listings = [
+      ...remoteListings,
+      ...state.listings.filter((listing) => !remoteIds.has(String(listing.enhancementId || listing.id)))
+    ];
+    persistAll();
+    renderAll();
+  } catch {
+    state.enhancerHydrated = false;
+  }
+}
+
+async function reviewRemoteEnhancement(listing, status) {
+  if (!listing?.enhancementId || String(listing.enhancementId).startsWith("local-")) return null;
+  const token = adminToken();
+  if (!token) return null;
+
+  const response = await fetch(`${adminApiBaseUrl()}/listing-enhancer`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      mode: "admin_review",
+      id: listing.enhancementId,
+      status,
+      adminNotes: status === "approved_live" ? "Approved by admin QC desk." : "Rejected by admin QC desk."
+    })
+  });
+
+  if (!response.ok) return null;
+  const result = await response.json();
+  return result.enhancement ? mapEnhancementToAdminListing(result.enhancement) : null;
 }
 
 function persistAll() {
@@ -279,6 +411,12 @@ function addNotification(title, message) {
     },
     ...state.notifications
   ];
+  window.RealtyGeniusPush?.notify(title, message, {
+    tag: `rg-admin-${String(title).toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+    url: location.origin && location.origin !== "null"
+      ? `${location.origin}/backend/admin.html`
+      : new URL("admin.html", location.href).href
+  });
 }
 
 function scanAgent(agent) {
@@ -460,13 +598,15 @@ function renderListings() {
   els.listingPreview.innerHTML = `
     <img class="listing-image" src="${listing.imageUrl}" alt="${listing.title}">
     <h4>${listing.title}</h4>
-    <p class="subtext">${listing.location} - Submitted by ${agent?.name || "Unknown agent"}</p>
+    <p class="subtext">${listing.location} - Submitted by ${agent?.name || listing.agentName || "Unknown agent"}</p>
     <div class="listing-meta-grid">
-      <div><span>Asking price</span><strong>${money(listing.price)}</strong></div>
+      <div><span>Asking price</span><strong>${listing.price ? money(listing.price) : "Agent draft"}</strong></div>
       <div><span>Market average</span><strong>${money(average)}</strong></div>
-      <div><span>Image quality</span><strong>${listing.imageResolution}px</strong></div>
+      <div><span>Image quality</span><strong>${listing.imageScore ? `${listing.imageScore}/100` : `${listing.imageResolution}px`}</strong></div>
+      <div><span>SEO score</span><strong>${listing.seoScore ?? "Manual QC"}</strong></div>
       <div><span>Status</span><strong>${listing.status.replace(/_/g, " ")}</strong></div>
     </div>
+    ${listing.optimizedDescription ? `<article class="drawer-card"><strong>Enhanced description</strong><p>${listing.optimizedDescription}</p></article>` : ""}
   `;
 
   els.listingWarnings.innerHTML = `
@@ -476,7 +616,7 @@ function renderListings() {
       ${flags.length ? flags.map((flag) => `
         <article class="flag-card">
           <span class="severity-pill ${flag.severity}">${flag.severity}</span>
-          <strong>${flag.flagType.replace(/_/g, " ")}</strong>
+          <strong>${(flag.flagType || flag.flag_type || "qc_flag").replace(/_/g, " ")}</strong>
           <p>${flag.message}</p>
         </article>
       `).join("") : `<article class="flag-card"><strong>No AI flags</strong><p>Price, image quality, and duplicate checks are within threshold.</p></article>`}
@@ -639,10 +779,23 @@ function updateAgentStatus(id, status) {
   showToast(`Agent ${status}`);
 }
 
-function approveListing(id) {
+async function approveListing(id) {
   const listing = findListing(id);
   if (!listing) return;
-  state.listings = state.listings.map((item) => item.id === id ? { ...item, status: "approved" } : item);
+  const remote = await reviewRemoteEnhancement(listing, "approved_live");
+  const approvedListing = { ...listing, ...(remote || {}), status: "approved", approvedAt: new Date().toISOString() };
+  state.listings = state.listings.map((item) => item.id === id ? approvedListing : item);
+  if (remote) {
+    state.listings = state.listings.map((item) => item.id === id ? { ...remote, status: "approved" } : item);
+  }
+  publishApprovedListingToBuyer(approvedListing);
+  updateAgentListingAfterReview(approvedListing, "Live", {
+    adminApproved: true,
+    approvalStatus: "approved",
+    liveStatus: "approved_live",
+    verificationSource: "admin_approved",
+    approvedAt: approvedListing.approvedAt
+  });
   addAudit("listing_approved", "listing", id, `${listing.title} pushed to live feed.`);
   addNotification("Listing approved", `${listing.title} is live.`);
   persistAll();
@@ -650,10 +803,23 @@ function approveListing(id) {
   showToast("Listing approved");
 }
 
-function rejectListing(id) {
+async function rejectListing(id) {
   const listing = findListing(id);
   if (!listing) return;
-  state.listings = state.listings.map((item) => item.id === id ? { ...item, status: "rejected" } : item);
+  const remote = await reviewRemoteEnhancement(listing, "rejected");
+  const rejectedListing = { ...listing, ...(remote || {}), status: "rejected", rejectedAt: new Date().toISOString() };
+  state.listings = state.listings.map((item) => item.id === id ? rejectedListing : item);
+  if (remote) {
+    state.listings = state.listings.map((item) => item.id === id ? { ...remote, status: "rejected" } : item);
+  }
+  removeBuyerListing(rejectedListing);
+  updateAgentListingAfterReview(rejectedListing, "Rejected", {
+    adminApproved: false,
+    approvalStatus: "rejected",
+    liveStatus: "rejected",
+    verificationSource: "agent",
+    rejectedAt: rejectedListing.rejectedAt
+  });
   addAudit("listing_rejected", "listing", id, `${listing.title} rejected with QC feedback.`);
   addNotification("Listing rejected", `${listing.title} was rejected by QC.`);
   persistAll();
@@ -664,8 +830,18 @@ function rejectListing(id) {
 function suspendListingFromReport(reportId) {
   const report = state.reports.find((item) => item.id === reportId);
   if (!report) return;
+  const listing = state.listings.find((item) => item.id === report.listingId);
   state.listings = state.listings.map((listing) => listing.id === report.listingId ? { ...listing, status: "rejected" } : listing);
   state.reports = state.reports.map((item) => item.id === reportId ? { ...item, status: "investigating" } : item);
+  if (listing) {
+    removeBuyerListing(listing);
+    updateAgentListingAfterReview(listing, "Rejected", {
+      adminApproved: false,
+      approvalStatus: "rejected",
+      liveStatus: "rejected",
+      verificationSource: "agent"
+    });
+  }
   addAudit("listing_suspended", "listing", report.listingId, `Suspended from report ${reportId}.`);
   addNotification("Listing suspended", `Listing ${report.listingId} was suspended from report review.`);
   persistAll();
@@ -752,6 +928,11 @@ function bindEvents() {
 
   els.runScanButton.addEventListener("click", runAiScan);
   els.resetDemoButton.addEventListener("click", resetDemo);
+  window.RealtyGeniusPush?.installButton(els.pushPermissionButton, (result) => {
+    if (result === "granted") showToast("Admin push notifications enabled");
+    else if (result === "denied") showToast("Browser blocked push notifications");
+    else showToast("Push notifications are unavailable here");
+  });
   els.closeDrawerButton.addEventListener("click", closeDrawer);
   els.noticeForm.addEventListener("submit", submitNotice);
 
@@ -784,3 +965,4 @@ runAiScan(false);
 const initialSection = location.hash.replace("#", "") || "agents";
 switchSection(["agents", "listings", "reports", "audit", "notifications"].includes(initialSection) ? initialSection : "agents");
 bindEvents();
+hydrateListingEnhancements();

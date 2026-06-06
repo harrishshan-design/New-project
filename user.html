@@ -3,6 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#071629">
+  <meta property="og:image" content="https://realitygenius.company/brand/realitygenius-og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://realitygenius.company/brand/realitygenius-og.png">
   <title>Klang Valley AI | Buyer Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,14 +20,23 @@
   <link rel="stylesheet" href="./user.css">
   <link rel="stylesheet" href="./ar-viewer.css">
   <link rel="stylesheet" href="./negotiation-ui.css">
+  <script src="./rg-error-logger.js" data-rg-surface="user"></script>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-</head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-100QC1J9RT"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-100QC1J9RT');
+  </script></head>
 <body>
   <div class="ambient ambient-one"></div>
   <div class="ambient ambient-two"></div>
 
   <div class="shell">
-    <header class="topbar">
+    <header class="topbar" id="dashboardTop">
       <div class="brand-wrap">
         <div class="brand-mark"><i class="fa-solid fa-building-circle-check"></i></div>
         <div>
@@ -38,6 +56,11 @@
           <span>Alerts</span>
           <strong id="notificationsCount">0</strong>
         </button>
+        <button class="toolbar-button" id="pushPermissionButton" type="button">
+          <i class="fa-solid fa-bolt"></i>
+          <span>Push</span>
+          <strong id="pushStatus" data-push-status>Off</strong>
+        </button>
       </div>
     </header>
 
@@ -55,7 +78,7 @@
             <div class="search-row">
               <div class="input-shell input-shell-grow">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input id="searchInput" type="text" placeholder="Search area, tower, vibe, or landmark">
+                <input id="searchInput" type="text" placeholder="Search area, tower, landmark">
               </div>
               <div class="input-shell select-shell">
                 <i class="fa-solid fa-arrow-down-wide-short"></i>
@@ -67,15 +90,19 @@
                   <option value="growth-high">Growth Potential</option>
                 </select>
               </div>
+              <button class="save-search-button" id="saveSearchButton" type="button">
+                <i class="fa-solid fa-bell"></i>
+                <span>Save Alert</span>
+              </button>
             </div>
 
             <div class="filter-row">
               <button class="filter-chip active" data-filter="all" type="button">All Picks</button>
               <button class="filter-chip" data-filter="condo" type="button">City Condo</button>
               <button class="filter-chip" data-filter="family" type="button">Family</button>
-              <button class="filter-chip" data-filter="investment" type="button">Investor</button>
               <button class="filter-chip" data-filter="luxury" type="button">Luxury</button>
             </div>
+            <div class="search-alert-strip" id="searchAlertStrip"></div>
           </div>
 
           <div class="hero-kpis">
@@ -128,10 +155,32 @@
             </div>
             <div class="engagement-list" id="engagementList"></div>
           </article>
+
+          <article class="gamification-card" id="gamificationPanel">
+            <div class="section-topline">
+              <span class="eyebrow soft">Buyer Quest</span>
+              <span class="quest-level" id="levelValue">Level 1</span>
+            </div>
+            <div class="xp-row">
+              <div>
+                <span>XP earned</span>
+                <strong id="xpValue">0 XP</strong>
+              </div>
+              <div>
+                <span>Streak</span>
+                <strong id="streakValue">0 days</strong>
+              </div>
+            </div>
+            <div class="achievement-track" aria-hidden="true">
+              <div class="achievement-fill" id="achievementMeter"></div>
+            </div>
+            <div class="quest-list" id="questList"></div>
+            <div class="badge-list" id="badgeList"></div>
+          </article>
         </aside>
       </section>
 
-      <section class="recommendation-section">
+      <section class="recommendation-section" id="recommendations">
         <div class="section-head">
           <div>
             <div class="eyebrow">Shortlist Brain</div>
@@ -141,7 +190,18 @@
         <div class="recommendation-grid" id="recommendationGrid"></div>
       </section>
 
-      <section class="feed-section">
+      <section class="personalized-section" id="personalizedSection" hidden>
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Personalized For You</div>
+            <h3>More like your recent interest</h3>
+            <p id="personalizedReason" class="section-subcopy"></p>
+          </div>
+        </div>
+        <div class="personalized-grid" id="personalizedGrid"></div>
+      </section>
+
+      <section class="feed-section" id="explore">
         <div class="section-head">
           <div>
             <div class="eyebrow">Property Feed</div>
@@ -165,7 +225,7 @@
         <div class="feed-sentinel" id="feedSentinel" aria-hidden="true"></div>
       </section>
 
-      <section class="saved-section">
+      <section class="saved-section" id="savedHomes">
         <div class="section-head">
           <div>
             <div class="eyebrow">Saved Properties</div>
@@ -176,6 +236,25 @@
       </section>
     </main>
   </div>
+
+  <nav class="mobile-quick-nav" aria-label="Buyer quick navigation">
+    <a href="#dashboardTop">
+      <i class="fa-solid fa-house"></i>
+      <span>Home</span>
+    </a>
+    <a href="#recommendations">
+      <i class="fa-solid fa-star"></i>
+      <span>For You</span>
+    </a>
+    <a href="#explore">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <span>Explore</span>
+    </a>
+    <a href="#savedHomes">
+      <i class="fa-solid fa-heart"></i>
+      <span>Saved</span>
+    </a>
+  </nav>
 
   <aside class="drawer" id="favoritesDrawer" aria-hidden="true">
     <div class="drawer-head">
@@ -212,6 +291,7 @@
       <div class="modal-grid">
         <section class="modal-visual">
           <img id="modalImage" class="modal-image" alt="Property preview">
+          <div class="modal-gallery" id="modalGallery" aria-label="Property photo gallery"></div>
           <div class="modal-stats" id="modalStats"></div>
         </section>
 
@@ -467,6 +547,13 @@
   <script src="./negotiation-store.js"></script>
   <script src="./negotiation-assistant.js"></script>
   <script src="./ar-viewer.js"></script>
+  <script src="./property-data.js"></script>
+  <script src="./rg-push-notifications.js" data-push-role="user"></script>
   <script src="./user.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./rg-trust-loop.js" data-trust-role="user"></script>
+  <script src="./rg-behavior-loop.js" data-behavior-role="user"></script>
+<script src="./rg-feedback-gate.js?v=39" data-feedback-role="user"></script>
+  <script src="./mobile-app-shell.js?v=48" data-mobile-role="user"></script>
 </body>
 </html>

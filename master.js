@@ -9,7 +9,8 @@ const STORAGE_KEYS = {
   killSwitches: "rg_master_kill_switches",
   ownerAudit: "rg_master_owner_audit",
   globalAlert: "rg_global_platform_alert",
-  agencyBans: "rg_master_agency_bans"
+  agencyBans: "rg_master_agency_bans",
+  adminMasterTasks: "rg_master_admin_tasks"
 };
 
 const DEFAULT_ALGORITHM = {
@@ -27,14 +28,14 @@ const seedVoiceTranscripts = [
   {
     id: "voice-001",
     type: "voice",
-    title: "AI Voice Agent cold call with landlord",
+    title: "AI Voice Agent project availability call",
     participants: "AI Voice Agent -> Mr Lim",
-    property: "Skyline Residence",
+    property: "Dwi Aurora Residence @ Petaling Jaya",
     createdAt: new Date(Date.now() - 34 * 60000).toISOString(),
     lines: [
-      { speaker: "AI Voice", text: "Hi Mr Lim, I am calling from RealtyGenius about your Mont Kiara unit. Are you open to a verified agent viewing request this week?" },
-      { speaker: "Landlord", text: "Only if the buyer is serious. I do not want window shoppers." },
-      { speaker: "AI Voice", text: "Understood. The buyer passed DSR screening and the agent can confirm a Saturday slot." }
+      { speaker: "AI Voice", text: "Hi, I am calling from RealtyGenius about Dwi Aurora Residence @ Petaling Jaya. Can we confirm latest package and viewing availability this week?" },
+      { speaker: "Project Desk", text: "Please verify the buyer profile first and share the preferred date." },
+      { speaker: "AI Voice", text: "Understood. The buyer can complete DSR screening before the agent requests a slot." }
     ]
   },
   {
@@ -42,7 +43,7 @@ const seedVoiceTranscripts = [
     type: "voice",
     title: "AI Voice Agent lead qualification",
     participants: "AI Voice Agent -> Buyer Alya",
-    property: "Bangsar Hill Collection",
+    property: "Emerald Residences",
     createdAt: new Date(Date.now() - 78 * 60000).toISOString(),
     lines: [
       { speaker: "AI Voice", text: "Are you buying for own stay, investment, or both?" },
@@ -77,6 +78,12 @@ const els = {
   saasMetric: document.getElementById("saasMetric"),
   bankReferralMetric: document.getElementById("bankReferralMetric"),
   logMetric: document.getElementById("logMetric"),
+  terminalClock: document.getElementById("terminalClock"),
+  tapeEscrow: document.getElementById("tapeEscrow"),
+  tapeSaas: document.getElementById("tapeSaas"),
+  tapeBank: document.getElementById("tapeBank"),
+  tapeLogs: document.getElementById("tapeLogs"),
+  tapeStatus: document.getElementById("tapeStatus"),
   refreshButton: document.getElementById("refreshButton"),
   searchInput: document.getElementById("searchInput"),
   logTypeFilter: document.getElementById("logTypeFilter"),
@@ -131,6 +138,16 @@ function dateTime(value) {
   return new Date(value).toLocaleString("en-MY", { dateStyle: "medium", timeStyle: "short" });
 }
 
+function terminalTime() {
+  return new Date().toLocaleTimeString("en-MY", {
+    timeZone: "Asia/Kuala_Lumpur",
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+}
+
 function statusText(value) {
   return String(value || "unknown").replace(/_/g, " ");
 }
@@ -153,6 +170,27 @@ function getAgentListings() {
 
 function getAdminAgents() {
   return readStore(STORAGE_KEYS.adminAgents, []);
+}
+
+function getAdminMasterTasks() {
+  return readStore(STORAGE_KEYS.adminMasterTasks, []);
+}
+
+function buildAdminTaskLogs() {
+  return getAdminMasterTasks().map((task) => ({
+    id: `admin-task-${task.id}`,
+    type: "admin_task",
+    title: task.title || "Admin task pushed to Master",
+    participants: `Admin Gatekeeper -> Master`,
+    property: task.agentName || task.agentEmail || "Owner review queue",
+    createdAt: task.createdAt || new Date().toISOString(),
+    summary: `${statusText(task.priority || "normal")} priority - ${statusText(task.status || "open")}`,
+    lines: [
+      { speaker: "Admin task", text: task.message || "Admin requested owner review." },
+      { speaker: "Target", text: `${task.agentName || "Agent"} ${task.agentEmail ? `<${task.agentEmail}>` : ""}` },
+      { speaker: "Status", text: `${statusText(task.status || "open")} - ${statusText(task.priority || "normal")} priority` }
+    ]
+  }));
 }
 
 function buildNegotiationLogs() {
@@ -208,11 +246,74 @@ function buildEscrowLogs() {
 
 function getAllLogs() {
   return [
+    ...buildAdminTaskLogs(),
     ...buildNegotiationLogs(),
     ...seedVoiceTranscripts,
     ...buildCobrokeLogs(),
     ...buildEscrowLogs()
   ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+function ensureMasterTaskPanel() {
+  let panel = document.getElementById("masterTaskPanel");
+  if (panel) return panel;
+  panel = document.createElement("section");
+  panel.id = "masterTaskPanel";
+  panel.className = "section-panel master-task-panel";
+  const anchor = document.querySelector(".hero");
+  if (anchor?.parentElement) anchor.insertAdjacentElement("afterend", panel);
+  else document.querySelector(".main")?.prepend(panel);
+  return panel;
+}
+
+function updateMasterTaskStatus(taskId, status) {
+  const tasks = getAdminMasterTasks().map((task) => task.id === taskId ? {
+    ...task,
+    status,
+    updatedAt: new Date().toISOString()
+  } : task);
+  writeStore(STORAGE_KEYS.adminMasterTasks, tasks);
+  addAudit(`admin_task_${status}`, `Owner marked admin task ${taskId} as ${status}.`);
+  renderAll();
+  showToast(`Task ${status}`);
+}
+
+function renderMasterTasks() {
+  const panel = ensureMasterTaskPanel();
+  const tasks = getAdminMasterTasks();
+  panel.innerHTML = `
+    <div class="panel-head">
+      <div>
+        <div class="eyebrow">Admin-To-Master Queue</div>
+        <h3>Gatekeeper tasks pushed by admin</h3>
+      </div>
+      <div class="chip-row">
+        <span class="chip">${tasks.filter((task) => task.status !== "done").length} open</span>
+        <span class="chip">Owner review lane</span>
+      </div>
+    </div>
+    <div class="master-task-grid">
+      ${tasks.length ? tasks.slice(0, 6).map((task) => `
+        <article class="master-task-card">
+          <div class="pill-row">
+            <span class="type-pill ${task.priority === "high" ? "escrow" : ""}">${statusText(task.priority || "normal")}</span>
+            <span class="type-pill">${dateTime(task.createdAt)}</span>
+          </div>
+          <strong>${task.title}</strong>
+          <p>${task.message}</p>
+          <div class="terminal-board compact">
+            <div><span>AGENT</span><strong>${task.agentName || "Unknown"}</strong></div>
+            <div><span>EMAIL</span><strong>${task.agentEmail || "No email"}</strong></div>
+            <div><span>STATUS</span><strong>${statusText(task.status || "open")}</strong></div>
+          </div>
+          <div class="row-actions">
+            <button class="ghost-button" data-master-task-status="${task.id}" data-status="reviewing" type="button">Reviewing</button>
+            <button class="primary-button" data-master-task-status="${task.id}" data-status="done" type="button">Done</button>
+          </div>
+        </article>
+      `).join("") : `<article class="master-task-card"><strong>No admin tasks yet</strong><p>When admin clicks Push to Master on a new agent, it will appear here and in Panopticon.</p></article>`}
+    </div>
+  `;
 }
 
 function filteredLogs() {
@@ -281,6 +382,17 @@ function renderMetrics() {
   els.saasMetric.textContent = money(moneyState.saasRevenue);
   els.bankReferralMetric.textContent = money(moneyState.bankReferral);
   els.logMetric.textContent = logs.length;
+  els.tapeEscrow.textContent = money(moneyState.heldEscrow);
+  els.tapeSaas.textContent = money(moneyState.saasRevenue);
+  els.tapeBank.textContent = money(moneyState.bankReferral);
+  els.tapeLogs.textContent = logs.length;
+  els.tapeStatus.textContent = state.killSwitches.escrowFrozen ? "ESCROW FROZEN" : "NORMAL";
+  els.tapeStatus.parentElement.classList.toggle("is-risk", state.killSwitches.escrowFrozen);
+}
+
+function renderTerminalClock() {
+  if (!els.terminalClock) return;
+  els.terminalClock.textContent = `MYT ${terminalTime()}`;
 }
 
 function renderPanopticon() {
@@ -520,6 +632,7 @@ function renderAudit() {
 
 function renderAll() {
   renderMetrics();
+  renderMasterTasks();
   renderPanopticon();
   renderMoney();
   renderAlgorithmValues();
@@ -543,6 +656,11 @@ function bindEvents() {
   els.refreshButton.addEventListener("click", () => {
     renderAll();
     showToast("Streams refreshed");
+  });
+  window.RealtyGeniusPush?.installButton(document.getElementById("pushPermissionButton"), (result) => {
+    if (result === "granted") showToast("Owner push notifications enabled");
+    else if (result === "denied") showToast("Browser blocked push notifications");
+    else showToast("Push notifications are unavailable here");
   });
   els.searchInput.addEventListener("input", (event) => {
     state.search = event.target.value;
@@ -570,6 +688,12 @@ function bindEvents() {
   els.pushAlertButton.addEventListener("click", pushGlobalAlert);
   els.clearAlertButton.addEventListener("click", clearGlobalAlert);
 
+  document.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target.closest("[data-master-task-status]") : null;
+    if (!target) return;
+    updateMasterTaskStatus(target.dataset.masterTaskStatus, target.dataset.status || "reviewing");
+  });
+
   window.addEventListener("storage", (event) => {
     if (Object.values(STORAGE_KEYS).includes(event.key)) {
       state.killSwitches = readStore(STORAGE_KEYS.killSwitches, DEFAULT_KILL_SWITCHES);
@@ -583,4 +707,6 @@ syncAlgorithmInputs();
 const initialSection = location.hash.replace("#", "") || "panopticon";
 switchSection(["panopticon", "money", "algorithm", "killswitch", "audit"].includes(initialSection) ? initialSection : "panopticon");
 bindEvents();
+renderTerminalClock();
+setInterval(renderTerminalClock, 1000);
 renderAll();

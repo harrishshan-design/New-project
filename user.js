@@ -7,7 +7,10 @@ const STORAGE_KEYS = {
   feedMode: "kvai_user_feed_mode",
   guessGame: "kvai_user_guess_game",
   communityNotes: "kvai_user_community_notes",
+  savedSearches: "kvai_user_saved_searches",
+  gamification: "rg_user_gamification",
   leakProofDeals: "kvai_leak_proof_deals",
+  buyerLiveListings: "rg_live_buyer_listings",
   globalAlert: "rg_global_platform_alert",
   algorithmControls: "rg_master_algorithm_controls"
 };
@@ -18,294 +21,64 @@ const DEFAULT_MASTER_ALGORITHM = {
   highYieldInvestorPriority: 35
 };
 
-const properties = [
-  {
-    id: 1,
-    title: "Skyline Residence",
-    location: "Mont Kiara, Kuala Lumpur",
-    area: "Mont Kiara",
-    type: "condo",
-    intent: "luxury",
-    price: 1180000,
-    bedrooms: 3,
-    bathrooms: 2,
-    sqft: 1240,
-    psf: 952,
-    yield: 4.6,
-    growth: 8.7,
-    aiScore: 96,
-    liveNow: 14,
-    vibe: "Low-density, polished, expatriate-friendly",
-    summary: "A clean luxury high-rise with strong rental resilience and a premium address profile.",
-    image: "https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=crop&w=1200&q=80",
-    modelUrl: "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
-    whatsapp: "60123456789"
-  },
-  {
-    id: 2,
-    title: "Parkside Terrace",
-    location: "Desa ParkCity, Kuala Lumpur",
-    area: "Desa ParkCity",
-    type: "family",
-    intent: "family",
-    price: 1680000,
-    bedrooms: 4,
-    bathrooms: 3,
-    sqft: 2320,
-    psf: 724,
-    yield: 3.7,
-    growth: 7.9,
-    aiScore: 93,
-    liveNow: 9,
-    vibe: "Family-oriented, green, highly livable",
-    summary: "A family-first landed option with excellent neighborhood quality and durable long-term demand.",
-    image: "https://images.unsplash.com/photo-1560185007-c5ca9d2c014d?auto=format&fit=crop&w=1200&q=80",
-    modelUrl: "",
-    whatsapp: "60123456789"
-  },
-  {
-    id: 3,
-    title: "Transit Point Loft",
-    location: "Bukit Jalil, Kuala Lumpur",
-    area: "Bukit Jalil",
-    type: "investment",
-    intent: "investment",
-    price: 690000,
-    bedrooms: 2,
-    bathrooms: 2,
-    sqft: 915,
-    psf: 754,
-    yield: 5.1,
-    growth: 7.2,
-    aiScore: 95,
-    liveNow: 18,
-    vibe: "Transit-linked, efficient, modern",
-    summary: "An investor-friendly city-fringe unit built around strong rental practicality and healthy yield.",
-    image: "https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80",
-    modelUrl: "https://modelviewer.dev/shared-assets/models/RobotExpressive.glb",
-    whatsapp: "60123456789"
-  },
-  {
-    id: 4,
-    title: "MRT City Nest",
-    location: "Petaling Jaya, Selangor",
-    area: "Petaling Jaya",
-    type: "condo",
-    intent: "investment",
-    price: 760000,
-    bedrooms: 2,
-    bathrooms: 2,
-    sqft: 980,
-    psf: 776,
-    yield: 4.8,
-    growth: 6.9,
-    aiScore: 91,
-    liveNow: 11,
-    vibe: "Connected, practical, lifestyle-rich",
-    summary: "A strong middle-market condo with reliable commuter appeal and stable leasing fundamentals.",
-    image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80",
-    modelUrl: "",
-    whatsapp: "60123456789"
-  },
-  {
-    id: 5,
-    title: "Bangsar Hill Collection",
-    location: "Bangsar, Kuala Lumpur",
-    area: "Bangsar",
-    type: "luxury",
-    intent: "luxury",
-    price: 1430000,
-    bedrooms: 3,
-    bathrooms: 2,
-    sqft: 1360,
-    psf: 1051,
-    yield: 4.1,
-    growth: 8.2,
-    aiScore: 90,
-    liveNow: 7,
-    vibe: "Established prestige, urban, social",
-    summary: "A premium city-core lifestyle choice for buyers who want status, convenience, and resale strength.",
-    image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80",
-    modelUrl: "",
-    whatsapp: "60123456789"
-  },
-  {
-    id: 6,
-    title: "Subang Smart Suite",
-    location: "Subang Jaya, Selangor",
-    area: "Subang Jaya",
-    type: "investment",
-    intent: "investment",
-    price: 540000,
-    bedrooms: 1,
-    bathrooms: 1,
-    sqft: 710,
-    psf: 761,
-    yield: 5.3,
-    growth: 6.1,
-    aiScore: 88,
-    liveNow: 13,
-    vibe: "Compact, efficient, tenant-friendly",
-    summary: "A smaller-format unit ideal for yield-focused buyers who want a practical entry into the market.",
-    image: "https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=1200&q=80",
-    modelUrl: "",
-    whatsapp: "60123456789"
-  },
-  {
-    id: 7,
-    title: "Lakefront Axis Residences",
-    location: "Cyberjaya, Selangor",
-    area: "Cyberjaya",
-    type: "investment",
-    intent: "investment",
-    price: 620000,
-    bedrooms: 2,
-    bathrooms: 2,
-    sqft: 890,
-    psf: 697,
-    yield: 5.4,
-    growth: 6.8,
-    aiScore: 89,
-    liveNow: 10,
-    vibe: "Lake-facing, efficient, younger tenant appeal",
-    summary: "A mid-ticket rental play with healthy yield and a practical layout near tech-driven demand.",
-    image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80",
-    modelUrl: "",
-    whatsapp: "60123456789"
-  },
-  {
-    id: 8,
-    title: "Uptown Glasshouse",
-    location: "Damansara Utama, Selangor",
-    area: "Damansara Utama",
-    type: "condo",
-    intent: "luxury",
-    price: 1320000,
-    bedrooms: 3,
-    bathrooms: 2,
-    sqft: 1280,
-    psf: 1031,
-    yield: 4.2,
-    growth: 7.8,
-    aiScore: 92,
-    liveNow: 12,
-    vibe: "Upscale, nightlife-adjacent, design-led",
-    summary: "A polished urban unit that blends lifestyle heat with a stronger-than-average resale profile.",
-    image: "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1200&q=80",
-    modelUrl: "",
-    whatsapp: "60123456789"
-  },
-  {
-    id: 9,
-    title: "Canopy Family Courtyard",
-    location: "Setia Alam, Selangor",
-    area: "Setia Alam",
-    type: "family",
-    intent: "family",
-    price: 980000,
-    bedrooms: 4,
-    bathrooms: 3,
-    sqft: 2010,
-    psf: 488,
-    yield: 3.9,
-    growth: 6.4,
-    aiScore: 87,
-    liveNow: 8,
-    vibe: "Family-scaled, calmer, weekend-livable",
-    summary: "A lower-psf family option with enough space to feel generous without overpaying for prestige.",
-    image: "https://images.unsplash.com/photo-1448630360428-65456885c650?auto=format&fit=crop&w=1200&q=80",
-    modelUrl: "",
-    whatsapp: "60123456789"
-  },
-  {
-    id: 10,
-    title: "MRT Core Residences",
-    location: "Cheras, Kuala Lumpur",
-    area: "Cheras",
-    type: "condo",
-    intent: "investment",
-    price: 575000,
-    bedrooms: 2,
-    bathrooms: 2,
-    sqft: 830,
-    psf: 693,
-    yield: 5.0,
-    growth: 6.6,
-    aiScore: 86,
-    liveNow: 16,
-    vibe: "Transit-ready, tenant practical, compact",
-    summary: "A commuter-first condo with enough affordability to keep rental demand moving.",
-    image: "https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=1200&q=80",
-    modelUrl: "",
-    whatsapp: "60123456789"
-  },
-  {
-    id: 11,
-    title: "Hillcrest Sky Villas",
-    location: "Ampang Hilir, Kuala Lumpur",
-    area: "Ampang Hilir",
-    type: "luxury",
-    intent: "luxury",
-    price: 1760000,
-    bedrooms: 3,
-    bathrooms: 3,
-    sqft: 1540,
-    psf: 1143,
-    yield: 4.0,
-    growth: 8.1,
-    aiScore: 94,
-    liveNow: 6,
-    vibe: "Diplomatic, polished, private",
-    summary: "A premium address for buyers who care about exclusivity, privacy, and top-tier urban positioning.",
-    image: "https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80",
-    modelUrl: "",
-    whatsapp: "60123456789"
-  },
-  {
-    id: 12,
-    title: "Riverline Loft",
-    location: "Old Klang Road, Kuala Lumpur",
-    area: "Old Klang Road",
-    type: "condo",
-    intent: "investment",
-    price: 655000,
-    bedrooms: 2,
-    bathrooms: 2,
-    sqft: 905,
-    psf: 724,
-    yield: 5.2,
-    growth: 6.5,
-    aiScore: 90,
-    liveNow: 15,
-    vibe: "High-velocity, renter-friendly, practical",
-    summary: "A velocity play with strong renter appetite and enough pricing logic to feel like a hidden value pocket.",
-    image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80",
-    modelUrl: "",
-    whatsapp: "60123456789"
-  },
-  {
-    id: 13,
-    title: "Private Collection Penthouse",
-    location: "KLCC, Kuala Lumpur",
-    area: "KLCC",
-    type: "luxury",
-    intent: "luxury",
-    price: 2250000,
-    bedrooms: 4,
-    bathrooms: 4,
-    sqft: 1980,
-    psf: 1136,
-    yield: 4.5,
-    growth: 9.2,
-    aiScore: 99,
-    liveNow: 4,
-    vibe: "Skyline statement, trophy-like, elite",
-    summary: "A hidden-gem recommendation reserved for high-signal users who keep saving premium and high-ROI stock.",
-    image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80",
-    modelUrl: "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
-    whatsapp: "60123456789",
-    secretOnly: true
+const BASE_PROPERTIES = window.RealtyGeniusPropertyListings || [];
+
+function readJsonStore(key, fallback) {
+  try {
+    const value = localStorage.getItem(key);
+    return value ? JSON.parse(value) : fallback;
+  } catch {
+    return fallback;
   }
+}
+
+function isAdminApprovedLiveListing(item) {
+  const approvalStatus = String(item?.approvalStatus || item?.liveStatus || item?.status || "").toLowerCase();
+  return Boolean(
+    item?.adminApproved === true
+    || item?.verificationSource === "admin_approved"
+    || approvalStatus === "approved"
+    || approvalStatus === "approved_live"
+  );
+}
+
+function mergeLiveProperties(baseProperties = BASE_PROPERTIES) {
+  const liveListings = readJsonStore(STORAGE_KEYS.buyerLiveListings, [])
+    .filter((item) => item && item.title && Number(item.price || 0) > 0 && isAdminApprovedLiveListing(item))
+    .map((item) => ({
+      ...item,
+      source: item.source || "admin_approved_agent_listing",
+      verifiedType: item.verifiedType || "agent",
+      verificationSource: item.verificationSource || "admin_approved",
+      freshnessStatus: item.freshnessStatus || "fresh",
+      confidenceScore: Number(item.confidenceScore || item.aiScore || 88),
+      aiScore: Number(item.aiScore || item.confidenceScore || 88),
+      liveNow: Number(item.liveNow || 4),
+      adminApproved: true,
+      approvalStatus: "approved",
+      liveStatus: "approved_live",
+      summary: item.summary || "Fresh live listing approved by RealityGenius admin QC."
+    }));
+  const liveIds = new Set(liveListings.map((item) => String(item.id)));
+  return [
+    ...liveListings,
+    ...baseProperties.filter((item) => !liveIds.has(String(item.id)))
+  ];
+}
+
+let properties = mergeLiveProperties();
+
+const PROPERTY_GALLERY_SLOTS = [
+  { label: "Front View", required: true },
+  { label: "Top View", required: true },
+  { label: "Room 1", required: true },
+  { label: "Bathroom", required: true },
+  { label: "Kitchen", required: true },
+  { label: "Living Area", required: false },
+  { label: "Room 2", required: false },
+  { label: "Facilities", required: false },
+  { label: "Parking / Lobby", required: false },
+  { label: "Balcony / View", required: false }
 ];
 
 const state = {
@@ -323,6 +96,8 @@ const state = {
   buyerProfile: readStore(STORAGE_KEYS.buyerProfile, { name: "", phone: "" }),
   guessGame: readStore(STORAGE_KEYS.guessGame, {}),
   communityNotes: readStore(STORAGE_KEYS.communityNotes, seedCommunityNotes()),
+  savedSearches: readStore(STORAGE_KEYS.savedSearches, []),
+  gamification: readStore(STORAGE_KEYS.gamification, seedGamification()),
   locationFallbacks: {},
   locationFallbackPending: {},
   locationView: "maps"
@@ -338,11 +113,16 @@ const els = {
   bookingCount: document.getElementById("bookingCount"),
   searchInput: document.getElementById("searchInput"),
   sortSelect: document.getElementById("sortSelect"),
+  saveSearchButton: document.getElementById("saveSearchButton"),
+  searchAlertStrip: document.getElementById("searchAlertStrip"),
   gridFeedButton: document.getElementById("gridFeedButton"),
   videoFeedButton: document.getElementById("videoFeedButton"),
   propertyGrid: document.getElementById("propertyGrid"),
   videoFeed: document.getElementById("videoFeed"),
   recommendationGrid: document.getElementById("recommendationGrid"),
+  personalizedSection: document.getElementById("personalizedSection"),
+  personalizedGrid: document.getElementById("personalizedGrid"),
+  personalizedReason: document.getElementById("personalizedReason"),
   savedGrid: document.getElementById("savedGrid"),
   favoritesDrawerList: document.getElementById("favoritesDrawerList"),
   notificationsDrawerList: document.getElementById("notificationsDrawerList"),
@@ -355,6 +135,15 @@ const els = {
   brainUnlockLabel: document.getElementById("brainUnlockLabel"),
   brainProgressFill: document.getElementById("brainProgressFill"),
   engagementList: document.getElementById("engagementList"),
+  pushPermissionButton: document.getElementById("pushPermissionButton"),
+  pushStatus: document.getElementById("pushStatus"),
+  gamificationPanel: document.getElementById("gamificationPanel"),
+  xpValue: document.getElementById("xpValue"),
+  levelValue: document.getElementById("levelValue"),
+  streakValue: document.getElementById("streakValue"),
+  questList: document.getElementById("questList"),
+  badgeList: document.getElementById("badgeList"),
+  achievementMeter: document.getElementById("achievementMeter"),
   signalBadge: document.getElementById("signalBadge"),
   feedLoading: document.getElementById("feedLoading"),
   feedSentinel: document.getElementById("feedSentinel"),
@@ -364,6 +153,7 @@ const els = {
   modalLocation: document.getElementById("modalLocation"),
   modalSummary: document.getElementById("modalSummary"),
   modalImage: document.getElementById("modalImage"),
+  modalGallery: document.getElementById("modalGallery"),
   modalStats: document.getElementById("modalStats"),
   modalAiReasons: document.getElementById("modalAiReasons"),
   modalRisk: document.getElementById("modalRisk"),
@@ -417,21 +207,18 @@ const els = {
   toast: document.getElementById("toast")
 };
 
-const feedProperties = properties.filter((property) => !property.secretOnly);
+let feedProperties = properties.filter((property) => !property.secretOnly);
 const AREA_NEARBY_MAP = {
-  "Mont Kiara": ["Bangsar", "Desa ParkCity", "Damansara Utama", "KLCC"],
-  "Desa ParkCity": ["Mont Kiara", "Setia Alam", "Petaling Jaya", "Damansara Utama"],
-  "Bukit Jalil": ["Old Klang Road", "Cheras", "Subang Jaya", "Petaling Jaya"],
-  "Petaling Jaya": ["Damansara Utama", "Subang Jaya", "Bangsar", "Mont Kiara"],
-  Bangsar: ["KLCC", "Mont Kiara", "Old Klang Road", "Petaling Jaya"],
-  "Subang Jaya": ["Petaling Jaya", "Bukit Jalil", "Setia Alam", "Cyberjaya"],
-  Cyberjaya: ["Bukit Jalil", "Subang Jaya", "Cheras", "Setia Alam"],
-  "Damansara Utama": ["Petaling Jaya", "Mont Kiara", "Bangsar", "Desa ParkCity"],
-  "Setia Alam": ["Desa ParkCity", "Subang Jaya", "Petaling Jaya", "Cyberjaya"],
-  Cheras: ["Bukit Jalil", "Old Klang Road", "KLCC", "Petaling Jaya"],
-  "Ampang Hilir": ["KLCC", "Bangsar", "Mont Kiara", "Cheras"],
-  "Old Klang Road": ["Bangsar", "Bukit Jalil", "Petaling Jaya", "Cheras"],
-  KLCC: ["Ampang Hilir", "Bangsar", "Mont Kiara", "Damansara Utama"]
+  "Bagan Serai": ["Bukit Mertajam", "Nibong Tebal", "Simpang Ampat"],
+  "Bayan Lepas": ["Pulau Pinang", "Simpang Ampat", "Seberang Perai"],
+  "Petaling Jaya": ["Subang Jaya", "Seri Kembangan", "Bayan Lepas"],
+  "Seri Kembangan": ["Petaling Jaya", "Subang Jaya", "Simpang Ampat"],
+  "Subang Jaya": ["Petaling Jaya", "Seri Kembangan", "Bayan Lepas"],
+  "Seberang Perai": ["Simpang Ampat", "Bukit Mertajam", "Pulau Pinang"],
+  "Simpang Ampat": ["Seberang Perai", "Bukit Mertajam", "Nibong Tebal"],
+  "Pulau Pinang": ["Bayan Lepas", "Simpang Ampat", "Seberang Perai"],
+  "Bukit Mertajam": ["Simpang Ampat", "Seberang Perai", "Nibong Tebal"],
+  "Nibong Tebal": ["Simpang Ampat", "Bukit Mertajam", "Bagan Serai"]
 };
 const LOCATION_INTENT_RULES = [
   {
@@ -481,6 +268,90 @@ function readStore(key, fallback) {
   }
 }
 
+function userApiBaseUrl() {
+  if (window.REALTYGENIUS_API_BASE) return window.REALTYGENIUS_API_BASE.replace(/\/+$/, "");
+  const stored = localStorage.getItem("realtygenius_api_base");
+  if (stored) return stored.replace(/\/+$/, "");
+  if (["realitygenius.company", "www.realitygenius.company"].includes(window.location.hostname)) {
+    return "https://api.realitygenius.company/api";
+  }
+  if (window.location.protocol === "file:") return "http://localhost:3000/api";
+  if (["localhost", "127.0.0.1"].includes(window.location.hostname) && window.location.port !== "3000") {
+    return "http://localhost:3000/api";
+  }
+  return `${window.location.origin}/api`;
+}
+
+function userApiUrl(path) {
+  const base = userApiBaseUrl();
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  if (base.endsWith("/api") && normalizedPath.startsWith("/api/")) {
+    return `${base}${normalizedPath.slice(4)}`;
+  }
+  return `${base}${normalizedPath}`;
+}
+
+async function hydrateBackendLiveListings() {
+  try {
+    const response = await fetch(userApiUrl("/properties"), { headers: { "Accept": "application/json" } });
+    if (!response.ok) return;
+    const payload = await response.json();
+    const remoteLive = (Array.isArray(payload) ? payload : payload.items || [])
+      .filter((item) => item?.source === "agent_live_upload" || item?.badge === "live-agent");
+    if (!remoteLive.length) return;
+    const existing = readStore(STORAGE_KEYS.buyerLiveListings, []);
+    const remoteIds = new Set(remoteLive.map((item) => String(item.id)));
+    writeStore(STORAGE_KEYS.buyerLiveListings, [
+      ...remoteLive,
+      ...existing.filter((item) => !remoteIds.has(String(item.id)))
+    ]);
+    refreshLiveBuyerListings(false);
+    resetFeedWindow();
+    renderDashboard();
+  } catch (error) {
+    if (window.RGLogError) window.RGLogError(error, { feature: "buyer_live_listing_hydration" });
+  }
+}
+
+function refreshLiveBuyerListings(shouldRender = false) {
+  properties = mergeLiveProperties();
+  feedProperties = properties.filter((property) => !property.secretOnly);
+  state.favorites = state.favorites.filter((id) => properties.some((property) => property.id === id));
+  if (!shouldRender) return;
+  resetFeedWindow();
+  renderDashboard();
+  showToast("Live agent listings updated");
+}
+
+function readSession() {
+  try {
+    return JSON.parse(localStorage.getItem("rg_session") || "null");
+  } catch {
+    return null;
+  }
+}
+
+function hasBuyerSession() {
+  const session = readSession();
+  const token = String(session?.token || "");
+  return Boolean(session && token && (session.role === "user" || session.role === "master"));
+}
+
+function loginForCurrentExplore() {
+  const next = `${window.location.pathname || "/user.html"}${window.location.search || ""}${window.location.hash || ""}`;
+  const query = new URLSearchParams({
+    role: "user",
+    next
+  });
+  window.location.assign(`/?${query.toString()}`);
+}
+
+function requireBuyerSessionForExplore() {
+  if (hasBuyerSession()) return true;
+  loginForCurrentExplore();
+  return false;
+}
+
 function writeStore(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
@@ -515,20 +386,28 @@ function seedNotifications() {
 }
 
 function seedCommunityNotes() {
-  return {
+  return window.RealtyGeniusCommunityNotes || {
     1: [
-      { id: 101, author: "Anon from Tower B", text: "The expat crowd is real here. Great polish, but lift traffic after work can get a little dramatic.", createdAt: new Date(Date.now() - 86400000).toISOString() },
-      { id: 102, author: "Quiet investor", text: "The sunset side photographs insanely well. If you are buying for vibes, pick the higher floor stack.", createdAt: new Date(Date.now() - 64000000).toISOString() }
+      { id: 101, author: "Source check", text: "Imported from the IQI Global CSV. Confirm current package, unit type, and developer promo before booking.", createdAt: new Date(Date.now() - 86400000).toISOString() }
     ],
     3: [
-      { id: 103, author: "Former tenant", text: "This one gets saved a lot for a reason. Layout is efficient and the MRT convenience is not fake marketing.", createdAt: new Date(Date.now() - 54000000).toISOString() }
+      { id: 103, author: "PJ buyer", text: "Useful Klang Valley benchmark because the CSV includes starting price, built-up size, and completion timing.", createdAt: new Date(Date.now() - 54000000).toISOString() }
     ],
-    5: [
-      { id: 104, author: "Anon from Bangsar", text: "Pricey, yes. But the walkability is addictive if you like city energy more than quiet weekends.", createdAt: new Date(Date.now() - 42000000).toISOString() }
+    6: [
+      { id: 104, author: "Industrial buyer", text: "Large built-up projects need a different lens: access, loading, business use, and financing terms matter more than bedrooms.", createdAt: new Date(Date.now() - 42000000).toISOString() }
     ],
-    11: [
-      { id: 105, author: "Neighbourhood gossip", text: "This pocket feels private in the best way. You pay for that diplomatic calm, but some people absolutely want it.", createdAt: new Date(Date.now() - 26000000).toISOString() }
+    10: [
+      { id: 105, author: "Family shortlist", text: "Garden Villa style projects should be checked for layout, maintenance, and township amenities before final comparison.", createdAt: new Date(Date.now() - 26000000).toISOString() }
     ]
+  };
+}
+
+function seedGamification() {
+  return {
+    xp: 0,
+    streak: 0,
+    lastActiveDate: "",
+    awarded: {}
   };
 }
 
@@ -554,6 +433,108 @@ function escapeAttr(value = "") {
   return escapeHtml(value).replace(/`/g, "&#096;");
 }
 
+function getPropertyGallery(property) {
+  const sourceGallery = Array.isArray(property.gallery) ? property.gallery : [];
+  const sourceByLabel = sourceGallery.reduce((map, item) => {
+    if (item?.label) map.set(String(item.label).toLowerCase(), item);
+    return map;
+  }, new Map());
+
+  const normalized = PROPERTY_GALLERY_SLOTS.map((slot, index) => {
+    const source = sourceByLabel.get(slot.label.toLowerCase()) || sourceGallery[index] || {};
+    const fallbackFrontImage = index === 0 ? property.image : "";
+    const url = String(source.url || source.display || source.image || fallbackFrontImage || "").trim();
+    const status = url ? (source.status || "verified") : "pending_agent_upload";
+    return {
+      ...slot,
+      ...source,
+      label: source.label || slot.label,
+      required: slot.required,
+      url,
+      status,
+      verified: Boolean(url) && status !== "pending_agent_upload"
+    };
+  });
+
+  const extras = sourceGallery.slice(PROPERTY_GALLERY_SLOTS.length).map((item, index) => ({
+    label: item.label || `Extra ${index + 1}`,
+    required: false,
+    url: String(item.url || item.display || item.image || "").trim(),
+    status: item.status || (item.url ? "verified" : "pending_agent_upload"),
+    verified: Boolean(item.url)
+  }));
+
+  return [...normalized, ...extras];
+}
+
+function getGalleryCompleteness(property) {
+  const gallery = getPropertyGallery(property);
+  const verified = gallery.filter((item) => item.url && item.status !== "pending_agent_upload").length;
+  const requiredMissing = gallery.filter((item) => item.required && (!item.url || item.status === "pending_agent_upload")).length;
+  return { gallery, verified, requiredMissing, total: gallery.length };
+}
+
+function getHeroImage(property) {
+  const { gallery } = getGalleryCompleteness(property);
+  return gallery.find((item) => item.url)?.url || property.image || "";
+}
+
+function renderGallerySlot(slot, index, activeIndex = 0) {
+  const isActive = index === activeIndex;
+  const pending = !slot.url || slot.status === "pending_agent_upload";
+  return `
+    <button class="gallery-thumb ${isActive ? "is-active" : ""} ${pending ? "is-pending" : ""}" data-action="select-gallery-image" data-index="${index}" type="button">
+      ${slot.url ? `<img src="${escapeAttr(slot.url)}" alt="${escapeAttr(slot.label)}">` : `<span class="gallery-thumb-placeholder"><i class="fa-solid fa-image"></i></span>`}
+      <span>${escapeHtml(slot.label)}</span>
+      ${slot.required ? `<strong>Required</strong>` : ""}
+    </button>
+  `;
+}
+
+function renderFeedGalleryMarkup(property) {
+  const { gallery, verified, requiredMissing, total } = getGalleryCompleteness(property);
+  return `
+    <div class="feed-gallery-summary">
+      <span><i class="fa-solid fa-images"></i> ${verified}/${total} photos ready</span>
+      <span>${requiredMissing ? `${requiredMissing} required pending` : "Main 5 complete"}</span>
+    </div>
+    <div class="feed-gallery-strip" aria-label="Main property photo labels">
+      ${gallery.slice(0, 5).map((slot) => `
+        <div class="feed-gallery-chip ${slot.url && slot.status !== "pending_agent_upload" ? "" : "is-pending"}">
+          ${slot.url ? `<img src="${escapeAttr(slot.url)}" alt="${escapeAttr(slot.label)}">` : `<i class="fa-solid fa-image"></i>`}
+          <span>${escapeHtml(slot.label)}</span>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderModalGallery(property, activeIndex = 0) {
+  const { gallery, verified, requiredMissing, total } = getGalleryCompleteness(property);
+  const activeSlot = gallery[activeIndex] || gallery.find((item) => item.url) || gallery[0];
+  els.modalImage.src = activeSlot?.url || property.image || "";
+  els.modalImage.alt = `${property.title} - ${activeSlot?.label || "Property preview"}`;
+
+  if (els.modalGallery) {
+    els.modalGallery.innerHTML = `
+      <div class="modal-gallery-head">
+        <strong>${verified}/${total} photos ready</strong>
+        <span>${requiredMissing ? `${requiredMissing} required agent uploads pending` : "Required front, top, room, bath, kitchen uploaded"}</span>
+      </div>
+      <div class="modal-gallery-grid">
+        ${gallery.map((slot, index) => renderGallerySlot(slot, index, activeIndex)).join("")}
+      </div>
+    `;
+  }
+}
+
+function selectModalGalleryImage(index) {
+  if (state.activePropertyId == null) return;
+  const property = properties.find((item) => item.id === state.activePropertyId);
+  if (!property) return;
+  renderModalGallery(property, index);
+}
+
 function getMapsQuery(query) {
   const trimmed = query.trim();
   return /malaysia/i.test(trimmed) ? trimmed : `${trimmed}, Malaysia`;
@@ -577,7 +558,59 @@ function getLocationFallbackCacheKey(query) {
 
 function getApiBaseUrl() {
   if (window.REALTYGENIUS_API_BASE) return window.REALTYGENIUS_API_BASE;
+  const stored = localStorage.getItem("realtygenius_api_base");
+  if (stored) return stored;
+  if (["realitygenius.company", "www.realitygenius.company"].includes(window.location.hostname)) {
+    return "https://api.realitygenius.company";
+  }
   return window.location.protocol === "file:" ? "http://localhost:3000" : window.location.origin;
+}
+
+function getApiUrl(path) {
+  const base = getApiBaseUrl().replace(/\/+$/, "");
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  if (base.endsWith("/api") && normalizedPath.startsWith("/api/")) {
+    return `${base}${normalizedPath.slice(4)}`;
+  }
+  return `${base}${normalizedPath}`;
+}
+
+async function sendLeadAutomation(payload) {
+  try {
+    const response = await fetch(getApiUrl("/api/leads"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      keepalive: true
+    });
+    if (!response.ok) throw new Error(`Lead automation failed: ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.warn("[RealityGenius] Lead automation queued locally only:", error.message);
+    return null;
+  }
+}
+
+function buildLeadAutomationPayload(property, overrides = {}) {
+  const profile = getInterestProfile();
+  return {
+    propertyId: property?.id,
+    propertyTitle: property?.title,
+    propertyArea: property?.area || property?.location,
+    propertyPrice: property?.price,
+    buyerName: state.buyerProfile.name || overrides.buyerName || "Website visitor",
+    buyerPhone: state.buyerProfile.phone || overrides.buyerPhone || "",
+    message: overrides.message || `Interested in ${property?.title || "a RealityGenius property"}.`,
+    inquiryType: overrides.inquiryType || "property_inquiry",
+    source: overrides.source || "user_dashboard",
+    bookingDate: overrides.bookingDate || "",
+    bookingTime: overrides.bookingTime || "",
+    offerPrice: overrides.offerPrice || null,
+    behaviorIntent: profile.intent || state.filter,
+    behaviorPreference: getPreferenceLine(),
+    viewedCount: Object.values(state.views).reduce((sum, count) => sum + count, 0),
+    savedCount: state.favorites.length
+  };
 }
 
 async function requestBackendLocationFallback(query) {
@@ -588,7 +621,7 @@ async function requestBackendLocationFallback(query) {
 
   state.locationFallbackPending[key] = true;
   try {
-    const response = await fetch(`${getApiBaseUrl()}/api/search/location-fallback`, {
+    const response = await fetch(getApiUrl("/api/search/location-fallback"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -707,13 +740,16 @@ function getGuessResult(propertyId) {
 function renderPropertyCardMarkup(property, index) {
   const pack = getDecision(property);
   const saved = state.favorites.includes(property.id);
+  const { verified, total } = getGalleryCompleteness(property);
+  const heroImage = getHeroImage(property);
   return `
     <article class="property-card property-card--reveal" style="animation-delay:${index * 70}ms" data-tilt-card data-click-card data-id="${property.id}" tabindex="0" aria-label="Explore ${property.title}">
       <div class="feed-media">
-        <img src="${property.image}" alt="${property.title}" loading="lazy">
+        <img src="${heroImage}" alt="${property.title}" loading="lazy">
         <span class="area-pill">${property.area}</span>
         <span class="score-pill score-pill--match">AI ${property.aiScore}% Match</span>
         <span class="live-pill"><i class="fa-solid fa-fire"></i> ${property.liveNow} viewing now</span>
+        <span class="photo-count-pill"><i class="fa-solid fa-images"></i> ${verified}/${total}</span>
       </div>
       <div class="card-body">
         <div class="price-row">
@@ -732,6 +768,7 @@ function renderPropertyCardMarkup(property, index) {
           <span class="mini-stat"><i class="fa-solid fa-ruler-combined"></i> ${property.sqft} sqft</span>
           <span class="mini-stat"><i class="fa-solid fa-chart-line"></i> ${property.yield}% yield</span>
         </div>
+        ${renderFeedGalleryMarkup(property)}
         <p class="summary">${property.summary}</p>
         <div class="card-tags">
           <span class="tag">${pack.roi}% ROI</span>
@@ -794,11 +831,12 @@ function renderGuessCardMarkup(property) {
 function renderVideoFeedMarkup(property) {
   const saved = state.favorites.includes(property.id);
   const decision = getDecision(property);
+  const heroImage = getHeroImage(property);
   return `
     <article class="video-feed-card">
       <video
         class="property-reel"
-        poster="${property.image}"
+        poster="${heroImage}"
         muted
         loop
         playsinline
@@ -910,7 +948,7 @@ function buildTimelineScenario(property) {
     return `Alternative timeline: split the deposit ${splitCount > 1 ? `with ${splitCount} friends, ` : ""}furnish it like a content house, and offset roughly ${fullMoney(roomOffset)} a month through premium room rentals or short stays. Suddenly the fantasy looks less impossible and more like a chaotic group spreadsheet.`;
   }
 
-  return `Stretch plan: if you saved a ${fullMoney(deposit)} deposit, rented one room for about ${fullMoney(roomOffset)}, and redirected your daily coffee habit worth roughly RM ${coffeeJoke} a month, this starts looking like a serious lifestyle upgrade instead of a daydream.`;
+  return `Stretch idea: if you saved a ${fullMoney(deposit)} deposit, rented one room for about ${fullMoney(roomOffset)}, and redirected your daily coffee habit worth roughly RM ${coffeeJoke} a month, this starts looking like a serious lifestyle upgrade instead of a daydream.`;
 }
 
 function buildRoast(property) {
@@ -1063,6 +1101,90 @@ function getPreferenceLine() {
   if (top.intent === "family") return `family-led space with lower-regret downside`;
   if (top.intent === "luxury") return `premium city inventory with stronger prestige value`;
   return `${top.type} stock around ${top.area}`;
+}
+
+function weightedTop(entries) {
+  return Object.entries(entries)
+    .sort((a, b) => b[1] - a[1])
+    .map(([value]) => value)[0] || "";
+}
+
+function addInterestSignal(profile, property, weight) {
+  if (!property) return;
+  profile.hasSignals = true;
+  profile.areas[property.area] = (profile.areas[property.area] || 0) + weight;
+  profile.types[property.type] = (profile.types[property.type] || 0) + weight;
+  profile.intents[property.intent] = (profile.intents[property.intent] || 0) + weight;
+  profile.totalWeight += weight;
+  profile.priceTotal += property.price * weight;
+}
+
+function getInterestProfile() {
+  const profile = {
+    hasSignals: false,
+    areas: {},
+    types: {},
+    intents: {},
+    totalWeight: 0,
+    priceTotal: 0,
+    area: "",
+    type: "",
+    intent: "",
+    averagePrice: 0
+  };
+
+  state.favorites.forEach((id) => addInterestSignal(profile, properties.find((property) => property.id === id), 4));
+  Object.entries(state.views).forEach(([id, count]) => {
+    const weight = Math.min(Number(count) || 0, 5);
+    addInterestSignal(profile, properties.find((property) => property.id === Number(id)), weight);
+  });
+
+  if (!profile.hasSignals) return profile;
+
+  profile.area = weightedTop(profile.areas);
+  profile.type = weightedTop(profile.types);
+  profile.intent = weightedTop(profile.intents);
+  profile.averagePrice = profile.totalWeight ? profile.priceTotal / profile.totalWeight : 0;
+  return profile;
+}
+
+function scorePersonalizedProperty(property, profile) {
+  let score = getMasterFeedScore(property);
+  if (property.area === profile.area) score += 34;
+  if (property.type === profile.type) score += 22;
+  if (property.intent === profile.intent) score += 26;
+  if (profile.averagePrice) {
+    const priceDistance = Math.abs(property.price - profile.averagePrice) / profile.averagePrice;
+    score += Math.max(0, 18 - priceDistance * 30);
+  }
+  score += getDecision(property).roi * 1.4;
+  return score;
+}
+
+function getPersonalizationLabel(profile) {
+  if (!profile.hasSignals) return "";
+  if (profile.intent === "investment") return `higher-yield ${profile.type || "property"} options`;
+  if (profile.intent === "family") return "family-friendly space and practical layouts";
+  if (profile.intent === "luxury") return "premium listings with stronger status value";
+  return `${profile.type || "property"} stock${profile.area ? ` around ${profile.area}` : ""}`;
+}
+
+function getPersonalizedMatches(profile = getInterestProfile()) {
+  if (!profile.hasSignals) return [];
+
+  return feedProperties
+    .filter((property) => !state.favorites.includes(property.id))
+    .map((property) => ({ property, score: scorePersonalizedProperty(property, profile) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4)
+    .map((item) => item.property);
+}
+
+function getPersonalizedReason(property, profile) {
+  if (property.area === profile.area) return `You keep circling ${property.area}, so this stays close to your area bias.`;
+  if (property.intent === profile.intent) return `This matches the ${profile.intent} pattern from your recent views and saves.`;
+  if (property.type === profile.type) return `Same property style as your recent interest, with a cleaner AI score.`;
+  return "A nearby alternative with similar price logic and stronger shortlist potential.";
 }
 
 function getWhatsAppLink(property, source = "dashboard") {
@@ -1334,7 +1456,7 @@ function renderLocationFallback(query) {
       <div class="nearby-suggestion-grid">
         ${suggestions.map(({ property, reason }, index) => `
           <article class="nearby-suggestion-card" data-click-card data-id="${property.id}" tabindex="0" aria-label="Explore nearby option ${escapeAttr(property.title)}">
-            <img src="${property.image}" alt="${escapeAttr(property.title)}" loading="lazy">
+            <img src="${getHeroImage(property)}" alt="${escapeAttr(property.title)}" loading="lazy">
             <div>
               <span class="area-pill">${escapeHtml(property.area)}</span>
               <h4>${escapeHtml(property.title)}</h4>
@@ -1358,13 +1480,83 @@ function renderLocationFallback(query) {
 function renderDashboard() {
   renderGlobalPlatformAlert();
   renderMetrics();
+  renderSearchAlerts();
   renderEngagement();
+  renderGamification();
   renderRecommendations();
+  renderPersonalizedMatches();
   renderProperties();
   renderSaved();
   renderFavoritesDrawer();
   renderNotifications();
   setupInfiniteFeed();
+}
+
+function savedSearchLabel(alert) {
+  const query = alert.query ? `"${alert.query}"` : "All areas";
+  const type = alert.filter === "all" ? "all property types" : alert.filter;
+  return `${query} - ${type}`;
+}
+
+function matchingPropertiesForAlert(alert) {
+  const query = String(alert.query || "").trim().toLowerCase();
+  return feedProperties.filter((property) => {
+    const matchesFilter = alert.filter === "all" || property.type === alert.filter || property.intent === alert.filter;
+    const searchable = `${property.title} ${property.area} ${property.location} ${property.propertyType} ${property.summary}`.toLowerCase();
+    const matchesQuery = !query || searchable.includes(query);
+    return matchesFilter && matchesQuery;
+  });
+}
+
+function renderSearchAlerts() {
+  if (!els.searchAlertStrip) return;
+  const alerts = state.savedSearches || [];
+  if (!alerts.length) {
+    els.searchAlertStrip.innerHTML = `
+      <span><i class="fa-solid fa-bell"></i> Save a search to get return-visit alerts when matching homes appear.</span>
+    `;
+    return;
+  }
+
+  const latest = alerts[0];
+  const matches = matchingPropertiesForAlert(latest);
+  els.searchAlertStrip.innerHTML = `
+    <span><i class="fa-solid fa-bell"></i> ${escapeHtml(alerts.length)} saved alert${alerts.length === 1 ? "" : "s"}</span>
+    <strong>${escapeHtml(savedSearchLabel(latest))}</strong>
+    <em>${matches.length} matching listing${matches.length === 1 ? "" : "s"} now</em>
+  `;
+}
+
+function saveCurrentSearchAlert() {
+  const query = state.search.trim();
+  if (!query && state.filter === "all") {
+    showToast("Search an area or choose a filter first");
+    return;
+  }
+
+  const id = `${query || "all"}-${state.filter}`.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const alert = {
+    id,
+    query,
+    filter: state.filter,
+    sort: state.sort,
+    createdAt: new Date().toISOString()
+  };
+
+  state.savedSearches = [
+    alert,
+    ...(state.savedSearches || []).filter((item) => item.id !== id)
+  ].slice(0, 8);
+  writeStore(STORAGE_KEYS.savedSearches, state.savedSearches);
+
+  const matches = matchingPropertiesForAlert(alert);
+  pushUserNotification(
+    "Saved search alert created",
+    `${savedSearchLabel(alert)} is now watching ${matches.length} matching listing${matches.length === 1 ? "" : "s"}.`,
+    { tag: `rg-saved-search-${id}`, renotify: true }
+  );
+  renderDashboard();
+  showToast("Search alert saved");
 }
 
 function renderMetrics() {
@@ -1414,6 +1606,145 @@ function renderEngagement() {
   `).join("");
 }
 
+function normalizeGamification() {
+  state.gamification = {
+    ...seedGamification(),
+    ...state.gamification,
+    awarded: {
+      ...(state.gamification?.awarded || {})
+    }
+  };
+}
+
+function malaysiaDateKey(offsetDays = 0) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kuala_Lumpur" })
+    .format(new Date(Date.now() + offsetDays * 86400000));
+}
+
+function touchGamificationStreak() {
+  normalizeGamification();
+  const today = malaysiaDateKey();
+  const yesterday = malaysiaDateKey(-1);
+
+  if (state.gamification.lastActiveDate === today) return;
+  state.gamification.streak = state.gamification.lastActiveDate === yesterday
+    ? state.gamification.streak + 1
+    : 1;
+  state.gamification.lastActiveDate = today;
+}
+
+function persistGamification() {
+  normalizeGamification();
+  writeStore(STORAGE_KEYS.gamification, state.gamification);
+}
+
+function awardXp(key, amount, title, message) {
+  normalizeGamification();
+  if (state.gamification.awarded[key]) return false;
+
+  touchGamificationStreak();
+  state.gamification.awarded[key] = new Date().toISOString();
+  state.gamification.xp += amount;
+  persistGamification();
+
+  pushUserNotification(title, message, { tag: `rg-user-${key}`, renotify: true });
+  showToast(`+${amount} XP - ${title}`);
+  renderGamification();
+  renderMetrics();
+  return true;
+}
+
+function countTotalViews() {
+  return Object.values(state.views).reduce((sum, count) => sum + count, 0);
+}
+
+function checkGamificationMilestones(trigger, context = {}) {
+  const totalViews = countTotalViews();
+  const uniqueViews = Object.keys(state.views).length;
+  const saved = getFavorites().length;
+  const guesses = Object.keys(state.guessGame).length;
+
+  if (trigger === "view" || totalViews > 0) {
+    if (totalViews >= 1) awardXp("first-view", 15, "First Market Signal", "Your first property view started the recommendation memory.");
+    if (uniqueViews >= 3) awardXp("three-views", 30, "Area Explorer", "You viewed three different homes, so your shortlist is becoming smarter.");
+  }
+
+  if (trigger === "save" || saved > 0) {
+    if (saved >= 1) awardXp("first-save", 25, "Shortlist Started", "Your first saved home tells the engine what matters to you.");
+    if (saved >= 3) awardXp("three-saves", 45, "Serious Buyer Signal", "Three saved homes unlocked stronger match weighting.");
+  }
+
+  if (trigger === "guess" || guesses > 0) {
+    if (guesses >= 1) awardXp("first-guess", 15, "Price Instinct", "You tested your pricing instinct against the real asking price.");
+    if (context.deltaPct != null && context.deltaPct <= 0.12) {
+      awardXp("sharp-guess", 35, "Market Instinct Badge", "Your estimate landed close enough to count as a sharp buyer signal.");
+    }
+  }
+
+  if (trigger === "booking" && state.bookings.length >= 1) {
+    awardXp("first-booking", 60, "Viewing Mover", "Your first viewing request moved you from browsing into action.");
+  }
+
+  if (trigger === "note") {
+    awardXp("first-note", 20, "Community Signal", "Your anonymous note helped improve market intelligence for other buyers.");
+  }
+
+  if (trigger === "negotiation") {
+    awardXp("first-negotiation", 50, "Deal Room Starter", "You kept the offer trail inside RealityGenius where it can be tracked.");
+  }
+}
+
+function getGamificationLevel() {
+  normalizeGamification();
+  return Math.floor(state.gamification.xp / 120) + 1;
+}
+
+function renderGamification() {
+  if (!els.gamificationPanel) return;
+
+  normalizeGamification();
+  const level = getGamificationLevel();
+  const xp = state.gamification.xp;
+  const progress = Math.min(100, Math.round(((xp % 120) / 120) * 100));
+  const totalViews = countTotalViews();
+  const saved = getFavorites().length;
+  const guesses = Object.keys(state.guessGame).length;
+
+  els.xpValue.textContent = `${xp} XP`;
+  els.levelValue.textContent = `Level ${level}`;
+  els.streakValue.textContent = `${state.gamification.streak || 0} day${state.gamification.streak === 1 ? "" : "s"}`;
+  els.achievementMeter.style.width = `${progress}%`;
+
+  const quests = [
+    { title: "View 3 homes", progress: `${Math.min(Object.keys(state.views).length, 3)}/3`, complete: Object.keys(state.views).length >= 3 },
+    { title: "Save 2 serious picks", progress: `${Math.min(saved, 2)}/2`, complete: saved >= 2 },
+    { title: "Play price instinct", progress: `${Math.min(guesses, 1)}/1`, complete: guesses >= 1 },
+    { title: "Book a real viewing", progress: `${Math.min(state.bookings.length, 1)}/1`, complete: state.bookings.length >= 1 }
+  ];
+
+  els.questList.innerHTML = quests.map((quest) => `
+    <article class="quest-item ${quest.complete ? "complete" : ""}">
+      <i class="fa-solid ${quest.complete ? "fa-check" : "fa-circle"}"></i>
+      <div>
+        <strong>${quest.title}</strong>
+        <p>${quest.complete ? "Completed" : `${quest.progress} complete`}</p>
+      </div>
+    </article>
+  `).join("");
+
+  const badges = [
+    state.gamification.awarded["first-view"] && "Signal Starter",
+    state.gamification.awarded["first-save"] && "Shortlist Builder",
+    state.gamification.awarded["sharp-guess"] && "Market Instinct",
+    state.gamification.awarded["first-booking"] && "Tour Ready",
+    totalViews >= 5 && "Active Explorer"
+  ].filter(Boolean);
+
+  els.badgeList.innerHTML = badges.length
+    ? badges.map((badge) => `<span class="badge-chip"><i class="fa-solid fa-award"></i>${badge}</span>`).join("")
+    : `<span class="badge-chip"><i class="fa-regular fa-circle"></i>Badges unlock as you explore</span>`;
+}
+
 function renderRecommendations() {
   const unlocked = hasUnlockedHiddenGem();
   const hiddenGem = unlocked ? getHiddenGemProperty() : null;
@@ -1440,10 +1771,11 @@ function renderRecommendations() {
   els.recommendationGrid.innerHTML = displayPicks.map((property, index) => {
     const pack = getDecision(property);
     const secretCard = property.secretOnly ? " recommendation-card--secret" : "";
+    const heroImage = getHeroImage(property);
     return `
       <article class="recommendation-card${secretCard}" data-click-card data-id="${property.id}" tabindex="0" aria-label="Explore ${property.title}">
         <div class="card-media">
-          <img src="${property.image}" alt="${property.title}" loading="lazy">
+          <img src="${heroImage}" alt="${property.title}" loading="lazy">
           <span class="area-pill">${property.secretOnly ? "Highly Recommended" : `Pick ${index + 1}`}</span>
           <span class="score-pill">${pack.risk} Risk</span>
         </div>
@@ -1454,6 +1786,43 @@ function renderRecommendations() {
           <div class="card-tags">
             <span class="tag">${pack.roi}% ROI</span>
             <span class="tag">Offer ${money(pack.offer)}</span>
+          </div>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderPersonalizedMatches() {
+  if (!els.personalizedSection || !els.personalizedGrid) return;
+
+  const profile = getInterestProfile();
+  const matches = getPersonalizedMatches(profile);
+  if (!profile.hasSignals || !matches.length) {
+    els.personalizedSection.hidden = true;
+    els.personalizedGrid.innerHTML = "";
+    return;
+  }
+
+  els.personalizedSection.hidden = false;
+  if (els.personalizedReason) {
+    els.personalizedReason.textContent = `Based on your recent views and saves, RealityGenius is quietly boosting ${getPersonalizationLabel(profile)}.`;
+  }
+
+  els.personalizedGrid.innerHTML = matches.map((property) => {
+    const decision = getDecision(property);
+    const heroImage = getHeroImage(property);
+    return `
+      <article class="personalized-card" data-click-card data-id="${property.id}" tabindex="0" aria-label="Explore personalized match ${escapeAttr(property.title)}">
+        <img src="${heroImage}" alt="${escapeAttr(property.title)}" loading="lazy">
+        <div>
+          <span class="personalized-pill"><i class="fa-solid fa-wand-magic-sparkles"></i> Matches your pattern</span>
+          <h4>${escapeHtml(property.title)}</h4>
+          <p>${escapeHtml(getPersonalizedReason(property, profile))}</p>
+          <div class="personalized-meta">
+            <span>${money(property.price)}</span>
+            <span>AI ${property.aiScore}%</span>
+            <span>${decision.roi}% ROI</span>
           </div>
         </div>
       </article>
@@ -1597,11 +1966,15 @@ function toggleFavorite(id) {
   }
 
   showToast(exists ? "Removed from shortlist" : "Saved to your shortlist");
+  if (!exists) checkGamificationMilestones("save");
 }
 
 function incrementView(id) {
   state.views[id] = (state.views[id] || 0) + 1;
   writeStore(STORAGE_KEYS.views, state.views);
+  renderEngagement();
+  renderPersonalizedMatches();
+  checkGamificationMilestones("view");
 }
 
 function openPropertyModal(id) {
@@ -1616,13 +1989,14 @@ function openPropertyModal(id) {
   els.modalTitle.textContent = property.title;
   els.modalLocation.textContent = property.location;
   els.modalSummary.textContent = property.summary;
-  els.modalImage.src = property.image;
-  els.modalImage.alt = property.title;
+  renderModalGallery(property);
+  const { verified, total } = getGalleryCompleteness(property);
   els.modalStats.innerHTML = `
     <span>${property.bedrooms} bed / ${property.bathrooms} bath</span>
     <span>${property.sqft} sqft</span>
     <span>${property.yield}% yield</span>
     <span>${property.growth}% growth</span>
+    <span>${verified}/${total} photos ready</span>
   `;
   els.modalAiReasons.innerHTML = decision.reasons.map((item) => `<li>${item}</li>`).join("");
   els.modalRisk.textContent = `Risk: ${decision.risk}`;
@@ -2012,7 +2386,7 @@ function renderNegotiation(property) {
     : `<div class="empty-state">No negotiation yet. Send your first counter offer and let the AI frame it.</div>`;
 }
 
-function pushUserNotification(title, message) {
+function pushUserNotification(title, message, options = {}) {
   state.notifications = [
     {
       id: Date.now(),
@@ -2024,6 +2398,11 @@ function pushUserNotification(title, message) {
     ...readStore(STORAGE_KEYS.notifications, [])
   ];
   writeStore(STORAGE_KEYS.notifications, state.notifications);
+  window.RealtyGeniusPush?.notify(title, message, {
+    tag: options.tag,
+    renotify: options.renotify,
+    url: options.url || new URL("user.html", location.href).href
+  });
 }
 
 function handleGuessPrice(propertyId, guess) {
@@ -2046,6 +2425,7 @@ function handleGuessPrice(propertyId, guess) {
   } else {
     showToast("The market humbled you. Swipe for another round.");
   }
+  checkGamificationMilestones("guess", { deltaPct });
 }
 
 function submitCommunityNote(event) {
@@ -2072,6 +2452,7 @@ function submitCommunityNote(event) {
   els.noteInput.value = "";
   renderCommunityNotes(property);
   showToast("Anonymous note posted");
+  checkGamificationMilestones("note");
 }
 
 function submitNegotiationLegacy(action) {
@@ -2176,23 +2557,27 @@ function submitBooking(event) {
   }
 
   state.bookings = [booking, ...state.bookings];
-  state.notifications = [
-    {
-      id: Date.now() + 1,
-      title: "Viewing request sent",
-      message: `Your request for ${property.title} on ${booking.date} at ${booking.time} is now in motion.`,
-      createdAt: new Date().toISOString(),
-      read: false
-    },
-    ...state.notifications
-  ];
-
   writeStore(STORAGE_KEYS.bookings, state.bookings);
-  writeStore(STORAGE_KEYS.notifications, state.notifications);
+  pushUserNotification("Viewing request sent", `Your request for ${property.title} on ${booking.date} at ${booking.time} is now in motion.`);
+
+  sendLeadAutomation(buildLeadAutomationPayload(property, {
+    buyerName: booking.name,
+    buyerPhone: booking.phone,
+    inquiryType: "viewing_request",
+    source: "user_booking_form",
+    bookingDate: booking.date,
+    bookingTime: booking.time,
+    message: `Viewing request for ${property.title} on ${booking.date} at ${booking.time}.`
+  })).then((result) => {
+    if (result?.assignedAgent?.name) {
+      els.bookingStatus.textContent = `Viewing request sent. ${result.assignedAgent.name} received the lead with a ${result.lead.score}/100 score.`;
+    }
+  });
 
   els.bookingStatus.textContent = `Viewing request sent for ${property.title}. Check your alerts for updates.`;
   renderDashboard();
   showToast("Booking request sent");
+  checkGamificationMilestones("booking");
 }
 
 function renderFavoritesDrawer() {
@@ -2265,6 +2650,17 @@ function submitNegotiation(action) {
     `${property.title}: ${action === "counter" ? "your counter offer was sent." : action === "accept" ? "you accepted the suggested price." : "you paused this negotiation."}`
   );
 
+  sendLeadAutomation(buildLeadAutomationPayload(property, {
+    buyerName: state.buyerProfile.name,
+    buyerPhone: state.buyerProfile.phone,
+    inquiryType: action === "accept" ? "offer_acceptance" : "negotiation",
+    source: "user_negotiation_assistant",
+    offerPrice: price,
+    message: `${state.buyerProfile.name} ${action === "accept" ? "accepted" : action === "reject" ? "paused" : "sent a counter offer"} at ${fullMoney(price)} for ${property.title}.`
+  }));
+
+  checkGamificationMilestones("negotiation");
+
   renderDashboard();
   renderNegotiation(property);
   renderDealRoom(property);
@@ -2312,6 +2708,8 @@ function bindEvents() {
     renderDashboard();
   });
 
+  els.saveSearchButton?.addEventListener("click", saveCurrentSearchAlert);
+
   els.gridFeedButton.addEventListener("click", () => setFeedMode("grid"));
   els.videoFeedButton.addEventListener("click", () => {
     setFeedMode("video");
@@ -2335,7 +2733,10 @@ function bindEvents() {
       const id = Number(actionTarget.dataset.id);
       const action = actionTarget.dataset.action;
       if (action === "toggle-save") toggleFavorite(id);
-      if (action === "open-details") openPropertyModal(id);
+      if (action === "open-details") {
+        if (requireBuyerSessionForExplore()) openPropertyModal(id);
+      }
+      if (action === "select-gallery-image") selectModalGalleryImage(Number(actionTarget.dataset.index));
       if (action === "guess-price") handleGuessPrice(id, Number(actionTarget.dataset.guess));
       if (action === "set-location-view") {
         state.locationView = actionTarget.dataset.view === "earth" ? "earth" : "maps";
@@ -2347,7 +2748,7 @@ function bindEvents() {
     const cardTarget = target?.closest("[data-click-card]");
     const interactiveTarget = target?.closest("a, button, input, select, textarea, label");
     if (cardTarget && !interactiveTarget) {
-      openPropertyModal(Number(cardTarget.dataset.id));
+      if (requireBuyerSessionForExplore()) openPropertyModal(Number(cardTarget.dataset.id));
       return;
     }
 
@@ -2366,14 +2767,30 @@ function bindEvents() {
     const interactiveTarget = target?.closest("a, button, input, select, textarea, label");
     if (!cardTarget || interactiveTarget) return;
     event.preventDefault();
-    openPropertyModal(Number(cardTarget.dataset.id));
+    if (requireBuyerSessionForExplore()) openPropertyModal(Number(cardTarget.dataset.id));
   });
 
   els.favoritesButton.addEventListener("click", () => openDrawer("favoritesDrawer"));
   els.notificationsButton.addEventListener("click", () => openDrawer("notificationsDrawer"));
+  window.RealtyGeniusPush?.installButton(els.pushPermissionButton, (result) => {
+    if (result === "granted") showToast("Push notifications enabled");
+    else if (result === "denied") showToast("Browser blocked push notifications");
+    else showToast("Push notifications are unavailable here");
+  });
 
   els.modalSaveAction.addEventListener("click", () => {
     if (state.activePropertyId != null) toggleFavorite(state.activePropertyId);
+  });
+
+  els.modalContactAction.addEventListener("click", () => {
+    if (state.activePropertyId == null) return;
+    const property = properties.find((item) => item.id === state.activePropertyId);
+    if (!property) return;
+    sendLeadAutomation(buildLeadAutomationPayload(property, {
+      inquiryType: "quick_contact_click",
+      source: "user_whatsapp_contact",
+      message: `Buyer clicked WhatsApp quick contact for ${property.title}.`
+    }));
   });
 
   els.negotiationForm.addEventListener("submit", (event) => {
@@ -2444,6 +2861,15 @@ function bindEvents() {
       renderNotifications();
     }
 
+    if (event.key === STORAGE_KEYS.buyerLiveListings) {
+      refreshLiveBuyerListings(true);
+    }
+
+    if (event.key === STORAGE_KEYS.gamification) {
+      state.gamification = readStore(STORAGE_KEYS.gamification, state.gamification);
+      renderGamification();
+    }
+
     if (event.key === STORAGE_KEYS.communityNotes && state.activePropertyId != null) {
       state.communityNotes = readStore(STORAGE_KEYS.communityNotes, state.communityNotes);
       const property = properties.find((item) => item.id === state.activePropertyId);
@@ -2465,5 +2891,354 @@ function bindEvents() {
   });
 }
 
+function applyInitialQueryParams() {
+  const params = new URLSearchParams(window.location.search);
+  const query = params.get("search") || params.get("area") || "";
+  const filter = params.get("filter") || "";
+  if (query) {
+    state.search = query;
+    if (els.searchInput) els.searchInput.value = query;
+  }
+  if (filter && ["all", "condo", "family", "investment", "luxury"].includes(filter)) {
+    state.filter = filter;
+    document.querySelectorAll(".filter-chip").forEach((chip) => {
+      chip.classList.toggle("active", chip.dataset.filter === filter);
+    });
+  }
+}
+
+const growthState = {
+  role: "Buyer",
+  goal: "Find a shortlist",
+  channels: ["WhatsApp", "Email"]
+};
+
+function getGrowthElements() {
+  return {
+    section: document.getElementById("growth"),
+    planOutput: document.getElementById("growthPlanOutput"),
+    copyPlanButton: document.getElementById("copyGrowthPromptButton"),
+    waitlistForm: document.getElementById("waitlistForm"),
+    waitlistName: document.getElementById("waitlistName"),
+    waitlistEmail: document.getElementById("waitlistEmail"),
+    waitlistRole: document.getElementById("waitlistRole"),
+    waitlistGoal: document.getElementById("waitlistGoal"),
+    waitlistReferral: document.getElementById("waitlistReferral"),
+    waitlistResult: document.getElementById("waitlistResult"),
+    waitlistTotalPill: document.getElementById("waitlistTotalPill"),
+    digestForm: document.getElementById("digestForm"),
+    digestEmail: document.getElementById("digestEmail"),
+    digestStatus: document.getElementById("digestStatus"),
+    shareTitle: document.getElementById("shareTitle"),
+    sharePrice: document.getElementById("sharePrice"),
+    shareLocation: document.getElementById("shareLocation"),
+    shareHighlights: document.getElementById("shareHighlights"),
+    shareAgent: document.getElementById("shareAgent"),
+    sharePhone: document.getElementById("sharePhone"),
+    sharePreview: document.getElementById("propertySharePreview"),
+    whatsappShareLink: document.getElementById("whatsappShareLink"),
+    useTopListingButton: document.getElementById("useTopListingButton"),
+    copyPropertyShareButton: document.getElementById("copyPropertyShareButton"),
+    downloadPropertyShareButton: document.getElementById("downloadPropertyShareButton")
+  };
+}
+
+function buildGrowthPlan() {
+  const channels = growthState.channels.length ? growthState.channels.join(", ") : "WhatsApp";
+  return `${growthState.role} plan: ${growthState.goal} using RealityGenius AI match scoring, verified property cards, agent trust signals, and ${channels} follow-up. Start by saving 3 listings, request 1 viewing, then invite 2 people to unlock stronger property recommendations.`;
+}
+
+function updateGrowthPlan() {
+  const growthEls = getGrowthElements();
+  if (growthEls.planOutput) growthEls.planOutput.textContent = buildGrowthPlan();
+}
+
+async function copyTextToClipboard(text, message = "Copied") {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    textarea.remove();
+  }
+  showToast(message);
+}
+
+function getShareCardData() {
+  const growthEls = getGrowthElements();
+  return {
+    title: growthEls.shareTitle?.value.trim() || "RealityGenius Featured Home",
+    price: growthEls.sharePrice?.value.trim() || "Price on request",
+    location: growthEls.shareLocation?.value.trim() || "Malaysia",
+    highlights: growthEls.shareHighlights?.value.trim() || "Verified photos, AI match score, and WhatsApp-ready viewing flow.",
+    agent: growthEls.shareAgent?.value.trim() || "RealityGenius Concierge",
+    phone: growthEls.sharePhone?.value.trim() || "+60"
+  };
+}
+
+function buildPropertyShareText() {
+  const card = getShareCardData();
+  return `${card.title}\n${card.price}\n${card.location}\n\nHighlights: ${card.highlights}\n\nContact ${card.agent}: ${card.phone}\nRealityGenius: ${window.location.origin}/user.html#growth`;
+}
+
+function updateSharePreview() {
+  const growthEls = getGrowthElements();
+  if (!growthEls.sharePreview) return;
+  const card = getShareCardData();
+  const shareText = buildPropertyShareText();
+
+  growthEls.sharePreview.innerHTML = `
+    <div>
+      <span>RealityGenius card</span>
+      <h4>${escapeHtml(card.title)}</h4>
+      <p>${escapeHtml(card.location)}</p>
+    </div>
+    <div>
+      <strong>${escapeHtml(card.price)}</strong>
+      <p>${escapeHtml(card.highlights)}</p>
+    </div>
+    <small>${escapeHtml(card.agent)} - ${escapeHtml(card.phone)}</small>
+  `;
+
+  if (growthEls.whatsappShareLink) {
+    growthEls.whatsappShareLink.href = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+  }
+}
+
+function useTopListingForShareCard() {
+  const growthEls = getGrowthElements();
+  const property = filteredProperties()[0] || properties[0];
+  if (!property) return;
+
+  if (growthEls.shareTitle) growthEls.shareTitle.value = property.title || "RealityGenius Featured Home";
+  if (growthEls.sharePrice) growthEls.sharePrice.value = money(property.price);
+  if (growthEls.shareLocation) growthEls.shareLocation.value = property.location || property.area || "Malaysia";
+  if (growthEls.shareHighlights) {
+    growthEls.shareHighlights.value = `${property.beds || 0} bed, ${property.baths || 0} bath, ${property.yield || 0}% yield, ${property.growth || 0}% growth. ${property.summary || "Verified listing with AI match context."}`;
+  }
+  updateSharePreview();
+  showToast("Top listing loaded into share card");
+}
+
+function drawShareCard() {
+  const card = getShareCardData();
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080;
+  canvas.height = 1350;
+  const context = canvas.getContext("2d");
+  if (!context) return;
+
+  const gradient = context.createLinearGradient(0, 0, 1080, 1350);
+  gradient.addColorStop(0, "#0f766e");
+  gradient.addColorStop(0.52, "#b55a38");
+  gradient.addColorStop(1, "#201714");
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 1080, 1350);
+
+  context.fillStyle = "rgba(255,250,245,0.94)";
+  context.fillRect(72, 72, 936, 1206);
+  context.fillStyle = "#201714";
+  context.fillRect(104, 104, 872, 420);
+
+  context.fillStyle = "#fffaf5";
+  context.font = "700 34px Arial";
+  context.fillText("REALITYGENIUS PROPERTY CARD", 144, 170);
+  context.font = "700 72px Arial";
+  wrapCanvasText(context, card.title, 144, 398, 780, 78);
+
+  context.fillStyle = "#201714";
+  context.font = "700 64px Arial";
+  context.fillText(card.price, 144, 660);
+  context.font = "400 34px Arial";
+  context.fillStyle = "#75675d";
+  wrapCanvasText(context, card.location, 144, 724, 780, 42);
+
+  context.fillStyle = "#0f766e";
+  context.fillRect(144, 818, 130, 9);
+  context.fillStyle = "#201714";
+  context.font = "700 40px Arial";
+  context.fillText("Highlights", 144, 902);
+  context.font = "400 32px Arial";
+  context.fillStyle = "#75675d";
+  wrapCanvasText(context, card.highlights, 144, 960, 780, 43);
+
+  context.fillStyle = "#201714";
+  context.font = "700 34px Arial";
+  context.fillText(card.agent, 144, 1190);
+  context.font = "400 30px Arial";
+  context.fillStyle = "#75675d";
+  context.fillText(card.phone, 144, 1234);
+
+  const link = document.createElement("a");
+  link.download = `${card.title.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "realitygenius"}-property-card.png`;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+}
+
+function wrapCanvasText(context, text, x, y, maxWidth, lineHeight) {
+  const words = String(text || "").split(" ");
+  let line = "";
+  let currentY = y;
+
+  words.forEach((word, index) => {
+    const nextLine = line ? `${line} ${word}` : word;
+    if (context.measureText(nextLine).width > maxWidth && line) {
+      context.fillText(line, x, currentY);
+      line = word;
+      currentY += lineHeight;
+    } else {
+      line = nextLine;
+    }
+
+    if (index === words.length - 1) context.fillText(line, x, currentY);
+  });
+}
+
+async function refreshWaitlistSummary() {
+  const growthEls = getGrowthElements();
+  if (!growthEls.waitlistTotalPill) return;
+
+  try {
+    const response = await fetch("/api/waitlist");
+    const data = await response.json();
+    if (response.ok) growthEls.waitlistTotalPill.textContent = `${data.total || 0} joined`;
+  } catch {
+    growthEls.waitlistTotalPill.textContent = "Join now";
+  }
+}
+
+async function submitWaitlist(event) {
+  event.preventDefault();
+  const growthEls = getGrowthElements();
+  const button = growthEls.waitlistForm?.querySelector("button[type='submit']");
+  if (button) button.disabled = true;
+
+  try {
+    const response = await fetch("/api/waitlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: growthEls.waitlistName?.value,
+        email: growthEls.waitlistEmail?.value,
+        role: growthEls.waitlistRole?.value,
+        goal: growthEls.waitlistGoal?.value,
+        referredBy: growthEls.waitlistReferral?.value
+      })
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Waitlist signup failed");
+
+    const result = payload.data;
+    growthEls.waitlistResult.classList.add("is-visible");
+    growthEls.waitlistResult.innerHTML = `
+      <strong>Position #${result.position}</strong><br>
+      Invite code: <strong>${escapeHtml(result.entry.referralCode)}</strong><br>
+      Rewards: <strong>${result.entry.rewardPoints} pts</strong>
+      <button class="ghost-button" id="copyReferralButton" type="button">
+        <i class="fa-regular fa-copy"></i>
+        Copy Referral Link
+      </button>
+    `;
+    document.getElementById("copyReferralButton")?.addEventListener("click", () => copyTextToClipboard(result.referralUrl, "Referral link copied"));
+    if (growthEls.waitlistTotalPill) growthEls.waitlistTotalPill.textContent = `${result.total || 0} joined`;
+    showToast(result.isExisting ? "Waitlist profile updated" : "Waitlist spot reserved");
+  } catch (error) {
+    growthEls.waitlistResult.classList.add("is-visible");
+    growthEls.waitlistResult.textContent = error.message || "Waitlist signup failed";
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+async function submitDigest(event) {
+  event.preventDefault();
+  const growthEls = getGrowthElements();
+  const topics = [...growthEls.digestForm.querySelectorAll("input[type='checkbox']:checked")].map((input) => input.value);
+  const button = growthEls.digestForm?.querySelector("button[type='submit']");
+  if (button) button.disabled = true;
+
+  try {
+    const response = await fetch("/api/digest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: growthEls.digestEmail?.value,
+        topics
+      })
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Digest signup failed");
+    growthEls.digestStatus.textContent = payload.isExisting ? "Digest preferences updated." : `Subscribed. ${payload.total || 1} readers are on the weekly list.`;
+    showToast("Weekly digest saved");
+  } catch (error) {
+    growthEls.digestStatus.textContent = error.message || "Digest signup failed";
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+function initGrowthSuite() {
+  const growthEls = getGrowthElements();
+  if (!growthEls.section) return;
+
+  const referralCode = new URLSearchParams(window.location.search).get("ref");
+  if (referralCode && growthEls.waitlistReferral) growthEls.waitlistReferral.value = referralCode.toUpperCase();
+
+  document.querySelectorAll("[data-growth-role]").forEach((button) => {
+    button.addEventListener("click", () => {
+      growthState.role = button.dataset.growthRole;
+      document.querySelectorAll("[data-growth-role]").forEach((item) => item.classList.toggle("is-active", item === button));
+      updateGrowthPlan();
+    });
+  });
+
+  document.querySelectorAll("[data-growth-goal]").forEach((button) => {
+    button.addEventListener("click", () => {
+      growthState.goal = button.dataset.growthGoal;
+      document.querySelectorAll("[data-growth-goal]").forEach((item) => item.classList.toggle("is-active", item === button));
+      updateGrowthPlan();
+    });
+  });
+
+  document.querySelectorAll("[data-growth-channel]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const channel = button.dataset.growthChannel;
+      const isActive = growthState.channels.includes(channel);
+      growthState.channels = isActive ? growthState.channels.filter((item) => item !== channel) : [...growthState.channels, channel];
+      button.classList.toggle("is-active", !isActive);
+      updateGrowthPlan();
+    });
+  });
+
+  growthEls.copyPlanButton?.addEventListener("click", () => copyTextToClipboard(buildGrowthPlan(), "Growth plan copied"));
+  growthEls.waitlistForm?.addEventListener("submit", submitWaitlist);
+  growthEls.digestForm?.addEventListener("submit", submitDigest);
+  growthEls.useTopListingButton?.addEventListener("click", useTopListingForShareCard);
+  growthEls.copyPropertyShareButton?.addEventListener("click", () => copyTextToClipboard(buildPropertyShareText(), "Property share text copied"));
+  growthEls.downloadPropertyShareButton?.addEventListener("click", drawShareCard);
+
+  [
+    growthEls.shareTitle,
+    growthEls.sharePrice,
+    growthEls.shareLocation,
+    growthEls.shareHighlights,
+    growthEls.shareAgent,
+    growthEls.sharePhone
+  ].forEach((input) => input?.addEventListener("input", updateSharePreview));
+
+  updateGrowthPlan();
+  updateSharePreview();
+  refreshWaitlistSummary();
+}
+
+initGrowthSuite();
+applyInitialQueryParams();
 bindEvents();
 renderDashboard();
+hydrateBackendLiveListings();

@@ -4,6 +4,7 @@
   "description": "Node.js backend for KVAI Platform",
   "main": "server.js",
   "scripts": {
+    "build": "node vercel-static-build.js",
     "start": "node server.js"
   },
   "dependencies": {
