@@ -12,6 +12,7 @@ const GOOGLE_MAPS_API_KEY = readEnv('GOOGLE_MAPS_API_KEY', 'GOOGLE_API_KEY');
 const FRONTEND_URL = normalizeOrigin(readEnv('FRONTEND_URL'));
 const SUPABASE_REST_URL = normalizeSupabaseRestUrl(readEnv('SUPABASE_URL'));
 const SUPABASE_SERVICE_ROLE_KEY = readEnv('SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_SECRET_KEY');
+const TELEGRAM_BOT_TOKEN = readEnv('TELEGRAM_BOT_TOKEN');
 const TELEGRAM_WEBHOOK_SECRET = readEnv('TELEGRAM_WEBHOOK_SECRET');
 const ADMIN_API_KEY = readEnv('ADMIN_API_KEY');
 const { OpenAI } = require('openai');
@@ -782,6 +783,30 @@ async function createAdminNotification(title, message, payload = {}) {
     }
 }
 
+async function sendTelegramMessage(chatId, text) {
+    if (!TELEGRAM_BOT_TOKEN || !chatId || !text) return null;
+    try {
+        const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text,
+                disable_web_page_preview: true
+            })
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            console.error("[TELEGRAM REPLY] Failed:", payload.description || response.statusText);
+            return null;
+        }
+        return payload;
+    } catch (error) {
+        console.error("[TELEGRAM REPLY] Failed:", error.message);
+        return null;
+    }
+}
+
 async function handleTelegramWebhook(update) {
     if (!hasSupabaseConfig()) {
         return { ok: false, error: "Supabase is not configured." };
@@ -793,6 +818,7 @@ async function handleTelegramWebhook(update) {
     const rawMessage = await saveRawTelegramMessage(meta);
     if (!meta.text && !meta.fileIds.length) {
         await patchSupabaseRow("telegram_raw_messages", rawMessage.id, { processed_status: "ignored_empty" });
+        await sendTelegramMessage(meta.chatId, "RealityGenius received the Telegram update, but there was no listing text or caption to extract. Please send a property post with price, location, size, and contact details.");
         return { ok: true, ignored: true, rawMessageId: rawMessage.id };
     }
 
@@ -808,6 +834,11 @@ async function handleTelegramWebhook(update) {
         "Telegram AI listing needs review",
         `${extraction.title} was imported from ${meta.chatTitle || meta.chatId || "Telegram"} with ${extraction.confidenceScore}% confidence.`,
         { importId: imported.id, rawMessageId: rawMessage.id, status: imported.status }
+    );
+
+    await sendTelegramMessage(
+        meta.chatId,
+        `RealityGenius received this listing: ${extraction.title}. Status: needs_review. Admin must verify it before it goes live.`
     );
 
     return { ok: true, importId: imported.id, status: imported.status, confidenceScore: extraction.confidenceScore };
