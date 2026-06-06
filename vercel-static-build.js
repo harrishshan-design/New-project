@@ -58,6 +58,24 @@ function copyDirectory(sourceDir, targetDir) {
   }
 }
 
+function publicConfigValue(...names) {
+  for (const name of names) {
+    const value = process.env[name];
+    if (value) return String(value);
+  }
+  return "";
+}
+
+function writeRuntimeConfig() {
+  const config = {
+    SUPABASE_URL: publicConfigValue("REALTYGENIUS_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_PUBLIC_URL", "SUPABASE_URL").replace(/\/rest\/v1\/?$/, ""),
+    SUPABASE_PUBLISHABLE_KEY: publicConfigValue("REALTYGENIUS_SUPABASE_PUBLISHABLE_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_ANON_KEY"),
+    API_BASE: publicConfigValue("REALTYGENIUS_API_BASE", "NEXT_PUBLIC_REALTYGENIUS_API_BASE", "VITE_API_URL")
+  };
+  const body = `window.REALTYGENIUS_CONFIG = Object.assign(window.REALTYGENIUS_CONFIG || {}, ${JSON.stringify(config, null, 2)});\n`;
+  fs.writeFileSync(path.join(outDir, "rg-config.js"), body, "utf8");
+}
+
 resetOutput();
 
 for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
@@ -74,5 +92,7 @@ for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
     copyFile(source, target);
   }
 }
+
+writeRuntimeConfig();
 
 console.log("Static RealityGenius build written to dist/");

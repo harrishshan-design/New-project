@@ -1,7 +1,7 @@
 (function () {
   const CONFIG = {
-    supabaseUrl: "https://tjmvbgdgddscbilfkggu.supabase.co",
-    publishableKey: "sb_publishable_gdHnuY0_2GgMZJMNuVxC2g_g0ZB0mmJ",
+    supabaseUrl: "",
+    publishableKey: "",
     tables: [
       "profiles",
       "properties",
@@ -789,9 +789,15 @@
     }
 
     const runtime = window.REALTYGENIUS_CONFIG || {};
+    const supabaseUrl = runtime.SUPABASE_URL || CONFIG.supabaseUrl;
+    const publishableKey = runtime.SUPABASE_PUBLISHABLE_KEY || runtime.SUPABASE_ANON_KEY || CONFIG.publishableKey;
+    if (!supabaseUrl || !publishableKey) {
+      setStatus("Supabase client not configured");
+      return;
+    }
     const client = window.supabase.createClient(
-      runtime.SUPABASE_URL || CONFIG.supabaseUrl,
-      runtime.SUPABASE_PUBLISHABLE_KEY || runtime.SUPABASE_ANON_KEY || CONFIG.publishableKey
+      supabaseUrl,
+      publishableKey
     );
     state.client = client;
     window.RealtyGeniusLiveData = { client, state, refresh: () => refreshAll(client) };

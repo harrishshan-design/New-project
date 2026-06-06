@@ -1,0 +1,5 @@
+window.REALTYGENIUS_CONFIG = Object.assign(window.REALTYGENIUS_CONFIG || {}, {
+  SUPABASE_URL: "",
+  SUPABASE_PUBLISHABLE_KEY: "",
+  API_BASE: ""
+});

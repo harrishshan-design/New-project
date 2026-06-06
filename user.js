@@ -270,6 +270,7 @@ function readStore(key, fallback) {
 
 function userApiBaseUrl() {
   if (window.REALTYGENIUS_API_BASE) return window.REALTYGENIUS_API_BASE.replace(/\/+$/, "");
+  if (window.REALTYGENIUS_CONFIG?.API_BASE) return window.REALTYGENIUS_CONFIG.API_BASE.replace(/\/+$/, "");
   const stored = localStorage.getItem("realtygenius_api_base");
   if (stored) return stored.replace(/\/+$/, "");
   if (["realitygenius.company", "www.realitygenius.company"].includes(window.location.hostname)) {
@@ -297,7 +298,10 @@ async function hydrateBackendLiveListings() {
     if (!response.ok) return;
     const payload = await response.json();
     const remoteLive = (Array.isArray(payload) ? payload : payload.items || [])
-      .filter((item) => item?.source === "agent_live_upload" || item?.badge === "live-agent");
+      .filter((item) => {
+        if (item?.source === "telegram_ai_import") return isAdminApprovedLiveListing(item);
+        return item?.source === "agent_live_upload" || item?.badge === "live-agent" || isAdminApprovedLiveListing(item);
+      });
     if (!remoteLive.length) return;
     const existing = readStore(STORAGE_KEYS.buyerLiveListings, []);
     const remoteIds = new Set(remoteLive.map((item) => String(item.id)));
@@ -558,6 +562,7 @@ function getLocationFallbackCacheKey(query) {
 
 function getApiBaseUrl() {
   if (window.REALTYGENIUS_API_BASE) return window.REALTYGENIUS_API_BASE;
+  if (window.REALTYGENIUS_CONFIG?.API_BASE) return window.REALTYGENIUS_CONFIG.API_BASE;
   const stored = localStorage.getItem("realtygenius_api_base");
   if (stored) return stored;
   if (["realitygenius.company", "www.realitygenius.company"].includes(window.location.hostname)) {

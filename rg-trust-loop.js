@@ -1,7 +1,7 @@
 (function () {
   const CONFIG = {
-    supabaseUrl: "https://tjmvbgdgddscbilfkggu.supabase.co",
-    publishableKey: "sb_publishable_gdHnuY0_2GgMZJMNuVxC2g_g0ZB0mmJ",
+    supabaseUrl: "",
+    publishableKey: "",
     primaryAgentId: "22222222-2222-4222-8222-222222222222",
     primaryAgentName: "Arvind Govindasamy"
   };
@@ -26,6 +26,14 @@
 
   function $(id) {
     return document.getElementById(id);
+  }
+
+  function supabaseRuntimeConfig() {
+    const runtime = window.REALTYGENIUS_CONFIG || {};
+    return {
+      supabaseUrl: runtime.SUPABASE_URL || CONFIG.supabaseUrl,
+      publishableKey: runtime.SUPABASE_PUBLISHABLE_KEY || runtime.SUPABASE_ANON_KEY || CONFIG.publishableKey
+    };
   }
 
   function showToast(message) {
@@ -204,7 +212,9 @@
 
   async function start() {
     if (!window.supabase) return;
-    state.client = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.publishableKey);
+    const runtime = supabaseRuntimeConfig();
+    if (!runtime.supabaseUrl || !runtime.publishableKey) return;
+    state.client = window.supabase.createClient(runtime.supabaseUrl, runtime.publishableKey);
     await loadReviews();
     bindEvents();
     renderPanel();

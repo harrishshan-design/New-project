@@ -6,7 +6,8 @@ const STORAGE_KEYS = {
   auditLogs: "rg_admin_audit_logs",
   notifications: "rg_admin_notifications",
   agentListings: "kvai_agent_listings",
-  buyerLiveListings: "rg_live_buyer_listings"
+  buyerLiveListings: "rg_live_buyer_listings",
+  adminApiKey: "rg_admin_api_key"
 };
 
 const ADMIN_ID = "admin-gatekeeper-01";
@@ -56,7 +57,9 @@ const seedNotifications = [
 const state = {
   section: "agents",
   activeListingId: null,
+  activeAiImportId: null,
   enhancerHydrated: false,
+  aiImports: [],
   agents: readStore(STORAGE_KEYS.agents, seedAgents),
   verificationLogs: readStore(STORAGE_KEYS.verificationLogs, []),
   listings: readStore(STORAGE_KEYS.listings, seedListings),
@@ -81,6 +84,13 @@ const els = {
   listingQueue: document.getElementById("listingQueue"),
   listingPreview: document.getElementById("listingPreview"),
   listingWarnings: document.getElementById("listingWarnings"),
+  aiImportAccessForm: document.getElementById("aiImportAccessForm"),
+  adminApiKeyInput: document.getElementById("adminApiKeyInput"),
+  saveAdminApiKeyButton: document.getElementById("saveAdminApiKeyButton"),
+  refreshAiImportsButton: document.getElementById("refreshAiImportsButton"),
+  aiImportStatus: document.getElementById("aiImportStatus"),
+  aiImportList: document.getElementById("aiImportList"),
+  aiImportPreview: document.getElementById("aiImportPreview"),
   reportList: document.getElementById("reportList"),
   strikeBoard: document.getElementById("strikeBoard"),
   auditList: document.getElementById("auditList"),
@@ -116,13 +126,44 @@ function slugify(value) {
     .replace(/(^-|-$)/g, "");
 }
 
+function escapeHtml(value = "") {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#039;"
+  }[character]));
+}
+
 function adminApiBaseUrl() {
+  if (window.REALTYGENIUS_API_BASE) return window.REALTYGENIUS_API_BASE.replace(/\/+$/, "");
+  if (window.REALTYGENIUS_CONFIG?.API_BASE) return window.REALTYGENIUS_CONFIG.API_BASE.replace(/\/+$/, "");
+  const stored = localStorage.getItem("realtygenius_api_base");
+  if (stored) return stored.replace(/\/+$/, "");
+  if (["realitygenius.company", "www.realitygenius.company"].includes(window.location.hostname)) {
+    return "https://api.realitygenius.company/api";
+  }
   if (window.location.protocol === "file:") return "http://localhost:3000/api";
+  if (["localhost", "127.0.0.1"].includes(window.location.hostname) && window.location.port !== "3000") {
+    return "http://localhost:3000/api";
+  }
   return `${window.location.origin}/api`;
 }
 
 function adminToken() {
   return localStorage.getItem("rg_token") || "";
+}
+
+function adminReviewApiKey() {
+  return localStorage.getItem(STORAGE_KEYS.adminApiKey) || "";
+}
+
+function adminJsonHeaders() {
+  return {
+    "Content-Type": "application/json",
+    "X-Admin-Api-Key": adminReviewApiKey()
+  };
 }
 
 function listingKey(listing) {
@@ -361,6 +402,182 @@ async function reviewRemoteEnhancement(listing, status) {
   return result.enhancement ? mapEnhancementToAdminListing(result.enhancement) : null;
 }
 
+function aiImportApiUrl(path) {
+  return `${adminApiBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+function setAiImportStatus(message, tone = "") {
+  if (!els.aiImportStatus) return;
+  els.aiImportStatus.textContent = message;
+  els.aiImportStatus.dataset.tone = tone;
+}
+
+function splitLines(value) {
+  return String(value || "")
+    .split(/\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function aiImportStatusClass(status) {
+  if (status === "approved" || status === "live") return "confirmed";
+  if (status === "rejected") return "rejected";
+  return "pending";
+}
+
+async function loadAiImports() {
+  if (!els.aiImportList) return;
+  if (!adminReviewApiKey()) {
+    state.aiImports = [];
+    setAiImportStatus("Enter the admin API key to load Telegram AI imports.", "warn");
+    renderAiImports();
+    return;
+  }
+
+  setAiImportStatus("Loading Telegram AI imports...");
+  try {
+    const response = await fetch(aiImportApiUrl("/admin/ai-imports"), {
+      headers: adminJsonHeaders()
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || "Unable to load AI imports.");
+    state.aiImports = Array.isArray(payload.items) ? payload.items : [];
+    if (!state.activeAiImportId && state.aiImports[0]) state.activeAiImportId = state.aiImports[0].id;
+    setAiImportStatus(`${state.aiImports.length} AI import${state.aiImports.length === 1 ? "" : "s"} loaded.`);
+    renderAiImports();
+  } catch (error) {
+    setAiImportStatus(error.message, "error");
+    renderAiImports();
+  }
+}
+
+function renderAiImports() {
+  if (!els.aiImportList || !els.aiImportPreview) return;
+  const imports = state.aiImports || [];
+  if (!imports.length) {
+    els.aiImportList.innerHTML = '<div class="empty-state">No Telegram imports loaded yet.</div>';
+    els.aiImportPreview.innerHTML = '<div class="subtext">Select an imported listing to review its AI extraction.</div>';
+    return;
+  }
+
+  els.aiImportList.innerHTML = imports.map((item) => `
+    <article class="report-card ${state.activeAiImportId === item.id ? "active" : ""}">
+      <div>
+        <strong>${escapeHtml(item.title || "Untitled import")}</strong>
+        <p>${escapeHtml(item.location || "Location pending")}</p>
+        <span class="chip ${aiImportStatusClass(item.status)}">${escapeHtml(item.status || "needs_review")}</span>
+      </div>
+      <div class="report-meta">
+        <span>${Number(item.confidence_score || 0)}% confidence</span>
+        <span>${escapeHtml(item.source_chat_title || item.source_chat_id || "Telegram")}</span>
+      </div>
+      <button class="ghost-button" data-action="select-ai-import" data-id="${item.id}" type="button">Review</button>
+    </article>
+  `).join("");
+
+  const active = imports.find((item) => item.id === state.activeAiImportId) || imports[0];
+  state.activeAiImportId = active?.id || null;
+  if (active) renderAiImportPreview(active);
+}
+
+function renderAiImportPreview(item) {
+  const extraction = item.extraction_json || {};
+  const imageUrls = Array.isArray(item.image_urls) ? item.image_urls : [];
+  const highlights = Array.isArray(item.highlights) ? item.highlights.join("\n") : "";
+  const facilities = Array.isArray(item.facilities) ? item.facilities.join("\n") : "";
+  const landmarks = Array.isArray(item.nearby_landmarks) ? item.nearby_landmarks.join("\n") : "";
+  const missing = Array.isArray(item.missing_fields) ? item.missing_fields.join(", ") : "";
+
+  els.aiImportPreview.innerHTML = `
+    <div class="preview-card">
+      <div class="preview-media">
+        <img src="${escapeHtml(imageUrls[0] || "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=900&q=80")}" alt="${escapeHtml(item.title || "AI import")}">
+      </div>
+      <div class="preview-body">
+        <div class="chip-row">
+          <span class="chip ${aiImportStatusClass(item.status)}">${escapeHtml(item.status || "needs_review")}</span>
+          <span class="chip">${Number(item.confidence_score || 0)}% confidence</span>
+          <span class="chip">${escapeHtml(item.source || "telegram")}</span>
+        </div>
+        <div class="edit-grid">
+          <input class="field" id="aiImportTitle" value="${escapeHtml(item.title || "")}" placeholder="Title">
+          <input class="field" id="aiImportLocation" value="${escapeHtml(item.location || "")}" placeholder="Location">
+          <input class="field" id="aiImportPrice" type="number" value="${Number(item.price || 0)}" placeholder="Price">
+          <input class="field" id="aiImportSqft" type="number" value="${Number(item.built_up_sqft || 0)}" placeholder="Built-up sqft">
+          <input class="field" id="aiImportBedrooms" type="number" value="${item.bedrooms ?? ""}" placeholder="Bedrooms">
+          <input class="field" id="aiImportBathrooms" type="number" value="${item.bathrooms ?? ""}" placeholder="Bathrooms">
+          <input class="field" id="aiImportType" value="${escapeHtml(item.property_type || "")}" placeholder="Property type">
+          <input class="field" id="aiImportPhone" value="${escapeHtml(item.contact_phone || "")}" placeholder="Agent phone">
+          <textarea class="field" id="aiImportDescription" rows="4" placeholder="Description">${escapeHtml(item.description || "")}</textarea>
+          <textarea class="field" id="aiImportImages" rows="4" placeholder="Image URLs, one per line">${escapeHtml(imageUrls.join("\n"))}</textarea>
+          <textarea class="field" id="aiImportHighlights" rows="3" placeholder="Highlights">${escapeHtml(highlights)}</textarea>
+          <textarea class="field" id="aiImportFacilities" rows="3" placeholder="Facilities">${escapeHtml(facilities)}</textarea>
+          <textarea class="field" id="aiImportLandmarks" rows="3" placeholder="Nearby landmarks">${escapeHtml(landmarks)}</textarea>
+          <textarea class="field" id="aiImportNotes" rows="3" placeholder="Admin notes">${escapeHtml(item.admin_notes || extraction.adminReviewNote || "")}</textarea>
+        </div>
+        <p class="subtext"><strong>Missing:</strong> ${escapeHtml(missing || "None flagged")}<br><strong>Raw:</strong> ${escapeHtml(String(item.original_text || "").slice(0, 260))}</p>
+        <div class="modal-actions">
+          <button class="ghost-button" data-action="save-ai-import" data-id="${item.id}" type="button">Save Edit</button>
+          <button class="primary-button" data-action="approve-ai-import" data-id="${item.id}" type="button">Approve</button>
+          <button class="primary-button" data-action="live-ai-import" data-id="${item.id}" type="button">Approve + Live</button>
+          <button class="danger-button" data-action="reject-ai-import" data-id="${item.id}" type="button">Reject</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function collectAiImportEdits() {
+  return {
+    title: document.getElementById("aiImportTitle")?.value.trim(),
+    location: document.getElementById("aiImportLocation")?.value.trim(),
+    price: Number(document.getElementById("aiImportPrice")?.value || 0),
+    builtUpSqft: Number(document.getElementById("aiImportSqft")?.value || 0),
+    bedrooms: Number(document.getElementById("aiImportBedrooms")?.value || 0),
+    bathrooms: Number(document.getElementById("aiImportBathrooms")?.value || 0),
+    propertyType: document.getElementById("aiImportType")?.value.trim(),
+    contactPhone: document.getElementById("aiImportPhone")?.value.trim(),
+    description: document.getElementById("aiImportDescription")?.value.trim(),
+    imageUrls: splitLines(document.getElementById("aiImportImages")?.value),
+    highlights: splitLines(document.getElementById("aiImportHighlights")?.value),
+    facilities: splitLines(document.getElementById("aiImportFacilities")?.value),
+    nearbyLandmarks: splitLines(document.getElementById("aiImportLandmarks")?.value)
+  };
+}
+
+async function reviewAiImport(id, action) {
+  if (!adminReviewApiKey()) {
+    setAiImportStatus("Save the admin API key before reviewing imports.", "warn");
+    return;
+  }
+
+  setAiImportStatus(`Saving ${action}...`);
+  try {
+    const response = await fetch(aiImportApiUrl("/admin/ai-imports/review"), {
+      method: "POST",
+      headers: adminJsonHeaders(),
+      body: JSON.stringify({
+        id,
+        action,
+        edits: collectAiImportEdits(),
+        adminNotes: document.getElementById("aiImportNotes")?.value.trim() || "",
+        reviewedBy: ADMIN_ID
+      })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || "Unable to review AI import.");
+    const item = payload.item;
+    state.aiImports = state.aiImports.map((current) => current.id === id ? item : current);
+    if (!state.aiImports.some((current) => current.id === id) && item) state.aiImports = [item, ...state.aiImports];
+    state.activeAiImportId = item?.id || id;
+    renderAiImports();
+    setAiImportStatus(`Import ${action} saved.`);
+    showToast(`AI import ${action} saved`);
+  } catch (error) {
+    setAiImportStatus(error.message, "error");
+  }
+}
+
 function persistAll() {
   writeStore(STORAGE_KEYS.agents, state.agents);
   writeStore(STORAGE_KEYS.verificationLogs, state.verificationLogs);
@@ -505,11 +722,13 @@ function switchSection(section) {
   els.navItems.forEach((item) => item.classList.toggle("active", item.dataset.section === section));
   els.panels.forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === section));
   history.replaceState(null, "", `#${section}`);
+  if (section === "ai-imports") loadAiImports();
 }
 
 function renderMetrics() {
+  const pendingImports = state.aiImports.filter((item) => item.status === "needs_review").length;
   els.pendingAgentCount.textContent = state.agents.filter((agent) => agent.status === "pending").length;
-  els.pendingListingCount.textContent = state.listings.filter((listing) => listing.status === "pending_qc").length;
+  els.pendingListingCount.textContent = state.listings.filter((listing) => listing.status === "pending_qc").length + pendingImports;
   els.openReportCount.textContent = state.reports.filter((report) => ["open", "investigating"].includes(report.status)).length;
   els.suspendedCount.textContent = state.agents.filter((agent) => agent.status === "suspended").length;
 }
@@ -696,6 +915,7 @@ function renderAll() {
   renderMetrics();
   renderAgents();
   renderListings();
+  renderAiImports();
   renderReports();
   renderAuditLogs();
   renderNotifications();
@@ -935,6 +1155,19 @@ function bindEvents() {
   });
   els.closeDrawerButton.addEventListener("click", closeDrawer);
   els.noticeForm.addEventListener("submit", submitNotice);
+  els.aiImportAccessForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const key = els.adminApiKeyInput?.value.trim();
+    if (!key) {
+      setAiImportStatus("Enter the admin API key first.", "warn");
+      return;
+    }
+    localStorage.setItem(STORAGE_KEYS.adminApiKey, key);
+    els.adminApiKeyInput.value = "";
+    setAiImportStatus("Admin review key saved on this device.");
+    loadAiImports();
+  });
+  els.refreshAiImportsButton?.addEventListener("click", loadAiImports);
 
   document.addEventListener("click", (event) => {
     const target = event.target instanceof Element ? event.target.closest("[data-action]") : null;
@@ -954,6 +1187,14 @@ function bindEvents() {
     if (action === "suspend-agent-report") suspendAgentFromReport(id);
     if (action === "warn-agent") warnAgent(id);
     if (action === "close-report") closeReport(id);
+    if (action === "select-ai-import") {
+      state.activeAiImportId = id;
+      renderAiImports();
+    }
+    if (action === "save-ai-import") reviewAiImport(id, "edit");
+    if (action === "approve-ai-import") reviewAiImport(id, "approve");
+    if (action === "live-ai-import") reviewAiImport(id, "live");
+    if (action === "reject-ai-import") reviewAiImport(id, "reject");
   });
 
   document.addEventListener("keydown", (event) => {
@@ -963,6 +1204,6 @@ function bindEvents() {
 
 runAiScan(false);
 const initialSection = location.hash.replace("#", "") || "agents";
-switchSection(["agents", "listings", "reports", "audit", "notifications"].includes(initialSection) ? initialSection : "agents");
+switchSection(["agents", "listings", "ai-imports", "reports", "audit", "notifications"].includes(initialSection) ? initialSection : "agents");
 bindEvents();
 hydrateListingEnhancements();
