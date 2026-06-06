@@ -1,0 +1,20 @@
+Tag: select, ID: roleSelect, Class: select
+Tag: input, ID: roleName, Class: field
+Tag: button, ID: applyRoleBtn, Class: chip
+Tag: button, ID: dopamineNextActionButton, Class: btn
+Tag: p, ID: modalLocation, Class: sub
+Tag: input, ID: negotiatorOfferPrice, Class: field
+Tag: input, ID: negotiatorOfferPrice, Class: field
+Tag: p, ID: rentPaymentDescription, Class: sub
+Tag: p, ID: calculatorDescription, Class: sub
+Tag: p, ID: calculatorSecondary, Class: sub
+Tag: p, ID: featurePurpose, Class: sub
+Tag: p, ID: featureDescription, Class: sub
+Tag: p, ID: upgradeDescription, Class: sub
+Tag: p, ID: upgradeNarrative, Class: sub
+Tag: div, ID: quizQ1, Class: quiz-slide active
+Tag: div, ID: quizQ2, Class: quiz-slide
+Tag: div, ID: quizQ3, Class: quiz-slide
+Tag: div, ID: quizQ4, Class: quiz-slide
+Tag: div, ID: quizQ5, Class: quiz-slide
+Tag: div, ID: quizLoading, Class: quiz-slide

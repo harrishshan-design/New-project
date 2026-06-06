@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RealtyGenius | Admin Gatekeeper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="./admin.css">
+  <script src="./rg-config.js"></script>
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <div class="workspace">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark"><i class="fa-solid fa-shield-halved"></i></div>
+        <div>
+          <div class="eyebrow">Admin Dashboard</div>
+          <h1>The Gatekeeper</h1>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Admin sections">
+        <button class="nav-item active" data-section="agents" type="button">
+          <i class="fa-solid fa-user-shield"></i>
+          <span>/admin/agents</span>
+        </button>
+        <button class="nav-item" data-section="listings" type="button">
+          <i class="fa-solid fa-list-check"></i>
+          <span>/admin/listings</span>
+        </button>
+        <button class="nav-item" data-section="ai-imports" type="button">
+          <i class="fa-solid fa-robot"></i>
+          <span>/admin/ai-imports</span>
+        </button>
+        <button class="nav-item" data-section="reports" type="button">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>/admin/reports</span>
+        </button>
+        <button class="nav-item" data-section="audit" type="button">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span>/admin/audit-logs</span>
+        </button>
+        <button class="nav-item" data-section="notifications" type="button">
+          <i class="fa-solid fa-bell"></i>
+          <span>/admin/notifications</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-card">
+        <div class="eyebrow soft">Trust Perimeter</div>
+        <h3>Nothing touches live supply without a scan.</h3>
+        <p>Agents, listings, reports, and strikes move through one controlled review lane.</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">RealtyGenius Control Tower</div>
+          <h2>Marketplace security desk</h2>
+        </div>
+        <div class="top-actions">
+          <button class="ghost-button" id="resetDemoButton" type="button">
+            <i class="fa-solid fa-rotate-left"></i>
+            <span>Reset Demo</span>
+          </button>
+          <button class="primary-button" id="runScanButton" type="button">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>Run AI Scan</span>
+          </button>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="hero-pill">Airport security for marketplace trust</div>
+          <h3>Scan every agent, listing, and user report before risk reaches buyers.</h3>
+          <p>Duplicate identities, suspicious pricing, bad images, fake listings, and scam reports are triaged here before they damage liquidity.</p>
+        </div>
+
+        <div class="hero-metrics">
+          <article class="metric-card">
+            <span>Pending agents</span>
+            <strong id="pendingAgentCount">0</strong>
+            <p>Awaiting REN and IC review</p>
+          </article>
+          <article class="metric-card">
+            <span>QC listings</span>
+            <strong id="pendingListingCount">0</strong>
+            <p>AI flagged before live feed</p>
+          </article>
+          <article class="metric-card">
+            <span>Open reports</span>
+            <strong id="openReportCount">0</strong>
+            <p>Buyer trust cases</p>
+          </article>
+          <article class="metric-card">
+            <span>Suspended</span>
+            <strong id="suspendedCount">0</strong>
+            <p>Agents locked by strikes</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-panel active" data-panel="agents">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">Agent Verification System</div>
+            <h3>Pending agents</h3>
+          </div>
+          <div class="chip-row">
+            <span class="chip">Duplicate REN check</span>
+            <span class="chip">Duplicate IC check</span>
+          </div>
+        </div>
+        <div class="agent-layout">
+          <div class="queue-table" id="agentQueue"></div>
+          <aside class="mini-panel">
+            <div class="eyebrow">AI Assistance</div>
+            <h4>Identity risk scan</h4>
+            <div class="risk-list" id="agentRiskList"></div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section-panel" data-panel="listings">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">Listing QC Desk</div>
+            <h3>Anti-scam firewall</h3>
+          </div>
+          <div class="chip-row">
+            <span class="chip">Price anomaly</span>
+            <span class="chip">Image blur</span>
+            <span class="chip">Duplicate listing</span>
+          </div>
+        </div>
+        <div class="qc-layout">
+          <div class="listing-stack" id="listingQueue"></div>
+          <div class="listing-preview" id="listingPreview"></div>
+          <div class="ai-warning-panel" id="listingWarnings"></div>
+        </div>
+      </section>
+
+      <section class="section-panel" data-panel="ai-imports">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">Telegram AI Imports</div>
+            <h3>Imported listings needing admin review</h3>
+          </div>
+          <div class="chip-row">
+            <span class="chip">AI extracted</span>
+            <span class="chip chip-hot">Needs edit before live</span>
+          </div>
+        </div>
+        <div class="notifications-layout">
+          <form class="notice-composer" id="aiImportAccessForm">
+            <div class="input-shell">
+              <i class="fa-solid fa-key"></i>
+              <input id="adminApiKeyInput" type="password" placeholder="Admin API key for AI import review">
+            </div>
+            <button class="primary-button full-width" id="saveAdminApiKeyButton" type="submit">
+              <i class="fa-solid fa-lock"></i>
+              Save Review Key
+            </button>
+            <button class="ghost-button full-width" id="refreshAiImportsButton" type="button">
+              <i class="fa-solid fa-rotate"></i>
+              Refresh Imports
+            </button>
+            <p class="subtext" id="aiImportStatus">Paste the admin API key once on this device to review Telegram imports.</p>
+          </form>
+          <div class="report-list" id="aiImportList"></div>
+        </div>
+        <div class="listing-preview" id="aiImportPreview" style="margin-top:18px"></div>
+      </section>
+
+      <section class="section-panel" data-panel="reports">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">User Report System</div>
+            <h3>Reports and strikes</h3>
+          </div>
+          <div class="chip-row">
+            <span class="chip chip-hot">3 strikes auto-suspend</span>
+            <span class="chip">Admin power actions</span>
+          </div>
+        </div>
+        <div class="reports-layout">
+          <div class="report-list" id="reportList"></div>
+          <aside class="mini-panel">
+            <div class="eyebrow">Strike System</div>
+            <h4>Agent risk scoreboard</h4>
+            <div class="strike-board" id="strikeBoard"></div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section-panel" data-panel="audit">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">Audit Logs</div>
+            <h3>Admin decision trail</h3>
+          </div>
+        </div>
+        <div class="audit-list" id="auditList"></div>
+      </section>
+
+      <section class="section-panel" data-panel="notifications">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">Notifications</div>
+            <h3>Trust operations alerts</h3>
+          </div>
+        </div>
+        <div class="notifications-layout">
+          <form class="notice-composer" id="noticeForm">
+            <div class="input-shell">
+              <i class="fa-solid fa-heading"></i>
+              <input id="noticeTitle" type="text" placeholder="Notification title" required>
+            </div>
+            <div class="input-shell">
+              <i class="fa-solid fa-message"></i>
+              <textarea id="noticeMessage" rows="4" placeholder="Message to admin team" required></textarea>
+            </div>
+            <button class="primary-button full-width" type="submit">
+              <i class="fa-solid fa-paper-plane"></i>
+              Send Admin Notice
+            </button>
+          </form>
+          <div class="notification-list" id="notificationList"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <aside class="review-drawer" id="reviewDrawer" aria-hidden="true">
+    <div class="drawer-head">
+      <div>
+        <div class="eyebrow" id="drawerEyebrow">Review</div>
+        <h3 id="drawerTitle">Case review</h3>
+      </div>
+      <button class="close-button" id="closeDrawerButton" type="button" aria-label="Close drawer">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="drawer-body" id="drawerBody"></div>
+  </aside>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="./admin.js"></script>
+</body>
+</html>

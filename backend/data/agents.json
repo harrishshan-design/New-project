@@ -1,0 +1,32 @@
+﻿[
+    {
+        "id":  3,
+        "name":  "Test Agent",
+        "phone":  "60123456789",
+        "password":  "agent123",
+        "company":  "TestCo",
+        "areaFocus":  "KL",
+        "activeToday":  true,
+        "verified":  true
+    },
+    {
+        "id":  1,
+        "name":  "Aina Property",
+        "phone":  "60123456789",
+        "password":  "agent123",
+        "company":  "KV Premier Realty",
+        "areaFocus":  "Mont Kiara",
+        "activeToday":  true,
+        "verified":  true
+    },
+    {
+        "id":  2,
+        "name":  "Farid Homes",
+        "phone":  "60129876543",
+        "password":  "agent456",
+        "company":  "Urban Valley Estates",
+        "areaFocus":  "Bangsar",
+        "activeToday":  true,
+        "verified":  true
+    }
+]

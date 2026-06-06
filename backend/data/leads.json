@@ -1,0 +1,26 @@
+﻿[
+    {
+        "id":  2,
+        "listingId":  1,
+        "listingTitle":  "Arcoris Signature Residences",
+        "userName":  "Alice",
+        "userPhone":  "60111222333",
+        "userMessage":  "Interested in viewing",
+        "assignedAgentId":  1,
+        "assignedAgentName":  "Aina Property",
+        "assignedAgentPhone":  "60123456789",
+        "createdAt":  "2026-03-24T23:01:23.6979465+08:00"
+    },
+    {
+        "id":  1,
+        "listingId":  1,
+        "listingTitle":  "Arcoris Signature Residences",
+        "userName":  "Test User",
+        "userPhone":  "60111111111",
+        "userMessage":  "Need a viewing",
+        "assignedAgentId":  1,
+        "assignedAgentName":  "Aina Property",
+        "assignedAgentPhone":  "60123456789",
+        "createdAt":  "2026-03-24T17:30:23.6921470+08:00"
+    }
+]

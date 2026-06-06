@@ -1,0 +1,197 @@
+.negotiation-panel{
+  margin-top:18px;
+  border:1px solid var(--line);
+  border-radius:22px;
+  background:#fff;
+  padding:18px;
+}
+
+.negotiation-panel.dark{
+  background:rgba(255,255,255,0.03);
+}
+
+.negotiation-stack,
+.negotiation-form,
+.negotiation-thread,
+.agent-negotiation-list{
+  display:grid;
+  gap:12px;
+}
+
+.negotiation-form{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  margin-top:12px;
+}
+
+.negotiation-form .full-span{
+  grid-column:1 / -1;
+}
+
+.negotiation-input{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:14px 16px;
+  border-radius:16px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,0.06);
+}
+
+.negotiation-input i{
+  color:var(--muted);
+}
+
+.negotiation-input input{
+  width:100%;
+  border:none;
+  outline:none;
+  background:transparent;
+  color:inherit;
+}
+
+.negotiation-suggestion{
+  padding:16px;
+  border-radius:18px;
+  background:#f8f3ed;
+  border:1px solid var(--line);
+  box-shadow:0 16px 28px rgba(181,90,56,0.08);
+}
+
+.negotiation-suggestion.dark{
+  background:rgba(255,255,255,0.05);
+}
+
+.negotiation-suggestion strong{
+  display:block;
+  margin-bottom:8px;
+  color:var(--brand-strong);
+}
+
+.negotiation-suggestion p{
+  margin:0;
+  line-height:1.65;
+  color:var(--muted);
+}
+
+.typing-line{
+  min-height:4.9em;
+  position:relative;
+}
+
+.typing-line::after{
+  content:"";
+  display:inline-block;
+  width:1px;
+  height:1em;
+  margin-left:6px;
+  vertical-align:-2px;
+  background:currentColor;
+  animation:typingCursor .85s step-end infinite;
+}
+
+.typing-line.typing-complete::after{
+  display:none;
+}
+
+.negotiation-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.negotiation-entry{
+  padding:14px 16px;
+  border-radius:18px;
+  border:1px solid var(--line);
+  background:#fff;
+}
+
+.negotiation-entry.dark{
+  background:rgba(255,255,255,0.04);
+}
+
+.negotiation-entry-head{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:flex-start;
+  margin-bottom:8px;
+}
+
+.negotiation-entry-head strong{
+  display:block;
+}
+
+.negotiation-entry p{
+  margin:0;
+  color:var(--muted);
+  line-height:1.6;
+}
+
+.negotiation-price{
+  font-family:"Space Grotesk",sans-serif;
+  font-size:1.1rem;
+  font-weight:800;
+}
+
+.negotiation-status{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 12px;
+  border-radius:12px;
+  font-size:.82rem;
+  font-weight:800;
+}
+
+.negotiation-status.open{
+  background:#e9f2ff;
+  color:#0b5ed7;
+}
+
+.negotiation-status.accepted{
+  background:#dff6e8;
+  color:#127a45;
+}
+
+.negotiation-status.rejected{
+  background:#fde7e4;
+  color:#b42318;
+}
+
+.negotiation-status.closed{
+  background:#eceff4;
+  color:#556070;
+}
+
+.negotiation-locked{
+  padding:14px 16px;
+  border-radius:16px;
+  border:1px solid #efccb9;
+  background:#fff1eb;
+  color:#934226;
+  font-weight:700;
+}
+
+.agent-negotiation-card{
+  padding:18px;
+  border-radius:20px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,0.04);
+}
+
+.agent-negotiation-card .meta-row{
+  margin-top:10px;
+}
+
+@keyframes typingCursor{
+  50%{
+    opacity:0;
+  }
+}
+
+@media (max-width:760px){
+  .negotiation-form{
+    grid-template-columns:1fr;
+  }
+}

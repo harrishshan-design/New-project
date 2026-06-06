@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#071629">
+  <meta property="og:image" content="https://realitygenius.company/brand/realitygenius-og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://realitygenius.company/brand/realitygenius-og.png">
+  <title>Klang Valley AI | Buyer Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="./user.css">
+  <script src="./rg-config.js"></script>
+  <link rel="stylesheet" href="./ar-viewer.css">
+  <link rel="stylesheet" href="./negotiation-ui.css">
+  <script src="./rg-error-logger.js" data-rg-surface="user"></script>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-100QC1J9RT"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-100QC1J9RT');
+  </script></head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <div class="shell">
+    <header class="topbar" id="dashboardTop">
+      <div class="brand-wrap">
+        <div class="brand-mark"><i class="fa-solid fa-building-circle-check"></i></div>
+        <div>
+          <div class="eyebrow">AI-Powered Property Decision Intelligence System for Malaysia</div>
+          <h1>Klang Valley AI</h1>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <button class="toolbar-button" id="favoritesButton" type="button">
+          <i class="fa-solid fa-heart"></i>
+          <span>Saved</span>
+          <strong id="favoritesCount">0</strong>
+        </button>
+        <button class="toolbar-button" id="notificationsButton" type="button">
+          <i class="fa-solid fa-bell"></i>
+          <span>Alerts</span>
+          <strong id="notificationsCount">0</strong>
+        </button>
+        <button class="toolbar-button" id="pushPermissionButton" type="button">
+          <i class="fa-solid fa-bolt"></i>
+          <span>Push</span>
+          <strong id="pushStatus" data-push-status>Off</strong>
+        </button>
+      </div>
+    </header>
+
+    <main class="dashboard">
+      <section class="hero-panel">
+        <div class="hero-copy">
+          <div class="hero-pill">Buyer Mode</div>
+          <h2>Scroll into the market with a sharper shortlist, cleaner decisions, and one-tap contact.</h2>
+          <p>
+            The feed learns from what you open, save, and revisit. Every click sharpens your recommendations,
+            so the dashboard feels less like browsing and more like momentum.
+          </p>
+
+          <div class="hero-search">
+            <div class="search-row">
+              <div class="input-shell input-shell-grow">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input id="searchInput" type="text" placeholder="Search area, tower, landmark">
+              </div>
+              <div class="input-shell select-shell">
+                <i class="fa-solid fa-arrow-down-wide-short"></i>
+                <select id="sortSelect">
+                  <option value="recommended">AI Match</option>
+                  <option value="price-low">Price Low to High</option>
+                  <option value="price-high">Price High to Low</option>
+                  <option value="yield-high">Rental Yield</option>
+                  <option value="growth-high">Growth Potential</option>
+                </select>
+              </div>
+              <button class="save-search-button" id="saveSearchButton" type="button">
+                <i class="fa-solid fa-bell"></i>
+                <span>Save Alert</span>
+              </button>
+            </div>
+
+            <div class="filter-row">
+              <button class="filter-chip active" data-filter="all" type="button">All Picks</button>
+              <button class="filter-chip" data-filter="condo" type="button">City Condo</button>
+              <button class="filter-chip" data-filter="family" type="button">Family</button>
+              <button class="filter-chip" data-filter="luxury" type="button">Luxury</button>
+            </div>
+            <div class="search-alert-strip" id="searchAlertStrip"></div>
+          </div>
+
+          <div class="hero-kpis">
+            <article class="kpi-card">
+              <span>Live feed</span>
+              <strong id="propertyCount">0</strong>
+              <p>Relevant properties in your current view</p>
+            </article>
+            <article class="kpi-card">
+              <span>Saved</span>
+              <strong id="savedCount">0</strong>
+              <p>Homes worth revisiting later tonight</p>
+            </article>
+            <article class="kpi-card">
+              <span>Bookings</span>
+              <strong id="bookingCount">0</strong>
+              <p>Requests you have already moved on</p>
+            </article>
+          </div>
+        </div>
+
+        <aside class="hero-side">
+          <article class="brain-card">
+            <div class="section-topline">
+              <span class="eyebrow soft">Smart Recommendations</span>
+              <span class="signal-badge" id="signalBadge">Learning from your behavior</span>
+            </div>
+            <h3 id="recommendationTitle">Waiting for your first signal</h3>
+            <p id="recommendationText">
+              Open a few properties, save the strong ones, and the recommendation engine will start reading your bias.
+            </p>
+            <div class="brain-progress">
+              <div class="brain-progress-topline">
+                <span id="brainProgressLabel">Signal strength: 0%</span>
+                <span id="brainUnlockLabel">Hidden gem locked</span>
+              </div>
+              <div class="brain-progress-track" aria-hidden="true">
+                <div class="brain-progress-fill" id="brainProgressFill"></div>
+              </div>
+            </div>
+            <div class="brain-strip" id="recommendationMeta">
+              The engine updates from your browsing and saved homes.
+            </div>
+          </article>
+
+          <article class="engagement-card">
+            <div class="section-topline">
+              <span class="eyebrow soft">Momentum Loop</span>
+              <span class="mini-dot"></span>
+            </div>
+            <div class="engagement-list" id="engagementList"></div>
+          </article>
+
+          <article class="gamification-card" id="gamificationPanel">
+            <div class="section-topline">
+              <span class="eyebrow soft">Buyer Quest</span>
+              <span class="quest-level" id="levelValue">Level 1</span>
+            </div>
+            <div class="xp-row">
+              <div>
+                <span>XP earned</span>
+                <strong id="xpValue">0 XP</strong>
+              </div>
+              <div>
+                <span>Streak</span>
+                <strong id="streakValue">0 days</strong>
+              </div>
+            </div>
+            <div class="achievement-track" aria-hidden="true">
+              <div class="achievement-fill" id="achievementMeter"></div>
+            </div>
+            <div class="quest-list" id="questList"></div>
+            <div class="badge-list" id="badgeList"></div>
+          </article>
+        </aside>
+      </section>
+
+      <section class="recommendation-section" id="recommendations">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Shortlist Brain</div>
+            <h3>Recommended next clicks</h3>
+          </div>
+        </div>
+        <div class="recommendation-grid" id="recommendationGrid"></div>
+      </section>
+
+      <section class="personalized-section" id="personalizedSection" hidden>
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Personalized For You</div>
+            <h3>More like your recent interest</h3>
+            <p id="personalizedReason" class="section-subcopy"></p>
+          </div>
+        </div>
+        <div class="personalized-grid" id="personalizedGrid"></div>
+      </section>
+
+      <section class="feed-section" id="explore">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Property Feed</div>
+            <h3>Explore the market</h3>
+          </div>
+          <div class="feed-controls">
+            <div class="feed-view-toggle" aria-label="Feed view mode">
+              <button class="view-toggle-button active" id="gridFeedButton" type="button">Grid View</button>
+              <button class="view-toggle-button" id="videoFeedButton" type="button">Video View</button>
+            </div>
+            <div class="feed-meta">
+              <span class="meta-pill">Save the strongest</span>
+              <span class="meta-pill">Contact in one tap</span>
+              <span class="meta-pill">AR where available</span>
+            </div>
+          </div>
+        </div>
+        <div class="property-feed" id="propertyGrid"></div>
+        <div class="video-feed" id="videoFeed" hidden></div>
+        <div class="feed-loading" id="feedLoading" hidden>Loading more properties for your next scroll...</div>
+        <div class="feed-sentinel" id="feedSentinel" aria-hidden="true"></div>
+      </section>
+
+      <section class="saved-section" id="savedHomes">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Saved Properties</div>
+            <h3>Your private shortlist</h3>
+          </div>
+        </div>
+        <div class="saved-grid" id="savedGrid"></div>
+      </section>
+    </main>
+  </div>
+
+  <nav class="mobile-quick-nav" aria-label="Buyer quick navigation">
+    <a href="#dashboardTop">
+      <i class="fa-solid fa-house"></i>
+      <span>Home</span>
+    </a>
+    <a href="#recommendations">
+      <i class="fa-solid fa-star"></i>
+      <span>For You</span>
+    </a>
+    <a href="#explore">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <span>Explore</span>
+    </a>
+    <a href="#savedHomes">
+      <i class="fa-solid fa-heart"></i>
+      <span>Saved</span>
+    </a>
+  </nav>
+
+  <aside class="drawer" id="favoritesDrawer" aria-hidden="true">
+    <div class="drawer-head">
+      <div>
+        <div class="eyebrow">Saved</div>
+        <h3>Favorites</h3>
+      </div>
+      <button class="close-button" data-close="favoritesDrawer" type="button"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="drawer-list" id="favoritesDrawerList"></div>
+  </aside>
+
+  <aside class="drawer" id="notificationsDrawer" aria-hidden="true">
+    <div class="drawer-head">
+      <div>
+        <div class="eyebrow">Notifications</div>
+        <h3>Buyer alerts</h3>
+      </div>
+      <button class="close-button" data-close="notificationsDrawer" type="button"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="drawer-list" id="notificationsDrawerList"></div>
+  </aside>
+
+  <div class="modal-backdrop" id="propertyModal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-topbar">
+        <div>
+          <div class="eyebrow" id="modalBadge">Property</div>
+          <h3 id="modalTitle">Property</h3>
+        </div>
+        <button class="close-button" data-close="propertyModal" type="button"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-grid">
+        <section class="modal-visual">
+          <img id="modalImage" class="modal-image" alt="Property preview">
+          <div class="modal-gallery" id="modalGallery" aria-label="Property photo gallery"></div>
+          <div class="modal-stats" id="modalStats"></div>
+        </section>
+
+        <section class="modal-copy">
+          <p class="modal-location" id="modalLocation"></p>
+          <p class="modal-summary" id="modalSummary"></p>
+
+          <div class="modal-action-bar">
+            <button class="ghost-button" id="modalSaveAction" type="button">Save Property</button>
+            <a class="primary-button quick-contact" id="modalContactAction" href="#" target="_blank" rel="noopener noreferrer">
+              <i class="fa-brands fa-whatsapp"></i>
+              Quick Contact
+            </a>
+          </div>
+
+          <section class="decision-panel">
+            <div class="section-topline">
+              <span class="eyebrow">Decision Brain</span>
+              <strong id="modalRisk">Risk: Low</strong>
+            </div>
+            <ul class="decision-list" id="modalAiReasons"></ul>
+            <div class="decision-footer">
+              <article>
+                <span>Suggested Offer</span>
+                <strong id="modalOffer">RM 0</strong>
+              </article>
+              <article>
+                <span>Estimated ROI</span>
+                <strong id="modalRoi">0%</strong>
+              </article>
+            </div>
+          </section>
+
+          <section class="fun-panel">
+            <div class="section-topline">
+              <div>
+                <div class="eyebrow">Daydream Lab</div>
+                <h4>Play with the fantasy</h4>
+              </div>
+              <div class="fun-actions">
+                <button class="ghost-button" id="timelineButton" type="button">How could I afford this?</button>
+                <button class="ghost-button" id="roastButton" type="button">Roast This House</button>
+              </div>
+            </div>
+            <div class="fun-grid">
+              <article class="fun-card">
+                <span class="fun-tag">Alternative Timeline</span>
+                <p id="timelineOutput">Tap the affordability button and the AI will scheme up a playful path into this lifestyle.</p>
+              </article>
+              <article class="fun-card">
+                <span class="fun-tag">Roast Mode</span>
+                <p id="roastOutput">Flip roast mode on and let the AI lovingly drag the weird layout, pricing, or design choices.</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="negotiation-panel">
+            <div class="section-topline">
+              <div>
+                <div class="eyebrow">AI Negotiation Assistant</div>
+                <h4>Negotiate this property</h4>
+              </div>
+              <span class="negotiation-status open" id="negotiationState">Open</span>
+            </div>
+            <div class="negotiation-stack">
+              <div class="negotiation-suggestion" id="negotiationSuggestion"></div>
+              <div class="negotiation-locked" id="negotiationLocked" hidden>This negotiation has been closed by the agent for this property and buyer profile.</div>
+              <form class="negotiation-form" id="negotiationForm">
+                <div class="negotiation-input">
+                  <i class="fa-solid fa-user"></i>
+                  <input id="negotiationName" type="text" placeholder="Your name" required>
+                </div>
+                <div class="negotiation-input">
+                  <i class="fa-brands fa-whatsapp"></i>
+                  <input id="negotiationPhone" type="tel" placeholder="WhatsApp number" required>
+                </div>
+                <div class="negotiation-input full-span">
+                  <i class="fa-solid fa-money-bill-wave"></i>
+                  <input id="negotiationOffer" type="number" placeholder="Your offer price" required>
+                </div>
+                <div class="negotiation-actions full-span">
+                  <button class="primary-button" id="sendNegotiationButton" type="submit">Send Counter Offer</button>
+                  <button class="ghost-button" id="acceptNegotiationButton" type="button">Accept AI Suggestion</button>
+                  <button class="ghost-button" id="rejectNegotiationButton" type="button">Reject For Now</button>
+                </div>
+              </form>
+              <div class="negotiation-thread" id="negotiationThread"></div>
+            </div>
+          </section>
+
+          <section class="deal-room-panel">
+            <div class="section-topline">
+              <div>
+                <div class="eyebrow">Leak-Proof Deal Room</div>
+                <h4>Escrow, loan discount, and offer paper trail</h4>
+              </div>
+              <span class="deal-room-pill" id="dealRoomStatus">Not started</span>
+            </div>
+
+            <div class="deal-room-grid">
+              <article class="deal-control-card">
+                <div class="deal-control-head">
+                  <span class="deal-control-icon"><i class="fa-solid fa-shield-halved"></i></span>
+                  <div>
+                    <strong>Booking Fee Escrow</strong>
+                    <p id="escrowStatus">No booking fee held yet.</p>
+                  </div>
+                </div>
+                <div class="deal-control-meta">
+                  <span id="escrowAmount">RM 10,000 protected deposit</span>
+                  <span id="escrowReference">Reference pending</span>
+                </div>
+                <button class="primary-button" id="payBookingFeeButton" type="button">Pay Booking Fee</button>
+              </article>
+
+              <article class="deal-control-card">
+                <div class="deal-control-head">
+                  <span class="deal-control-icon"><i class="fa-solid fa-building-columns"></i></span>
+                  <div>
+                    <strong>Partner Bank Loan Path</strong>
+                    <p id="loanStatus">Start the DSR vault to unlock the 0.1% mortgage-rate route.</p>
+                  </div>
+                </div>
+                <div class="deal-control-meta">
+                  <span>AI Document Vault keeps paperwork here</span>
+                  <span>Bank referral monetizes without touching agent commission</span>
+                </div>
+                <div class="deal-control-actions">
+                  <button class="ghost-button" id="startLoanPackButton" type="button">Start Loan Pack</button>
+                  <button class="ghost-button" id="submitPartnerBankButton" type="button">Submit to Partner Bank</button>
+                </div>
+              </article>
+
+              <article class="deal-control-card">
+                <div class="deal-control-head">
+                  <span class="deal-control-icon"><i class="fa-solid fa-file-signature"></i></span>
+                  <div>
+                    <strong>Digital Letter of Offer</strong>
+                    <p id="offerStatus">Accept an offer to generate the e-sign paper trail.</p>
+                  </div>
+                </div>
+                <div class="offer-preview" id="offerPreview">No offer generated yet.</div>
+                <div class="deal-control-actions">
+                  <button class="ghost-button" id="generateOfferButton" type="button">Generate Offer</button>
+                  <button class="ghost-button" id="buyerSignOfferButton" type="button">Buyer E-Sign</button>
+                </div>
+              </article>
+            </div>
+
+            <div class="deal-room-timeline" id="dealRoomTimeline"></div>
+          </section>
+
+          <section class="ar-panel">
+            <div class="section-topline">
+              <div>
+                <div class="eyebrow">AR Viewing</div>
+                <h4>Walk the space</h4>
+              </div>
+            </div>
+            <div class="ar-module" id="arModule">
+              <div class="ar-stage">
+                <model-viewer
+                  id="arViewer"
+                  camera-controls
+                  ar
+                  ar-modes="webxr scene-viewer quick-look"
+                  ar-placement="floor"
+                  auto-rotate
+                  shadow-intensity="1"
+                  exposure="1"
+                  interaction-prompt="none"
+                  touch-action="pan-y"
+                  min-camera-orbit="auto auto 70%"
+                  max-camera-orbit="auto auto 180%"
+                >
+                  <button slot="ar-button" class="ar-hidden-launch" id="hiddenArLaunch" type="button">Launch AR</button>
+                </model-viewer>
+                <div class="ar-tooltip" id="arTooltip">Drag to look around</div>
+                <div class="ar-fallback" id="arFallback">AR preview will appear here for supported listings.</div>
+              </div>
+              <div class="ar-toolbar">
+                <button class="primary-button" id="toggleArButton" type="button">
+                  <i class="fa-solid fa-camera"></i>
+                  Launch AR
+                </button>
+                <button class="ghost-button" id="resetArButton" type="button">
+                  <i class="fa-solid fa-rotate-left"></i>
+                  Reset View
+                </button>
+                <span class="ar-status" id="arStatus">Waiting for a property model</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="booking-panel">
+            <div class="section-topline">
+              <div>
+                <div class="eyebrow">Book a Viewing</div>
+                <h4>Request your slot</h4>
+              </div>
+            </div>
+            <form class="booking-form" id="bookingForm">
+              <div class="input-shell">
+                <i class="fa-solid fa-user"></i>
+                <input id="bookingName" type="text" placeholder="Your name" required>
+              </div>
+              <div class="input-shell">
+                <i class="fa-brands fa-whatsapp"></i>
+                <input id="bookingPhone" type="tel" placeholder="WhatsApp number" required>
+              </div>
+              <div class="input-shell">
+                <i class="fa-solid fa-calendar-days"></i>
+                <input id="bookingDate" type="date" required>
+              </div>
+              <div class="input-shell select-shell">
+                <i class="fa-regular fa-clock"></i>
+                <select id="bookingTime" required>
+                  <option value="10:00 AM">10:00 AM</option>
+                  <option value="12:00 PM">12:00 PM</option>
+                  <option value="3:00 PM">3:00 PM</option>
+                  <option value="6:30 PM">6:30 PM</option>
+                </select>
+              </div>
+              <button class="primary-button booking-submit" type="submit">Send Booking Request</button>
+            </form>
+            <p class="form-status" id="bookingStatus"></p>
+          </section>
+
+          <section class="notes-panel">
+            <div class="section-topline">
+              <div>
+                <div class="eyebrow">Vibe Check</div>
+                <h4>Community notes and condo gossip</h4>
+              </div>
+              <span class="notes-pill">Anonymous and unverified</span>
+            </div>
+            <div class="notes-list" id="notesList"></div>
+            <form class="notes-form" id="notesForm">
+              <div class="input-shell note-input-shell">
+                <i class="fa-regular fa-comments"></i>
+                <textarea id="noteInput" rows="3" placeholder="Drop an anonymous note about the management, view, vibe, lift speed, parking chaos, or hidden upside."></textarea>
+              </div>
+              <button class="primary-button" type="submit">Post Anonymous Note</button>
+            </form>
+          </section>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="./negotiation-store.js"></script>
+  <script src="./negotiation-assistant.js"></script>
+  <script src="./ar-viewer.js"></script>
+  <script src="./property-data.js"></script>
+  <script src="./rg-push-notifications.js" data-push-role="user"></script>
+  <script src="./user.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./rg-trust-loop.js" data-trust-role="user"></script>
+  <script src="./rg-behavior-loop.js" data-behavior-role="user"></script>
+<script src="./rg-feedback-gate.js?v=39" data-feedback-role="user"></script>
+  <script src="./mobile-app-shell.js?v=48" data-mobile-role="user"></script>
+</body>
+</html>
