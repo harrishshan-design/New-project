@@ -699,6 +699,135 @@ function importedListingToPublicProperty(item) {
     };
 }
 
+function normalizeJsonArray(value) {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+        const parsed = safeJsonParse(value, null);
+        return Array.isArray(parsed) ? parsed : [];
+    }
+    return [];
+}
+
+function normalizePublicGalleryUrls(value) {
+    return normalizeJsonArray(value)
+        .map((item, index) => {
+            const rawUrl = typeof item === 'string' ? item : item?.url || item?.display || item?.image || '';
+            const url = String(rawUrl || '').trim();
+            if (!url || /^data:image\//i.test(url)) return null;
+            if (!/^https?:\/\//i.test(url)) return null;
+            return {
+                label: typeof item === 'object' && item?.label ? String(item.label) : index === 0 ? "Front View" : `Photo ${index + 1}`,
+                required: Boolean(typeof item === 'object' ? item?.required : index < 5),
+                url,
+                original: typeof item === 'object' ? item?.original || url : url,
+                source: typeof item === 'object' ? item?.source || "Agent upload" : "Agent upload",
+                status: "verified"
+            };
+        })
+        .filter(Boolean)
+        .slice(0, 10);
+}
+
+function parseListingPrice(value) {
+    if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+    const normalized = String(value || '').replace(/rm/gi, '').replace(/,/g, '').trim();
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeAgentListingStatus(value = 'pending_qc') {
+    const normalized = String(value || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+    if (['approve', 'approved'].includes(normalized)) return 'live';
+    if (normalized === 'live') return 'live';
+    if (normalized === 'reject' || normalized === 'rejected') return 'rejected';
+    return 'pending_qc';
+}
+
+function pickAgentListingPayload(payload = {}) {
+    const gallery = normalizePublicGalleryUrls(
+        payload.gallery_urls || payload.galleryUrls || payload.gallery || payload.photos || []
+    );
+    const price = parseListingPrice(payload.price);
+    const title = String(payload.title || payload.original_title || '').trim();
+    const area = String(payload.area || payload.location || '').trim();
+
+    if (!title) return { error: "Listing title is required." };
+    if (!area) return { error: "Listing area is required." };
+    if (!price || price <= 0) return { error: "Listing price must be a positive number." };
+    if (gallery.length < 4) {
+        return {
+            error: "At least 4 public gallery image URLs are required. Device-uploaded data URLs are temporary until Supabase Storage/S3 upload is added."
+        };
+    }
+
+    return {
+        agent_id: payload.agent_id || payload.agentId || null,
+        title,
+        area,
+        price,
+        property_type: String(payload.property_type || payload.propertyType || "Residential").trim() || "Residential",
+        address: String(payload.address || payload.location || area).trim(),
+        landlord_name: String(payload.landlord_name || payload.landlordName || '').trim(),
+        landlord_phone: cleanPhone(payload.landlord_phone || payload.landlordPhone || ''),
+        gallery_urls: gallery,
+        ar_link: String(payload.ar_link || payload.arLink || payload.modelUrl || '').trim(),
+        status: "pending_qc",
+        updated_at: new Date().toISOString()
+    };
+}
+
+function agentListingToPublicProperty(item) {
+    const gallery = normalizePublicGalleryUrls(item.gallery_urls);
+    const price = parseListingPrice(item.price);
+    const propertyType = item.property_type || "Residential";
+    const image = gallery[0]?.url || "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=80";
+    const area = item.area || item.address || "Malaysia";
+    const type = inferPropertyType(propertyType).toLowerCase();
+    const sqft = Number(item.built_up_sqft || 0);
+    return {
+        id: numericPublicId(`agent-${item.id}`),
+        agentListingId: item.id,
+        source: "agent_live_upload",
+        badge: "live-agent",
+        title: item.title || "Agent Property Listing",
+        area,
+        location: item.address || area,
+        type,
+        intent: /industrial|commercial/i.test(propertyType) ? "investment" : "family",
+        price,
+        bedrooms: Number(item.bedrooms || 0),
+        bathrooms: Number(item.bathrooms || 0),
+        beds: Number(item.bedrooms || 0),
+        baths: Number(item.bathrooms || 0),
+        sqft,
+        psf: sqft && price ? Math.round(price / sqft) : 0,
+        image,
+        gallery,
+        galleryCount: gallery.length,
+        whatsapp: item.landlord_phone || "",
+        aiScore: 88,
+        confidenceScore: 88,
+        yield: 4.2,
+        growth: 5.1,
+        summary: `${propertyType} in ${area}. Admin-approved agent listing with ${gallery.length} verified public image URLs.`,
+        vibe: "Admin-approved agent listing",
+        tags: ["agent-upload", type, "admin-approved"],
+        verifiedType: "agent",
+        verificationSource: "admin_approved",
+        adminApproved: true,
+        approvalStatus: "approved",
+        liveStatus: "approved_live",
+        freshnessStatus: "fresh",
+        createdAt: item.created_at,
+        updatedAt: item.updated_at || item.created_at,
+        mapLink: `https://www.google.com/maps/search/${encodeURIComponent(item.address || item.area || item.title || "Malaysia")}`,
+        agentName: "RealityGenius Verified Agent",
+        agencyName: "RealityGenius Agent Network",
+        arLink: item.ar_link || "",
+        modelUrl: item.ar_link || ""
+    };
+}
+
 async function saveRawTelegramMessage(meta) {
     const existing = await selectSupabaseRows(
         "telegram_raw_messages",
@@ -912,13 +1041,69 @@ async function reviewAiImport(payload) {
     return { item: row };
 }
 
+async function createAgentListing(payload = {}) {
+    if (!hasSupabaseConfig()) return { __status: 500, error: "Supabase is not configured." };
+    const listing = pickAgentListingPayload(payload);
+    if (listing.error) return { __status: 400, error: listing.error };
+
+    const row = await insertSupabaseRow("agent_property_listings", listing);
+    await createAdminNotification(
+        "Agent listing needs QC",
+        `${row?.title || "New agent listing"} was submitted and is waiting for admin approval.`,
+        { listingId: row?.id, category: "agent_listing_qc" }
+    );
+    return { item: row };
+}
+
+async function listAdminAgentListings() {
+    if (!hasSupabaseConfig()) return { __status: 500, error: "Supabase is not configured." };
+    const rows = await selectSupabaseRows(
+        "agent_property_listings",
+        "select=*&order=created_at.desc&limit=200"
+    );
+    return { items: rows || [] };
+}
+
+async function reviewAgentListing(payload = {}) {
+    if (!hasSupabaseConfig()) return { __status: 500, error: "Supabase is not configured." };
+    const id = payload.id;
+    if (!id) return { __status: 400, error: "Listing id is required." };
+
+    const status = normalizeAgentListingStatus(payload.status || payload.action);
+    const updates = {
+        status,
+        rejection_reason: status === "rejected" ? String(payload.rejection_reason || payload.rejectionReason || '').trim() : null,
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: payload.reviewedBy || "admin",
+        updated_at: new Date().toISOString()
+    };
+
+    const row = await patchSupabaseRow("agent_property_listings", id, updates);
+    await createAdminNotification(
+        `Agent listing ${status}`,
+        `${row?.title || "Agent listing"} is now ${status}.`,
+        { listingId: id, category: "agent_listing_qc", status }
+    );
+    return { item: row };
+}
+
 async function listPublicProperties() {
     if (!hasSupabaseConfig()) return { items: [] };
-    const rows = await selectSupabaseRows(
+    const importedRows = await selectSupabaseRows(
         "ai_imported_listings",
         "select=*&status=in.(approved,live)&order=updated_at.desc&limit=100"
     );
-    return { items: (rows || []).map(importedListingToPublicProperty) };
+    const agentRows = await selectSupabaseRows(
+        "agent_property_listings",
+        "select=*&status=in.(approved,live)&order=updated_at.desc&limit=100"
+    );
+    const items = [
+        ...(importedRows || []).map(importedListingToPublicProperty),
+        ...(agentRows || []).map(agentListingToPublicProperty)
+    ]
+        .filter((item) => item && item.title && Number(item.price || 0) > 0)
+        .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
+    return { items };
 }
 
 // ---------------------------------------------------------
@@ -963,7 +1148,15 @@ const server = http.createServer(async (req, res) => {
             return {
                 ok: true,
                 service: "RealityGenius Telegram AI import backend",
-                routes: ["/api/telegram/webhook", "/api/telegram/health", "/api/admin/ai-imports", "/api/properties"],
+                routes: [
+                    "/api/telegram/webhook",
+                    "/api/telegram/health",
+                    "/api/agent/listings",
+                    "/api/admin/listings",
+                    "/api/admin/listings/review",
+                    "/api/admin/ai-imports",
+                    "/api/properties"
+                ],
                 config: {
                     supabase: hasSupabaseConfig(),
                     openai: Boolean(HAS_OPENAI && openai),
@@ -992,6 +1185,22 @@ const server = http.createServer(async (req, res) => {
             const auth = requireAdminAccess(req);
             if (!auth.ok) return { __status: auth.status, error: auth.error };
             return reviewAiImport(payload);
+        }
+
+        if (url === '/api/agent/listings') {
+            return createAgentListing(payload);
+        }
+
+        if (url === '/api/admin/listings') {
+            const auth = requireAdminAccess(req);
+            if (!auth.ok) return { __status: auth.status, error: auth.error };
+            return listAdminAgentListings();
+        }
+
+        if (url === '/api/admin/listings/review') {
+            const auth = requireAdminAccess(req);
+            if (!auth.ok) return { __status: auth.status, error: auth.error };
+            return reviewAgentListing(payload);
         }
 
         if (url === '/api/properties') {
