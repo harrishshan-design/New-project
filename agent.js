@@ -2782,7 +2782,7 @@ function downloadListingTemplate() {
 }
 
 function openListingAsset(id, kind) {
-  const listing = getEnhancedListing(state.listings.find((item) => item.id === id) || {});
+  const listing = getEnhancedListing(state.listings.find((item) => String(item.id) === String(id)) || {});
   const media = getGalleryStats(listing);
   const firstPhoto = media.gallery.find((item) => item.url);
   const link = kind === "ar" ? listing.arLink : firstPhoto?.original || listing.imageDriveLink || listing.image;
@@ -4847,9 +4847,9 @@ function bindEvents() {
     const id = Number(rawId);
     const action = actionTarget.dataset.action;
     if (action === "promote-lead") moveLeadForward(id);
-    if (action === "toggle-listing-status") toggleListingStatus(id);
-    if (action === "open-listing-image") openListingAsset(id, "image");
-    if (action === "open-listing-ar") openListingAsset(id, "ar");
+    if (action === "toggle-listing-status") toggleListingStatus(rawId);
+    if (action === "open-listing-image") openListingAsset(rawId, "image");
+    if (action === "open-listing-ar") openListingAsset(rawId, "ar");
     if (action === "agent-counter") handleNegotiationAction(id, "counter");
     if (action === "agent-accept") handleNegotiationAction(id, "accept");
     if (action === "agent-reject") handleNegotiationAction(id, "reject");
