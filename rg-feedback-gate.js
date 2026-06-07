@@ -197,6 +197,10 @@
         font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
         overflow:hidden;
       }
+      .rg-feedback-space--bottom{
+        margin-top:8px;
+        margin-bottom:calc(74px + var(--rg-mobile-safe-bottom,0px));
+      }
       .rg-feedback-space.is-highlighted{animation:rgFeedbackGlow 1.4s ease 2}
       @keyframes rgFeedbackGlow{
         0%,100%{box-shadow:0 20px 55px rgba(20,37,31,.11)}
@@ -307,6 +311,7 @@
         line-height:1.35;
       }
       body.rg-mobile-app .rg-feedback-space{margin-bottom:calc(108px + var(--rg-mobile-safe-bottom,0px))}
+      body.rg-mobile-app .rg-feedback-space--bottom{margin-bottom:calc(132px + var(--rg-mobile-safe-bottom,0px))}
       @media(max-width:560px){
         .rg-feedback-backdrop{align-items:flex-end;padding:10px}
         .rg-feedback-card{border-radius:18px 18px 12px 12px}
@@ -318,6 +323,7 @@
         .rg-feedback-submit,.rg-feedback-stay{width:100%}
         .rg-feedback-float{right:12px;bottom:calc(82px + var(--rg-mobile-safe-bottom,0px));min-height:42px;padding:0 12px}
         .rg-feedback-space{width:calc(100% - 20px);margin-top:22px;border-radius:18px}
+        .rg-feedback-space--bottom{margin-top:8px;margin-bottom:calc(96px + var(--rg-mobile-safe-bottom,0px))}
         .rg-feedback-space-inner{grid-template-columns:1fr;padding:12px;gap:12px}
         .rg-feedback-space-copy{padding:18px;border-radius:16px}
         .rg-feedback-space-copy h3{font-size:1.22rem}
@@ -399,7 +405,7 @@
         openModal("manual_feedback");
         return;
       }
-      space.scrollIntoView({ behavior: "smooth", block: "center" });
+      space.scrollIntoView({ behavior: "smooth", block: "end" });
       space.classList.add("is-highlighted");
       window.setTimeout(() => space.classList.remove("is-highlighted"), 2900);
     });
@@ -427,7 +433,7 @@
 
     const section = document.createElement("section");
     section.id = "rgFeedbackSpace";
-    section.className = "rg-feedback-space";
+    section.className = "rg-feedback-space rg-feedback-space--bottom";
     section.setAttribute("aria-label", "RealityGenius feedback space");
     section.innerHTML = `
       <div class="rg-feedback-space-inner">
@@ -476,8 +482,12 @@
       </div>
     `;
 
-    const target = document.querySelector("main") || document.querySelector(".main") || document.querySelector(".dashboard") || document.body;
-    target.appendChild(section);
+    const shell = document.querySelector(".shell");
+    if (shell?.parentNode) {
+      shell.insertAdjacentElement("afterend", section);
+    } else {
+      document.body.appendChild(section);
+    }
     bindInlineFeedbackSpace(section);
   }
 
@@ -690,11 +700,6 @@
   function bindNavigationGate() {
     ensureFloatButton();
     ensureInlineFeedbackSpace();
-
-    window.setTimeout(() => {
-      if (hasSubmitted() || hasSeenDailyPrompt() || state.active || document.visibilityState === "hidden") return;
-      openModal("today_checkin");
-    }, dailyPromptDelayMs);
 
     document.addEventListener("click", async (event) => {
       if (isModifiedClick(event)) return;
