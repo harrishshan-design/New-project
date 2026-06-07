@@ -11,6 +11,7 @@ const STORAGE_KEYS = {
   gamification: "rg_user_gamification",
   leakProofDeals: "kvai_leak_proof_deals",
   buyerLiveListings: "rg_live_buyer_listings",
+  backendBuyerListings: "rg_backend_buyer_listings",
   globalAlert: "rg_global_platform_alert",
   algorithmControls: "rg_master_algorithm_controls"
 };
@@ -22,6 +23,8 @@ const DEFAULT_MASTER_ALGORITHM = {
 };
 
 const BASE_PROPERTIES = window.RealtyGeniusPropertyListings || [];
+const FORCE_BACKEND_BUYER_FEED = ["realitygenius.company", "www.realitygenius.company"].includes(window.location.hostname);
+let backendListingFeedReady = FORCE_BACKEND_BUYER_FEED;
 
 function readJsonStore(key, fallback) {
   try {
@@ -43,7 +46,8 @@ function isAdminApprovedLiveListing(item) {
 }
 
 function mergeLiveProperties(baseProperties = BASE_PROPERTIES) {
-  const liveListings = readJsonStore(STORAGE_KEYS.buyerLiveListings, [])
+  const liveSourceKey = backendListingFeedReady ? STORAGE_KEYS.backendBuyerListings : STORAGE_KEYS.buyerLiveListings;
+  const liveListings = readJsonStore(liveSourceKey, [])
     .filter((item) => item && item.title && Number(item.price || 0) > 0 && isAdminApprovedLiveListing(item))
     .map((item) => ({
       ...item,
@@ -59,6 +63,7 @@ function mergeLiveProperties(baseProperties = BASE_PROPERTIES) {
       liveStatus: "approved_live",
       summary: item.summary || "Fresh live listing approved by RealityGenius admin QC."
     }));
+  if (backendListingFeedReady) return liveListings;
   const liveIds = new Set(liveListings.map((item) => String(item.id)));
   return [
     ...liveListings,
@@ -274,7 +279,7 @@ function userApiBaseUrl() {
   const stored = localStorage.getItem("realtygenius_api_base");
   if (stored) return stored.replace(/\/+$/, "");
   if (["realitygenius.company", "www.realitygenius.company"].includes(window.location.hostname)) {
-    return "https://api.realitygenius.company/api";
+    return "https://hh-empire.onrender.com/api";
   }
   if (window.location.protocol === "file:") return "http://localhost:3000/api";
   if (["localhost", "127.0.0.1"].includes(window.location.hostname) && window.location.port !== "3000") {
@@ -297,18 +302,14 @@ async function hydrateBackendLiveListings() {
     const response = await fetch(userApiUrl("/properties"), { headers: { "Accept": "application/json" } });
     if (!response.ok) return;
     const payload = await response.json();
+    backendListingFeedReady = true;
     const remoteLive = (Array.isArray(payload) ? payload : payload.items || [])
       .filter((item) => {
         if (item?.source === "telegram_ai_import") return isAdminApprovedLiveListing(item);
         return item?.source === "agent_live_upload" || item?.badge === "live-agent" || isAdminApprovedLiveListing(item);
       });
-    if (!remoteLive.length) return;
-    const existing = readStore(STORAGE_KEYS.buyerLiveListings, []);
-    const remoteIds = new Set(remoteLive.map((item) => String(item.id)));
-    writeStore(STORAGE_KEYS.buyerLiveListings, [
-      ...remoteLive,
-      ...existing.filter((item) => !remoteIds.has(String(item.id)))
-    ]);
+    writeStore(STORAGE_KEYS.backendBuyerListings, remoteLive);
+    writeStore(STORAGE_KEYS.buyerLiveListings, remoteLive);
     refreshLiveBuyerListings(false);
     resetFeedWindow();
     renderDashboard();
@@ -566,7 +567,7 @@ function getApiBaseUrl() {
   const stored = localStorage.getItem("realtygenius_api_base");
   if (stored) return stored;
   if (["realitygenius.company", "www.realitygenius.company"].includes(window.location.hostname)) {
-    return "https://api.realitygenius.company";
+    return "https://hh-empire.onrender.com/api";
   }
   return window.location.protocol === "file:" ? "http://localhost:3000" : window.location.origin;
 }
@@ -2866,7 +2867,7 @@ function bindEvents() {
       renderNotifications();
     }
 
-    if (event.key === STORAGE_KEYS.buyerLiveListings) {
+    if (event.key === STORAGE_KEYS.buyerLiveListings || event.key === STORAGE_KEYS.backendBuyerListings) {
       refreshLiveBuyerListings(true);
     }
 

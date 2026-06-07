@@ -59,6 +59,7 @@ const state = {
   activeListingId: null,
   activeAiImportId: null,
   enhancerHydrated: false,
+  agentListingsHydrated: false,
   aiImports: [],
   agents: readStore(STORAGE_KEYS.agents, seedAgents),
   verificationLogs: readStore(STORAGE_KEYS.verificationLogs, []),
@@ -142,7 +143,7 @@ function adminApiBaseUrl() {
   const stored = localStorage.getItem("realtygenius_api_base");
   if (stored) return stored.replace(/\/+$/, "");
   if (["realitygenius.company", "www.realitygenius.company"].includes(window.location.hostname)) {
-    return "https://api.realitygenius.company/api";
+    return "https://hh-empire.onrender.com/api";
   }
   if (window.location.protocol === "file:") return "http://localhost:3000/api";
   if (["localhost", "127.0.0.1"].includes(window.location.hostname) && window.location.port !== "3000") {
@@ -410,6 +411,99 @@ async function reviewRemoteEnhancement(listing, status) {
   return result.enhancement ? mapEnhancementToAdminListing(result.enhancement) : null;
 }
 
+function mapAgentBackendListingToAdminListing(row = {}) {
+  const gallery = Array.isArray(row.gallery_urls) ? row.gallery_urls : [];
+  const image = gallery.find((item) => item?.url)?.url || "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=900&q=80";
+  const status = row.status === "live" ? "approved" : row.status || "pending_qc";
+  const flags = [];
+  if (gallery.length < 4) {
+    flags.push({
+      flagType: "missing_gallery",
+      severity: "high",
+      message: `${gallery.length}/4 public image URLs detected. Listing should not go live until the gallery is complete.`
+    });
+  }
+  return {
+    id: row.id,
+    backendId: row.id,
+    backendTable: "agent_property_listings",
+    agentId: row.agent_id || "agent-live",
+    agentName: row.agent_id || "RealityGenius Agent",
+    title: row.title || "Untitled agent listing",
+    price: Number(row.price || 0),
+    location: row.area || row.address || "Malaysia",
+    address: row.address || row.area || "Malaysia",
+    propertyType: row.property_type || "Residential",
+    status,
+    imageUrl: image,
+    imageResolution: gallery.length >= 4 ? 1280 : 640,
+    blurScore: 0.1,
+    imageHash: `agent-backend-${row.id}`,
+    gallery,
+    galleryCount: gallery.length,
+    arLink: row.ar_link || "",
+    rejectionReason: row.rejection_reason || "",
+    createdAt: row.created_at || new Date().toISOString(),
+    updatedAt: row.updated_at || row.created_at || new Date().toISOString(),
+    buyerPayload: null,
+    aiFlags: flags
+  };
+}
+
+async function loadAgentQcListings(force = false) {
+  if (state.agentListingsHydrated && !force) return;
+  if (!adminReviewApiKey()) {
+    state.agentListingsHydrated = false;
+    showToast("Save admin API key to load backend listing QC");
+    return;
+  }
+
+  state.agentListingsHydrated = true;
+  try {
+    const response = await fetch(`${adminApiBaseUrl()}/admin/listings`, {
+      headers: adminJsonHeaders()
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || "Unable to load agent listings.");
+
+    const remoteListings = (payload.items || []).map(mapAgentBackendListingToAdminListing);
+    const remoteIds = new Set(remoteListings.map((listing) => String(listing.backendId || listing.id)));
+    state.listings = [
+      ...remoteListings,
+      ...state.listings.filter((listing) => (
+        listing.backendTable !== "agent_property_listings"
+        && !remoteIds.has(String(listing.backendId || listing.id))
+      ))
+    ];
+    persistAll();
+    renderAll();
+  } catch (error) {
+    state.agentListingsHydrated = false;
+    showToast(error.message || "Unable to load backend listing QC");
+  }
+}
+
+async function reviewRemoteAgentListing(listing, status) {
+  if (listing?.backendTable !== "agent_property_listings" || !listing.backendId) return null;
+  if (!adminReviewApiKey()) {
+    throw new Error("Save admin API key before reviewing backend listings.");
+  }
+
+  const response = await fetch(`${adminApiBaseUrl()}/admin/listings/review`, {
+    method: "POST",
+    headers: adminJsonHeaders(),
+    body: JSON.stringify({
+      id: listing.backendId,
+      status,
+      rejectionReason: status === "rejected" ? "Rejected by admin QC desk." : "",
+      reviewedBy: ADMIN_ID
+    })
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || "Unable to review backend listing.");
+  return payload.item ? mapAgentBackendListingToAdminListing(payload.item) : null;
+}
+
 function aiImportApiUrl(path) {
   return `${adminApiBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
 }
@@ -635,7 +729,7 @@ function findAgent(id) {
 }
 
 function findListing(id) {
-  return state.listings.find((listing) => listing.id === id);
+  return state.listings.find((listing) => String(listing.id) === String(id));
 }
 
 function addAudit(action, targetType, targetId, notes) {
@@ -757,6 +851,7 @@ function switchSection(section) {
   els.navItems.forEach((item) => item.classList.toggle("active", item.dataset.section === section));
   els.panels.forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === section));
   history.replaceState(null, "", `#${section}`);
+  if (section === "listings") loadAgentQcListings();
   if (section === "ai-imports") loadAiImports();
 }
 
@@ -823,14 +918,14 @@ function renderListings() {
     const order = { pending_qc: 0, rejected: 1, approved: 2, draft: 3 };
     return (order[a.status] ?? 4) - (order[b.status] ?? 4);
   });
-  if (!state.activeListingId || !state.listings.some((listing) => listing.id === state.activeListingId)) {
+  if (!state.activeListingId || !state.listings.some((listing) => String(listing.id) === String(state.activeListingId))) {
     state.activeListingId = listings[0]?.id || null;
   }
 
   els.listingQueue.innerHTML = listings.map((listing) => {
     const flags = listing.aiFlags || scanListing(listing);
     return `
-      <article class="listing-card ${listing.id === state.activeListingId ? "active" : ""}" data-action="select-listing" data-id="${listing.id}">
+      <article class="listing-card ${String(listing.id) === String(state.activeListingId) ? "active" : ""}" data-action="select-listing" data-id="${listing.id}">
         <span class="status-pill ${listing.status}">${listing.status}</span>
         <h4>${listing.title}</h4>
         <p>${listing.location} - ${money(listing.price)}</p>
@@ -1037,13 +1132,21 @@ function updateAgentStatus(id, status) {
 async function approveListing(id) {
   const listing = findListing(id);
   if (!listing) return;
-  const remote = await reviewRemoteEnhancement(listing, "approved_live");
-  const approvedListing = { ...listing, ...(remote || {}), status: "approved", approvedAt: new Date().toISOString() };
-  state.listings = state.listings.map((item) => item.id === id ? approvedListing : item);
-  if (remote) {
-    state.listings = state.listings.map((item) => item.id === id ? { ...remote, status: "approved" } : item);
+  let remote = null;
+  try {
+    remote = await reviewRemoteAgentListing(listing, "live") || await reviewRemoteEnhancement(listing, "approved_live");
+  } catch (error) {
+    showToast(error.message || "Unable to approve backend listing");
+    return;
   }
-  publishApprovedListingToBuyer(approvedListing);
+  const approvedListing = { ...listing, ...(remote || {}), status: "approved", approvedAt: new Date().toISOString() };
+  state.listings = state.listings.map((item) => String(item.id) === String(id) ? approvedListing : item);
+  if (remote) {
+    state.listings = state.listings.map((item) => String(item.id) === String(id) ? { ...remote, status: "approved" } : item);
+  }
+  if (listing.backendTable !== "agent_property_listings") {
+    publishApprovedListingToBuyer(approvedListing);
+  }
   updateAgentListingAfterReview(approvedListing, "Live", {
     adminApproved: true,
     approvalStatus: "approved",
@@ -1061,11 +1164,17 @@ async function approveListing(id) {
 async function rejectListing(id) {
   const listing = findListing(id);
   if (!listing) return;
-  const remote = await reviewRemoteEnhancement(listing, "rejected");
+  let remote = null;
+  try {
+    remote = await reviewRemoteAgentListing(listing, "rejected") || await reviewRemoteEnhancement(listing, "rejected");
+  } catch (error) {
+    showToast(error.message || "Unable to reject backend listing");
+    return;
+  }
   const rejectedListing = { ...listing, ...(remote || {}), status: "rejected", rejectedAt: new Date().toISOString() };
-  state.listings = state.listings.map((item) => item.id === id ? rejectedListing : item);
+  state.listings = state.listings.map((item) => String(item.id) === String(id) ? rejectedListing : item);
   if (remote) {
-    state.listings = state.listings.map((item) => item.id === id ? { ...remote, status: "rejected" } : item);
+    state.listings = state.listings.map((item) => String(item.id) === String(id) ? { ...remote, status: "rejected" } : item);
   }
   removeBuyerListing(rejectedListing);
   updateAgentListingAfterReview(rejectedListing, "Rejected", {
@@ -1200,6 +1309,8 @@ function bindEvents() {
     localStorage.setItem(STORAGE_KEYS.adminApiKey, key);
     renderAdminKeyState();
     setAiImportStatus("Trusted device saved. You will not need to re-enter the admin key on this browser.");
+    state.agentListingsHydrated = false;
+    if (state.section === "listings") loadAgentQcListings(true);
     loadAiImports();
   });
   els.refreshAiImportsButton?.addEventListener("click", loadAiImports);

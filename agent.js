@@ -178,6 +178,7 @@ const LISTING_MIN_PHOTO_COUNT = 4;
 const LISTING_RECOMMENDED_PHOTO_COUNT = 10;
 const LISTING_DEVICE_IMAGE_MAX_SIZE = 1200;
 const LISTING_DEVICE_IMAGE_QUALITY = 0.64;
+const LIVE_LISTING_SAVE_ERROR = "Listing could not be saved live. Backend/Supabase connection failed.";
 
 const LISTING_EXCEL_BASE_COLUMNS = [
   "title",
@@ -1020,17 +1021,106 @@ function writeAdminListingFromAgent(listing) {
 }
 
 async function syncListingToBackend(listing) {
-  if (listing.status !== "Live") return;
+  if (listing.status === "Live") return null;
+  return saveAgentListingToBackend(listing);
+}
+
+function publicGalleryForBackend(listing) {
+  return ensureListingGallery(listing)
+    .map((slot) => ({
+      label: slot.label,
+      required: Boolean(slot.required),
+      url: String(slot.url || "").trim(),
+      original: slot.original || slot.url || "",
+      source: slot.source || "Agent upload"
+    }))
+    .filter((slot) => slot.url && !/^data:image\//i.test(slot.url) && /^https?:\/\//i.test(slot.url))
+    .slice(0, LISTING_RECOMMENDED_PHOTO_COUNT);
+}
+
+function countTemporaryDeviceImages(listing) {
+  return ensureListingGallery(listing).filter((slot) => /^data:image\//i.test(String(slot.url || ""))).length;
+}
+
+function serializeAgentListingForBackend(listing) {
+  const agent = readLiveAgentProfile();
+  const galleryUrls = publicGalleryForBackend(listing);
+  const temporaryCount = countTemporaryDeviceImages(listing);
+  if (temporaryCount) {
+    // TODO: Upload device files to Supabase Storage/S3, then replace data URLs with public storage URLs.
+    throw new Error(`${temporaryCount} device-uploaded photo${temporaryCount === 1 ? "" : "s"} must be uploaded to Supabase Storage/S3 before live QC.`);
+  }
+  if (galleryUrls.length < LISTING_MIN_PHOTO_COUNT) {
+    throw new Error(`At least ${LISTING_MIN_PHOTO_COUNT} public image URLs are required for admin QC.`);
+  }
+  return {
+    agentId: agent.id || listing.agentId || null,
+    title: listing.title,
+    area: listing.area,
+    price: listing.price,
+    propertyType: listing.propertyType,
+    address: listing.address,
+    landlordName: listing.landlordName,
+    landlordPhone: listing.landlordPhone,
+    galleryUrls,
+    arLink: listing.arLink || listing.modelUrl || "",
+    source: listing.importSource || "manual"
+  };
+}
+
+function mergeBackendListingRow(listing, row = {}) {
+  const gallery = Array.isArray(row.gallery_urls) && row.gallery_urls.length
+    ? row.gallery_urls.map((item, index) => ({
+      label: item.label || LISTING_MEDIA_SLOTS[index]?.label || `Photo ${index + 1}`,
+      required: index < LISTING_REQUIRED_MEDIA_SLOTS.length,
+      url: item.url || item.display || item.image || "",
+      original: item.original || item.url || "",
+      source: item.source || "Agent upload",
+      status: "verified"
+    }))
+    : listing.gallery;
+
+  return {
+    ...listing,
+    id: row.id || listing.id,
+    backendId: row.id || listing.backendId,
+    status: row.status === "rejected" ? "Rejected" : row.status === "live" || row.status === "approved" ? "Live" : "Pending QC",
+    title: row.title || listing.title,
+    area: row.area || listing.area,
+    price: row.price == null ? listing.price : Number(row.price),
+    propertyType: row.property_type || listing.propertyType,
+    address: row.address || listing.address,
+    landlordName: row.landlord_name || listing.landlordName,
+    landlordPhone: row.landlord_phone || listing.landlordPhone,
+    gallery,
+    galleryCount: gallery.length,
+    verifiedPhotoCount: gallery.length,
+    image: gallery[0]?.url || listing.image,
+    arLink: row.ar_link || listing.arLink,
+    modelUrl: row.ar_link || listing.modelUrl,
+    adminApproved: row.status === "live" || row.status === "approved",
+    approvalStatus: row.status || "pending_qc",
+    liveStatus: row.status === "live" || row.status === "approved" ? "approved_live" : "pending_admin_review",
+    verificationSource: row.status === "live" || row.status === "approved" ? "admin_approved" : "agent",
+    createdAt: row.created_at || listing.createdAt,
+    updatedAt: row.updated_at || listing.updatedAt || new Date().toISOString()
+  };
+}
+
+async function saveAgentListingToBackend(listing) {
   try {
-    const buyerListing = listingToBuyerProperty(listing);
-    await fetch(agentApiUrl("/properties"), {
+    const response = await fetch(agentApiUrl("/agent/listings"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(buyerListing),
-      keepalive: true
+      body: JSON.stringify(serializeAgentListingForBackend(listing))
     });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || LIVE_LISTING_SAVE_ERROR);
+    return mergeBackendListingRow(listing, payload.item || {});
   } catch (error) {
     if (window.RGLogError) window.RGLogError(error, { feature: "live_listing_backend_sync" });
+    const detail = error?.message && error.message !== LIVE_LISTING_SAVE_ERROR ? ` ${error.message}` : "";
+    throw new Error(`${LIVE_LISTING_SAVE_ERROR}${detail}`);
   }
 }
 
@@ -1638,10 +1728,11 @@ function billingStatusLabel() {
 
 function agentApiBaseUrl() {
   if (window.REALTYGENIUS_API_BASE) return window.REALTYGENIUS_API_BASE.replace(/\/+$/, "");
+  if (window.REALTYGENIUS_CONFIG?.API_BASE) return window.REALTYGENIUS_CONFIG.API_BASE.replace(/\/+$/, "");
   const stored = localStorage.getItem("realtygenius_api_base");
   if (stored) return stored.replace(/\/+$/, "");
   if (["realitygenius.company", "www.realitygenius.company"].includes(window.location.hostname)) {
-    return "https://api.realitygenius.company/api";
+    return "https://hh-empire.onrender.com/api";
   }
   if (window.location.protocol === "file:") return "http://localhost:3000/api";
   if (["localhost", "127.0.0.1"].includes(window.location.hostname) && window.location.port !== "3000") {
@@ -2216,7 +2307,7 @@ function moveLeadForward(id) {
   showToast("Lead moved forward");
 }
 
-function toggleListingStatus(id) {
+async function toggleListingStatus(id) {
   const cycle = {
     Live: "Reserved",
     Reserved: "Draft",
@@ -2226,7 +2317,7 @@ function toggleListingStatus(id) {
   };
 
   state.listings = state.listings.map((listing) => {
-    if (listing.id !== id) return listing;
+    if (String(listing.id) !== String(id)) return listing;
     const nextStatus = cycle[listing.status] || "Pending QC";
     return {
       ...listing,
@@ -2237,10 +2328,22 @@ function toggleListingStatus(id) {
     };
   });
 
-  const updated = state.listings.find((listing) => listing.id === id);
+  let updated = state.listings.find((listing) => String(listing.id) === String(id));
   if (updated?.status === "Live" && isAdminApprovedListing(updated)) {
     publishListingsLive([updated], "status update");
   } else if (updated?.status === "Pending QC") {
+    if (!updated.backendId) {
+      try {
+        updated = await saveAgentListingToBackend(updated);
+        state.listings = state.listings.map((listing) => String(listing.id) === String(id) ? updated : listing);
+      } catch (error) {
+        state.listings = state.listings.map((listing) => String(listing.id) === String(id) ? { ...listing, status: "Draft" } : listing);
+        persistAll();
+        renderWorkspace();
+        showToast(error.message || LIVE_LISTING_SAVE_ERROR);
+        return;
+      }
+    }
     submitListingsForAdminReview([updated], "status update");
   } else {
     removeBuyerLiveListing(id);
@@ -2466,14 +2569,21 @@ async function addListing(event) {
   }
 
   const listing = result.listing;
+  let savedListing;
+  try {
+    savedListing = await saveAgentListingToBackend(listing);
+  } catch (error) {
+    showToast(error.message || LIVE_LISTING_SAVE_ERROR);
+    return;
+  }
 
-  state.listings = [listing, ...state.listings];
-  const reviewCount = submitListingsForAdminReview([listing], "manual upload");
+  state.listings = [savedListing, ...state.listings.filter((item) => String(item.id) !== String(savedListing.id))];
+  const reviewCount = submitListingsForAdminReview([savedListing], "manual upload");
   state.notifications = [
     {
       id: Date.now() + 1,
       title: "Listing submitted for QC",
-      message: `${listing.title} is waiting for admin verification before buyer visibility.`,
+      message: `${savedListing.title} is saved in Supabase and waiting for admin verification before buyer visibility.`,
       createdAt: new Date().toISOString()
     },
     ...state.notifications
@@ -2485,7 +2595,7 @@ async function addListing(event) {
   closeModal("listingModal");
   persistAll();
   renderWorkspace();
-  showToast(reviewCount ? "Sent to admin QC" : "Listing saved");
+  showToast(reviewCount ? "Saved live to backend. Sent to admin QC" : "Listing saved");
 }
 
 function autofillListingPhotoLinks() {
@@ -2597,13 +2707,33 @@ async function importListingsFromExcel(event) {
       return;
     }
 
-    state.listings = [...imported, ...state.listings];
-    const reviewCount = submitListingsForAdminReview(imported, "Excel import");
+    const savedListings = [];
+    for (const listing of imported) {
+      try {
+        savedListings.push(await saveAgentListingToBackend(listing));
+      } catch (error) {
+        rowErrors.push(`${listing.title}: ${error.message || LIVE_LISTING_SAVE_ERROR}`);
+      }
+    }
+
+    if (!savedListings.length) {
+      setImportStatus(`
+        <strong>No listings saved live</strong>
+        <p>${rowErrors.slice(0, 4).join("<br>") || LIVE_LISTING_SAVE_ERROR}</p>
+      `, "error");
+      return;
+    }
+
+    state.listings = [
+      ...savedListings,
+      ...state.listings.filter((existing) => !savedListings.some((listing) => String(listing.id) === String(existing.id)))
+    ];
+    const reviewCount = submitListingsForAdminReview(savedListings, "Excel import");
     state.notifications = [
       {
         id: Date.now() + 1,
         title: "Excel listings sent to QC",
-        message: `${imported.length} listings imported with at least ${LISTING_MIN_PHOTO_COUNT} photos. ${reviewCount} waiting for admin approval${rowErrors.length ? `; ${rowErrors.length} row issue(s) skipped.` : "."}`,
+        message: `${savedListings.length} listings saved to Supabase with at least ${LISTING_MIN_PHOTO_COUNT} photos. ${reviewCount} waiting for admin approval${rowErrors.length ? `; ${rowErrors.length} row issue(s) skipped.` : "."}`,
         createdAt: new Date().toISOString()
       },
       ...state.notifications
@@ -2612,11 +2742,11 @@ async function importListingsFromExcel(event) {
     persistAll();
     renderWorkspace();
     setImportStatus(`
-      <strong>${imported.length} listings imported - ${reviewCount} pending admin QC</strong>
-      <p>Each listing has the minimum ${LISTING_MIN_PHOTO_COUNT}-photo gallery. Google Drive pictures were converted to readable thumbnails, AR links are stored, and buyer visibility starts only after admin approval.</p>
+      <strong>${savedListings.length} listings saved to backend - ${reviewCount} pending admin QC</strong>
+      <p>Each listing has the minimum ${LISTING_MIN_PHOTO_COUNT}-photo gallery. Google Drive pictures were converted to readable thumbnails, AR links are stored in Supabase, and buyer visibility starts only after admin approval.</p>
       ${rowErrors.length ? `<p>${rowErrors.slice(0, 4).join("<br>")}</p>` : ""}
     `, rowErrors.length ? "warning" : "success");
-    showToast(`${reviewCount || imported.length} Excel listings sent to QC`);
+    showToast(`${reviewCount || savedListings.length} Excel listings saved to backend QC`);
   } catch (error) {
     setImportStatus(error instanceof Error ? error.message : "Excel import failed", "error");
   } finally {
