@@ -155,8 +155,16 @@ function adminToken() {
   return localStorage.getItem("rg_token") || "";
 }
 
+function normalizeAdminApiKey(value = "") {
+  return String(value || "").trim().replace(/^ADMIN_API_KEY\s*=\s*/i, "").trim();
+}
+
 function adminReviewApiKey() {
-  return localStorage.getItem(STORAGE_KEYS.adminApiKey) || "";
+  const stored = normalizeAdminApiKey(localStorage.getItem(STORAGE_KEYS.adminApiKey) || "");
+  if (stored && stored !== localStorage.getItem(STORAGE_KEYS.adminApiKey)) {
+    localStorage.setItem(STORAGE_KEYS.adminApiKey, stored);
+  }
+  return stored;
 }
 
 function adminJsonHeaders() {
@@ -412,6 +420,24 @@ function setAiImportStatus(message, tone = "") {
   els.aiImportStatus.dataset.tone = tone;
 }
 
+function renderAdminKeyState() {
+  const hasKey = Boolean(adminReviewApiKey());
+  if (els.aiImportAccessForm) {
+    els.aiImportAccessForm.dataset.trustedDevice = hasKey ? "true" : "false";
+  }
+  if (els.adminApiKeyInput) {
+    els.adminApiKeyInput.placeholder = hasKey
+      ? "Admin key saved on this device"
+      : "Paste admin API key once";
+    els.adminApiKeyInput.value = "";
+  }
+  if (els.saveAdminApiKeyButton) {
+    els.saveAdminApiKeyButton.innerHTML = hasKey
+      ? '<i class="fa-solid fa-rotate"></i> Update Saved Key'
+      : '<i class="fa-solid fa-lock"></i> Trust This Device';
+  }
+}
+
 function splitLines(value) {
   return String(value || "")
     .split(/\n|,/)
@@ -429,11 +455,13 @@ async function loadAiImports() {
   if (!els.aiImportList) return;
   if (!adminReviewApiKey()) {
     state.aiImports = [];
-    setAiImportStatus("Enter the admin API key to load Telegram AI imports.", "warn");
+    renderAdminKeyState();
+    setAiImportStatus("Paste the admin API key once. This browser will remember it.", "warn");
     renderAiImports();
     return;
   }
 
+  renderAdminKeyState();
   setAiImportStatus("Loading Telegram AI imports...");
   try {
     const response = await fetch(aiImportApiUrl("/admin/ai-imports"), {
@@ -443,10 +471,13 @@ async function loadAiImports() {
     if (!response.ok) throw new Error(payload.error || "Unable to load AI imports.");
     state.aiImports = Array.isArray(payload.items) ? payload.items : [];
     if (!state.activeAiImportId && state.aiImports[0]) state.activeAiImportId = state.aiImports[0].id;
-    setAiImportStatus(`${state.aiImports.length} AI import${state.aiImports.length === 1 ? "" : "s"} loaded.`);
+    setAiImportStatus(`${state.aiImports.length} AI import${state.aiImports.length === 1 ? "" : "s"} loaded. Admin key is saved on this device.`);
     renderAiImports();
   } catch (error) {
-    setAiImportStatus(error.message, "error");
+    const message = error instanceof TypeError
+      ? `Backend is unreachable at ${adminApiBaseUrl()}. Your saved admin key was not the problem.`
+      : error.message;
+    setAiImportStatus(message, "error");
     renderAiImports();
   }
 }
@@ -547,7 +578,8 @@ function collectAiImportEdits() {
 
 async function reviewAiImport(id, action) {
   if (!adminReviewApiKey()) {
-    setAiImportStatus("Save the admin API key before reviewing imports.", "warn");
+    renderAdminKeyState();
+    setAiImportStatus("Paste the admin API key once. This browser will remember it.", "warn");
     return;
   }
 
@@ -574,7 +606,10 @@ async function reviewAiImport(id, action) {
     setAiImportStatus(`Import ${action} saved.`);
     showToast(`AI import ${action} saved`);
   } catch (error) {
-    setAiImportStatus(error.message, "error");
+    const message = error instanceof TypeError
+      ? `Backend is unreachable at ${adminApiBaseUrl()}. Your saved admin key was not the problem.`
+      : error.message;
+    setAiImportStatus(message, "error");
   }
 }
 
@@ -1157,14 +1192,14 @@ function bindEvents() {
   els.noticeForm.addEventListener("submit", submitNotice);
   els.aiImportAccessForm?.addEventListener("submit", (event) => {
     event.preventDefault();
-    const key = els.adminApiKeyInput?.value.trim();
+    const key = normalizeAdminApiKey(els.adminApiKeyInput?.value);
     if (!key) {
-      setAiImportStatus("Enter the admin API key first.", "warn");
+      setAiImportStatus("Paste the admin API key once first.", "warn");
       return;
     }
     localStorage.setItem(STORAGE_KEYS.adminApiKey, key);
-    els.adminApiKeyInput.value = "";
-    setAiImportStatus("Admin review key saved on this device.");
+    renderAdminKeyState();
+    setAiImportStatus("Trusted device saved. You will not need to re-enter the admin key on this browser.");
     loadAiImports();
   });
   els.refreshAiImportsButton?.addEventListener("click", loadAiImports);
@@ -1204,6 +1239,7 @@ function bindEvents() {
 
 runAiScan(false);
 const initialSection = location.hash.replace("#", "") || "agents";
+renderAdminKeyState();
 switchSection(["agents", "listings", "ai-imports", "reports", "audit", "notifications"].includes(initialSection) ? initialSection : "agents");
 bindEvents();
 hydrateListingEnhancements();
