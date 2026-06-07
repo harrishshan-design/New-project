@@ -959,6 +959,23 @@ const server = http.createServer(async (req, res) => {
     };
 
     const routeManager = async (url, payload) => {
+        if (url === '/api/telegram/health') {
+            return {
+                ok: true,
+                service: "RealityGenius Telegram AI import backend",
+                routes: ["/api/telegram/webhook", "/api/telegram/health", "/api/admin/ai-imports", "/api/properties"],
+                config: {
+                    supabase: hasSupabaseConfig(),
+                    openai: Boolean(HAS_OPENAI && openai),
+                    telegramBot: Boolean(TELEGRAM_BOT_TOKEN),
+                    telegramWebhookSecret: Boolean(TELEGRAM_WEBHOOK_SECRET),
+                    adminApiKey: Boolean(ADMIN_API_KEY),
+                    frontendUrl: Boolean(FRONTEND_URL)
+                },
+                checkedAt: new Date().toISOString()
+            };
+        }
+
         if (url === '/api/telegram/webhook') {
             const auth = requireTelegramSecret(req);
             if (!auth.ok) return { __status: auth.status, error: auth.error };
