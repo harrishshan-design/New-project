@@ -283,10 +283,14 @@
     <div class="modal-card">
       <div class="modal-topbar">
         <div>
+          <div class="modal-state-row" aria-label="Current view state">
+            <span class="modal-state-pill"><i class="fa-solid fa-up-right-and-down-left-from-center"></i> Property detail view</span>
+            <span class="modal-return-note">Close to return to general feed</span>
+          </div>
           <div class="eyebrow" id="modalBadge">Property</div>
           <h3 id="modalTitle">Property</h3>
         </div>
-        <button class="close-button" data-close="propertyModal" type="button"><i class="fa-solid fa-xmark"></i></button>
+        <button class="close-button modal-feed-return" data-close="propertyModal" type="button" aria-label="Back to general feed"><i class="fa-solid fa-arrow-left"></i><span>Feed</span></button>
       </div>
 
       <div class="modal-grid">
@@ -554,7 +558,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./rg-trust-loop.js" data-trust-role="user"></script>
   <script src="./rg-behavior-loop.js" data-behavior-role="user"></script>
-<script src="./rg-feedback-gate.js?v=39" data-feedback-role="user"></script>
+<script src="./rg-feedback-gate.js?v=40" data-feedback-role="user"></script>
   <script src="./mobile-app-shell.js?v=48" data-mobile-role="user"></script>
 </body>
 </html>
