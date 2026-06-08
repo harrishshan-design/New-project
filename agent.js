@@ -1034,7 +1034,7 @@ function publicGalleryForBackend(listing) {
       original: slot.original || slot.url || "",
       source: slot.source || "Agent upload"
     }))
-    .filter((slot) => slot.url && !/^data:image\//i.test(slot.url) && /^https?:\/\//i.test(slot.url))
+    .filter((slot) => slot.url && (/^data:image\//i.test(slot.url) || /^https?:\/\//i.test(slot.url)))
     .slice(0, LISTING_RECOMMENDED_PHOTO_COUNT);
 }
 
@@ -1046,12 +1046,8 @@ function serializeAgentListingForBackend(listing) {
   const agent = readLiveAgentProfile();
   const galleryUrls = publicGalleryForBackend(listing);
   const temporaryCount = countTemporaryDeviceImages(listing);
-  if (temporaryCount) {
-    // TODO: Upload device files to Supabase Storage/S3, then replace data URLs with public storage URLs.
-    throw new Error(`${temporaryCount} device-uploaded photo${temporaryCount === 1 ? "" : "s"} must be uploaded to Supabase Storage/S3 before live QC.`);
-  }
   if (galleryUrls.length < LISTING_MIN_PHOTO_COUNT) {
-    throw new Error(`At least ${LISTING_MIN_PHOTO_COUNT} public image URLs are required for admin QC.`);
+    throw new Error(`At least ${LISTING_MIN_PHOTO_COUNT} property photos are required for admin QC.`);
   }
   return {
     agentId: agent.id || listing.agentId || null,
@@ -1063,6 +1059,7 @@ function serializeAgentListingForBackend(listing) {
     landlordName: listing.landlordName,
     landlordPhone: listing.landlordPhone,
     galleryUrls,
+    temporaryImageCount: temporaryCount,
     arLink: listing.arLink || listing.modelUrl || "",
     source: listing.importSource || "manual"
   };

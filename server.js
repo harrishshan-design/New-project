@@ -11,7 +11,9 @@ const HAS_OPENAI = !!process.env.OPENAI_API_KEY;
 const GOOGLE_MAPS_API_KEY = readEnv('GOOGLE_MAPS_API_KEY', 'GOOGLE_API_KEY');
 const FRONTEND_URL = normalizeOrigin(readEnv('FRONTEND_URL'));
 const SUPABASE_REST_URL = normalizeSupabaseRestUrl(readEnv('SUPABASE_URL'));
+const SUPABASE_PROJECT_URL = normalizeSupabaseProjectUrl(readEnv('SUPABASE_URL'));
 const SUPABASE_SERVICE_ROLE_KEY = readEnv('SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_SECRET_KEY');
+const SUPABASE_PROPERTY_MEDIA_BUCKET = readEnv('SUPABASE_PROPERTY_MEDIA_BUCKET') || 'property-media';
 const TELEGRAM_BOT_TOKEN = readEnv('TELEGRAM_BOT_TOKEN');
 const TELEGRAM_WEBHOOK_SECRET = readEnv('TELEGRAM_WEBHOOK_SECRET');
 const ADMIN_API_KEY = readEnv('ADMIN_API_KEY');
@@ -39,6 +41,12 @@ function normalizeSupabaseRestUrl(value) {
     const raw = String(value || '').trim().replace(/\/+$/, '');
     if (!raw) return '';
     return raw.endsWith('/rest/v1') ? raw : `${raw}/rest/v1`;
+}
+
+function normalizeSupabaseProjectUrl(value) {
+    const raw = String(value || '').trim().replace(/\/+$/, '');
+    if (!raw) return '';
+    return raw.replace(/\/rest\/v1$/i, '');
 }
 
 function normalizeOrigin(value) {
@@ -708,6 +716,90 @@ function normalizeJsonArray(value) {
     return [];
 }
 
+function hasStorageConfig() {
+    return Boolean(SUPABASE_PROJECT_URL && SUPABASE_SERVICE_ROLE_KEY);
+}
+
+function sanitizeStorageSegment(value, fallback = 'item') {
+    return String(value || fallback)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+        .slice(0, 80) || fallback;
+}
+
+function encodeStoragePath(storagePath) {
+    return String(storagePath || '')
+        .split('/')
+        .map((segment) => encodeURIComponent(segment))
+        .join('/');
+}
+
+function storagePublicUrl(storagePath) {
+    return `${SUPABASE_PROJECT_URL}/storage/v1/object/public/${encodeURIComponent(SUPABASE_PROPERTY_MEDIA_BUCKET)}/${encodeStoragePath(storagePath)}`;
+}
+
+function imageExtensionFromMime(mime = '', fallback = 'jpg') {
+    const normalized = String(mime || '').toLowerCase();
+    if (normalized.includes('png')) return 'png';
+    if (normalized.includes('webp')) return 'webp';
+    if (normalized.includes('gif')) return 'gif';
+    return fallback;
+}
+
+function imageMimeFromPath(filePath = '') {
+    const lower = String(filePath || '').toLowerCase();
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    if (lower.endsWith('.gif')) return 'image/gif';
+    return 'image/jpeg';
+}
+
+function parseDataImageUrl(value = '') {
+    const match = String(value || '').match(/^data:(image\/(?:jpeg|jpg|png|webp|gif));base64,([a-z0-9+/=\s]+)$/i);
+    if (!match) return null;
+    const mime = match[1].toLowerCase().replace('image/jpg', 'image/jpeg');
+    const buffer = Buffer.from(match[2].replace(/\s/g, ''), 'base64');
+    if (!buffer.length) return null;
+    if (buffer.length > 10 * 1024 * 1024) {
+        throw new Error('Each property photo must be 10MB or smaller after compression.');
+    }
+    return { buffer, mime, extension: imageExtensionFromMime(mime) };
+}
+
+async function uploadSupabaseStorageObject(storagePath, buffer, mime) {
+    if (!hasStorageConfig()) {
+        throw new Error('Supabase Storage is not configured.');
+    }
+    const response = await fetch(`${SUPABASE_PROJECT_URL}/storage/v1/object/${encodeURIComponent(SUPABASE_PROPERTY_MEDIA_BUCKET)}/${encodeStoragePath(storagePath)}`, {
+        method: 'POST',
+        headers: {
+            apikey: SUPABASE_SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            'Content-Type': mime,
+            'Cache-Control': '31536000',
+            'x-upsert': 'true'
+        },
+        body: buffer
+    });
+    const text = await response.text();
+    if (!response.ok) {
+        throw new Error(`Supabase Storage upload failed: ${text || response.statusText}`);
+    }
+    return storagePublicUrl(storagePath);
+}
+
+async function uploadDataImageToStorage(dataUrl, context = {}) {
+    const parsed = parseDataImageUrl(dataUrl);
+    if (!parsed) return '';
+    const agent = sanitizeStorageSegment(context.agentId || 'agent');
+    const listing = sanitizeStorageSegment(context.title || context.listingId || 'listing');
+    const label = sanitizeStorageSegment(context.label || `photo-${context.index || 0}`);
+    const hash = crypto.createHash('sha1').update(parsed.buffer).digest('hex').slice(0, 16);
+    const storagePath = `agent-listings/${agent}/${listing}/${String(context.index || 0).padStart(2, '0')}-${label}-${hash}.${parsed.extension}`;
+    return uploadSupabaseStorageObject(storagePath, parsed.buffer, parsed.mime);
+}
+
 function normalizePublicGalleryUrls(value) {
     return normalizeJsonArray(value)
         .map((item, index) => {
@@ -728,6 +820,36 @@ function normalizePublicGalleryUrls(value) {
         .slice(0, 10);
 }
 
+async function prepareAgentGalleryUrls(value, context = {}) {
+    const prepared = [];
+    const rawItems = normalizeJsonArray(value).slice(0, 10);
+    for (let index = 0; index < rawItems.length; index += 1) {
+        const item = rawItems[index];
+        const rawUrl = typeof item === 'string' ? item : item?.url || item?.display || item?.image || '';
+        const url = String(rawUrl || '').trim();
+        if (!url) continue;
+        const label = typeof item === 'object' && item?.label ? String(item.label) : index === 0 ? 'Front View' : `Photo ${index + 1}`;
+        let finalUrl = '';
+        let source = typeof item === 'object' ? item?.source || 'Agent upload' : 'Agent upload';
+        if (/^data:image\//i.test(url)) {
+            finalUrl = await uploadDataImageToStorage(url, { ...context, index, label });
+            source = 'Supabase Storage upload';
+        } else if (/^https?:\/\//i.test(url)) {
+            finalUrl = url;
+        }
+        if (!finalUrl) continue;
+        prepared.push({
+            label,
+            required: Boolean(typeof item === 'object' ? item?.required : index < 5),
+            url: finalUrl,
+            original: typeof item === 'object' ? item?.original || finalUrl : finalUrl,
+            source,
+            status: 'verified'
+        });
+    }
+    return prepared;
+}
+
 function parseListingPrice(value) {
     if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
     const normalized = String(value || '').replace(/rm/gi, '').replace(/,/g, '').trim();
@@ -743,25 +865,28 @@ function normalizeAgentListingStatus(value = 'pending_qc') {
     return 'pending_qc';
 }
 
-function pickAgentListingPayload(payload = {}) {
-    const gallery = normalizePublicGalleryUrls(
-        payload.gallery_urls || payload.galleryUrls || payload.gallery || payload.photos || []
-    );
+async function pickAgentListingPayload(payload = {}) {
     const price = parseListingPrice(payload.price);
     const title = String(payload.title || payload.original_title || '').trim();
     const area = String(payload.area || payload.location || '').trim();
+    const agentId = payload.agent_id || payload.agentId || null;
 
     if (!title) return { error: "Listing title is required." };
     if (!area) return { error: "Listing area is required." };
     if (!price || price <= 0) return { error: "Listing price must be a positive number." };
+
+    const gallery = await prepareAgentGalleryUrls(
+        payload.gallery_urls || payload.galleryUrls || payload.gallery || payload.photos || [],
+        { agentId, title }
+    );
     if (gallery.length < 4) {
         return {
-            error: "At least 4 public gallery image URLs are required. Device-uploaded data URLs are temporary until Supabase Storage/S3 upload is added."
+            error: "At least 4 property photos are required. Upload from device/computer or paste public image links."
         };
     }
 
     return {
-        agent_id: payload.agent_id || payload.agentId || null,
+        agent_id: agentId,
         title,
         area,
         price,
@@ -936,6 +1061,58 @@ async function sendTelegramMessage(chatId, text) {
     }
 }
 
+async function getTelegramFilePath(fileId) {
+    if (!TELEGRAM_BOT_TOKEN || !fileId) return '';
+    const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getFile?file_id=${encodeURIComponent(fileId)}`);
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload.ok || !payload.result?.file_path) {
+        throw new Error(payload.description || 'Telegram file lookup failed.');
+    }
+    return payload.result.file_path;
+}
+
+async function uploadTelegramPhotoToStorage(fileId, meta = {}) {
+    if (!fileId || !hasStorageConfig()) return '';
+    const filePath = await getTelegramFilePath(fileId);
+    const downloadUrl = `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${filePath}`;
+    const response = await fetch(downloadUrl);
+    if (!response.ok) {
+        throw new Error(`Telegram file download failed: ${response.statusText}`);
+    }
+    const buffer = Buffer.from(await response.arrayBuffer());
+    if (!buffer.length) return '';
+    if (buffer.length > 10 * 1024 * 1024) {
+        throw new Error('Telegram photo is larger than the 10MB property media limit.');
+    }
+    const mime = response.headers.get('content-type')?.startsWith('image/')
+        ? response.headers.get('content-type')
+        : imageMimeFromPath(filePath);
+    const extension = imageExtensionFromMime(mime, path.extname(filePath).replace('.', '') || 'jpg');
+    const hash = crypto.createHash('sha1').update(buffer).digest('hex').slice(0, 16);
+    const chat = sanitizeStorageSegment(meta.chatId || 'telegram');
+    const message = sanitizeStorageSegment(meta.messageId || Date.now());
+    const storagePath = `telegram-imports/${chat}/${message}/${hash}.${extension}`;
+    return uploadSupabaseStorageObject(storagePath, buffer, mime);
+}
+
+async function uploadTelegramMediaToStorage(meta = {}) {
+    const primaryIds = [
+        meta.primaryFileId,
+        Array.isArray(meta.fileIds) ? meta.fileIds[meta.fileIds.length - 1] : ''
+    ].filter(Boolean);
+    const fileIds = [...new Set(primaryIds)].slice(0, 4);
+    const urls = [];
+    for (const fileId of fileIds) {
+        try {
+            const uploaded = await uploadTelegramPhotoToStorage(fileId, meta);
+            if (uploaded) urls.push(uploaded);
+        } catch (error) {
+            console.error('[TELEGRAM STORAGE] Photo upload failed:', error.message);
+        }
+    }
+    return urls;
+}
+
 async function handleTelegramWebhook(update) {
     if (!hasSupabaseConfig()) {
         return { ok: false, error: "Supabase is not configured." };
@@ -952,6 +1129,11 @@ async function handleTelegramWebhook(update) {
     }
 
     const extraction = await extractListingWithAI(meta.text || "[Telegram media post without caption]", meta);
+    const uploadedTelegramImages = await uploadTelegramMediaToStorage(meta);
+    if (uploadedTelegramImages.length) {
+        extraction.imageUrls = [...new Set([...uploadedTelegramImages, ...(extraction.imageUrls || [])])].slice(0, 12);
+        extraction.missingFields = (extraction.missingFields || []).filter((field) => field !== 'imageUrls');
+    }
     const imported = await saveImportedListing(rawMessage, meta, extraction);
     await patchSupabaseRow("telegram_raw_messages", rawMessage.id, {
         processed_status: "imported",
@@ -1043,7 +1225,7 @@ async function reviewAiImport(payload) {
 
 async function createAgentListing(payload = {}) {
     if (!hasSupabaseConfig()) return { __status: 500, error: "Supabase is not configured." };
-    const listing = pickAgentListingPayload(payload);
+    const listing = await pickAgentListingPayload(payload);
     if (listing.error) return { __status: 400, error: listing.error };
 
     const row = await insertSupabaseRow("agent_property_listings", listing);
@@ -1159,6 +1341,8 @@ const server = http.createServer(async (req, res) => {
                 ],
                 config: {
                     supabase: hasSupabaseConfig(),
+                    storage: hasStorageConfig(),
+                    mediaBucket: SUPABASE_PROPERTY_MEDIA_BUCKET,
                     openai: Boolean(HAS_OPENAI && openai),
                     telegramBot: Boolean(TELEGRAM_BOT_TOKEN),
                     telegramWebhookSecret: Boolean(TELEGRAM_WEBHOOK_SECRET),
@@ -1410,9 +1594,10 @@ Rank and explain best 3 properties.`;
 
     if (req.method === 'POST') {
         let body = '';
+        const maxBodyBytes = routePath === '/api/agent/listings' ? 35 * 1024 * 1024 : 1024 * 1024;
         req.on('data', chunk => {
             body += chunk.toString();
-            if (body.length > 1024 * 1024) {
+            if (body.length > maxBodyBytes) {
                 req.destroy();
             }
         });
