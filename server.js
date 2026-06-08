@@ -1597,6 +1597,7 @@ const server = http.createServer(async (req, res) => {
                     openai: Boolean(HAS_OPENAI && openai),
                     telegramBot: Boolean(TELEGRAM_BOT_TOKEN),
                     telegramWebhookSecret: Boolean(TELEGRAM_WEBHOOK_SECRET),
+                    guidedTelegramListingFlow: true,
                     adminApiKey: Boolean(ADMIN_API_KEY),
                     frontendUrl: Boolean(FRONTEND_URL)
                 },
