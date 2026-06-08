@@ -482,20 +482,23 @@ function cleanPhone(value = '') {
 }
 
 function extractTelegramMessage(update) {
-    const message = update?.message || update?.channel_post || update?.edited_message || update?.edited_channel_post || {};
+    const callback = update?.callback_query || null;
+    const message = callback?.message || update?.message || update?.channel_post || update?.edited_message || update?.edited_channel_post || {};
     const text = [message.text, message.caption].filter(Boolean).join('\n').trim();
     const photos = Array.isArray(message.photo) ? message.photo : [];
     const bestPhoto = photos.length ? photos[photos.length - 1] : null;
     return {
         updateId: update?.update_id,
-        updateType: update?.channel_post ? 'channel_post' : update?.edited_channel_post ? 'edited_channel_post' : update?.edited_message ? 'edited_message' : 'message',
+        updateType: callback ? 'callback_query' : update?.channel_post ? 'channel_post' : update?.edited_channel_post ? 'edited_channel_post' : update?.edited_message ? 'edited_message' : 'message',
+        callbackId: callback?.id || '',
+        callbackData: callback?.data || '',
         chatId: message.chat?.id ? String(message.chat.id) : '',
         chatTitle: message.chat?.title || message.chat?.username || '',
         messageId: message.message_id || null,
         messageDate: message.date ? new Date(message.date * 1000).toISOString() : new Date().toISOString(),
-        senderId: message.from?.id ? String(message.from.id) : '',
-        senderUsername: message.from?.username || '',
-        text,
+        senderId: (callback?.from?.id || message.from?.id) ? String(callback?.from?.id || message.from?.id) : '',
+        senderUsername: callback?.from?.username || message.from?.username || '',
+        text: callback ? '' : text,
         caption: message.caption || '',
         fileIds: photos.map((photo) => photo.file_id).filter(Boolean),
         primaryFileId: bestPhoto?.file_id || '',
@@ -1037,7 +1040,7 @@ async function createAdminNotification(title, message, payload = {}) {
     }
 }
 
-async function sendTelegramMessage(chatId, text) {
+async function sendTelegramMessage(chatId, text, options = {}) {
     if (!TELEGRAM_BOT_TOKEN || !chatId || !text) return null;
     try {
         const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
@@ -1046,7 +1049,8 @@ async function sendTelegramMessage(chatId, text) {
             body: JSON.stringify({
                 chat_id: chatId,
                 text,
-                disable_web_page_preview: true
+                disable_web_page_preview: true,
+                ...(options.replyMarkup ? { reply_markup: options.replyMarkup } : {})
             })
         });
         const payload = await response.json().catch(() => ({}));
@@ -1059,6 +1063,20 @@ async function sendTelegramMessage(chatId, text) {
         console.error("[TELEGRAM REPLY] Failed:", error.message);
         return null;
     }
+}
+
+async function answerTelegramCallback(callbackId, text = '') {
+    if (!TELEGRAM_BOT_TOKEN || !callbackId) return null;
+    try {
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ callback_query_id: callbackId, text })
+        });
+    } catch (error) {
+        console.error('[TELEGRAM CALLBACK] Ack failed:', error.message);
+    }
+    return null;
 }
 
 async function getTelegramFilePath(fileId) {
@@ -1113,6 +1131,261 @@ async function uploadTelegramMediaToStorage(meta = {}) {
     return urls;
 }
 
+function isTelegramDoneText(text = '') {
+    return /^(\/done|done|siap|selesai)$/i.test(String(text || '').trim());
+}
+
+function isTelegramNewListingText(text = '') {
+    return /^(\/newlisting|\/new|new listing|listing baru)$/i.test(String(text || '').trim());
+}
+
+function telegramInlineKeyboard(buttons = []) {
+    return { inline_keyboard: buttons.map((row) => row.map((button) => ({ text: button.text, callback_data: button.data }))) };
+}
+
+function sessionPhotoDoneKeyboard(sessionId) {
+    return telegramInlineKeyboard([[{ text: 'Done photos', data: `rg_done_photos:${sessionId}` }]]);
+}
+
+function sessionDetailsDoneKeyboard(sessionId) {
+    return telegramInlineKeyboard([[{ text: 'Done details - send to admin QC', data: `rg_done_details:${sessionId}` }]]);
+}
+
+function sessionCancelKeyboard(sessionId) {
+    return telegramInlineKeyboard([[{ text: 'Cancel this listing', data: `rg_cancel:${sessionId}` }]]);
+}
+
+async function findActiveTelegramListingSession(chatId) {
+    if (!chatId) return null;
+    const rows = await selectSupabaseRows(
+        'telegram_listing_sessions',
+        `select=*&chat_id=${supabaseEq(chatId)}&status=in.(collecting_photos,awaiting_details)&order=updated_at.desc&limit=1`
+    );
+    return Array.isArray(rows) ? rows[0] || null : null;
+}
+
+async function getTelegramListingSession(id) {
+    if (!id) return null;
+    const rows = await selectSupabaseRows(
+        'telegram_listing_sessions',
+        `select=*&id=${supabaseEq(id)}&limit=1`
+    );
+    return Array.isArray(rows) ? rows[0] || null : null;
+}
+
+async function createTelegramListingSession(meta) {
+    return insertSupabaseRow('telegram_listing_sessions', {
+        chat_id: meta.chatId,
+        chat_title: meta.chatTitle,
+        started_by: meta.senderUsername || meta.senderId || '',
+        status: 'collecting_photos',
+        updated_at: new Date().toISOString()
+    });
+}
+
+async function cancelTelegramListingSession(sessionId) {
+    return patchSupabaseRow('telegram_listing_sessions', sessionId, {
+        status: 'cancelled',
+        updated_at: new Date().toISOString()
+    });
+}
+
+async function appendTelegramSessionPhotos(session, meta) {
+    const existing = Array.isArray(session.telegram_file_ids) ? session.telegram_file_ids : [];
+    const next = [...new Set([...existing, ...(meta.fileIds || [])])].slice(0, 10);
+    return patchSupabaseRow('telegram_listing_sessions', session.id, {
+        telegram_file_ids: next,
+        updated_at: new Date().toISOString()
+    });
+}
+
+async function uploadTelegramSessionPhotos(session, meta) {
+    const existingUrls = Array.isArray(session.image_urls) ? session.image_urls : [];
+    if (existingUrls.length >= 4) return existingUrls;
+    const fileIds = Array.isArray(session.telegram_file_ids) ? session.telegram_file_ids.slice(0, 10) : [];
+    const urls = [];
+    for (const fileId of fileIds) {
+        try {
+            const uploaded = await uploadTelegramPhotoToStorage(fileId, { ...meta, messageId: session.id });
+            if (uploaded) urls.push(uploaded);
+        } catch (error) {
+            console.error('[TELEGRAM SESSION STORAGE] Photo upload failed:', error.message);
+        }
+    }
+    return [...new Set([...existingUrls, ...urls])].slice(0, 10);
+}
+
+async function markTelegramPhotosDone(session, meta) {
+    const fileCount = Array.isArray(session.telegram_file_ids) ? session.telegram_file_ids.length : 0;
+    if (fileCount < 4) {
+        await sendTelegramMessage(
+            meta.chatId,
+            `Need at least 4 photos before details. Current: ${fileCount}/4. Send more property photos first.`
+        );
+        return { ok: true, waiting: 'photos', sessionId: session.id };
+    }
+
+    await sendTelegramMessage(meta.chatId, 'Uploading photos to RealityGenius cloud storage. One moment...');
+    const imageUrls = await uploadTelegramSessionPhotos(session, meta);
+    if (imageUrls.length < 4) {
+        await sendTelegramMessage(meta.chatId, `Only ${imageUrls.length}/4 photos uploaded successfully. Please send more photos and press Done photos again.`);
+        return { ok: true, waiting: 'photos', sessionId: session.id };
+    }
+
+    const updated = await patchSupabaseRow('telegram_listing_sessions', session.id, {
+        status: 'awaiting_details',
+        image_urls: imageUrls,
+        updated_at: new Date().toISOString()
+    });
+    await sendTelegramMessage(
+        meta.chatId,
+        [
+            `Photos saved: ${imageUrls.length}.`,
+            'Now send the property details in one message.',
+            '',
+            'Include: title/location, price, size sqft, bedrooms, bathrooms, property type, tenure, contact phone, and remarks.',
+            'After sending details, click Done details.'
+        ].join('\n'),
+        { replyMarkup: sessionCancelKeyboard(updated.id) }
+    );
+    return { ok: true, waiting: 'details', sessionId: updated.id };
+}
+
+async function saveTelegramSessionDetails(session, meta, rawMessage = null) {
+    const existing = String(session.details_text || '').trim();
+    const incoming = String(meta.text || '').trim();
+    const detailsText = [existing, incoming].filter(Boolean).join('\n\n').slice(0, 5000);
+    const updated = await patchSupabaseRow('telegram_listing_sessions', session.id, {
+        details_text: detailsText,
+        updated_at: new Date().toISOString()
+    });
+    if (rawMessage?.id) {
+        await patchSupabaseRow('telegram_raw_messages', rawMessage.id, {
+            processed_status: 'guided_details_collected',
+            processed_at: new Date().toISOString()
+        });
+    }
+    await sendTelegramMessage(
+        meta.chatId,
+        'Property details saved. Click Done details when this one listing is complete.',
+        { replyMarkup: sessionDetailsDoneKeyboard(updated.id) }
+    );
+    return { ok: true, waiting: 'details_done', sessionId: updated.id };
+}
+
+async function submitTelegramListingSession(session, meta, rawMessage) {
+    const imageUrls = Array.isArray(session.image_urls) ? session.image_urls : [];
+    const detailsText = String(session.details_text || '').trim();
+    if (imageUrls.length < 4) {
+        return markTelegramPhotosDone(session, meta);
+    }
+    if (!detailsText) {
+        await sendTelegramMessage(meta.chatId, 'Send the property details first, then click Done details.');
+        return { ok: true, waiting: 'details', sessionId: session.id };
+    }
+
+    await sendTelegramMessage(meta.chatId, 'Creating AI import for admin QC...');
+    const importMeta = {
+        ...meta,
+        messageId: Number.isFinite(Number(meta.messageId)) ? meta.messageId : null,
+        text: detailsText
+    };
+    const extraction = await extractListingWithAI(detailsText, importMeta);
+    extraction.imageUrls = [...new Set([...imageUrls, ...(extraction.imageUrls || [])])].slice(0, 12);
+    extraction.missingFields = (extraction.missingFields || []).filter((field) => field !== 'imageUrls');
+    extraction.adminReviewNote = `${extraction.adminReviewNote || ''} Guided Telegram import: ${imageUrls.length} photos collected before details.`.trim();
+
+    const imported = await saveImportedListing(rawMessage, importMeta, extraction);
+    await patchSupabaseRow('telegram_listing_sessions', session.id, {
+        status: 'submitted',
+        import_id: imported.id,
+        submitted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    });
+    await patchSupabaseRow('telegram_raw_messages', rawMessage.id, {
+        processed_status: 'guided_import_submitted',
+        ai_summary: extraction.title,
+        processed_at: new Date().toISOString()
+    });
+    await createAdminNotification(
+        'Telegram guided listing needs review',
+        `${extraction.title} was submitted with ${imageUrls.length} photos and is waiting for admin QC.`,
+        { importId: imported.id, rawMessageId: rawMessage.id, sessionId: session.id, status: imported.status }
+    );
+    await sendTelegramMessage(
+        meta.chatId,
+        `Done. RealityGenius created one complete listing for admin QC: ${extraction.title}. Status: needs_review.`
+    );
+    return { ok: true, importId: imported.id, sessionId: session.id, status: imported.status };
+}
+
+async function handleTelegramCallback(meta, rawMessage) {
+    await answerTelegramCallback(meta.callbackId, 'Received');
+    const [action, sessionId] = String(meta.callbackData || '').split(':');
+    const session = await getTelegramListingSession(sessionId);
+    if (!session) {
+        await sendTelegramMessage(meta.chatId, 'This listing session was not found. Send /newlisting to start again.');
+        return { ok: true, ignored: true, reason: 'Session not found' };
+    }
+    if (action === 'rg_cancel') {
+        await cancelTelegramListingSession(session.id);
+        await sendTelegramMessage(meta.chatId, 'Listing draft cancelled. Send /newlisting or send photos to start again.');
+        return { ok: true, status: 'cancelled', sessionId: session.id };
+    }
+    if (action === 'rg_done_photos') return markTelegramPhotosDone(session, meta);
+    if (action === 'rg_done_details') return submitTelegramListingSession(session, meta, rawMessage);
+    return { ok: true, ignored: true, reason: 'Unknown callback action' };
+}
+
+async function handleGuidedTelegramListing(meta, rawMessage) {
+    if (meta.callbackData) return handleTelegramCallback(meta, rawMessage);
+
+    if (isTelegramNewListingText(meta.text)) {
+        const existing = await findActiveTelegramListingSession(meta.chatId);
+        if (existing) await cancelTelegramListingSession(existing.id);
+        const session = await createTelegramListingSession(meta);
+        await sendTelegramMessage(meta.chatId, 'New listing started. Send at least 4 property photos first. After the 4th photo, click Done photos.');
+        return { ok: true, status: 'collecting_photos', sessionId: session.id };
+    }
+
+    let session = await findActiveTelegramListingSession(meta.chatId);
+    if (meta.fileIds.length) {
+        if (!session) session = await createTelegramListingSession(meta);
+        if (session.status === 'awaiting_details') {
+            await sendTelegramMessage(meta.chatId, 'This listing already has photos. Send property details now, or cancel and start a new listing.');
+            return { ok: true, waiting: 'details', sessionId: session.id };
+        }
+        const updated = await appendTelegramSessionPhotos(session, meta);
+        const count = Array.isArray(updated.telegram_file_ids) ? updated.telegram_file_ids.length : 0;
+        await patchSupabaseRow('telegram_raw_messages', rawMessage.id, { processed_status: 'guided_photo_collected' });
+        await sendTelegramMessage(
+            meta.chatId,
+            count >= 4
+                ? `Photo ${count}/10 received. Minimum 4 reached. Click Done photos when this listing's pictures are complete.`
+                : `Photo ${count}/4 received. Send ${4 - count} more photo${4 - count === 1 ? '' : 's'} for this listing.`,
+            { replyMarkup: count >= 4 ? sessionPhotoDoneKeyboard(updated.id) : sessionCancelKeyboard(updated.id) }
+        );
+        return { ok: true, status: 'collecting_photos', photoCount: count, sessionId: updated.id };
+    }
+
+    if (session && session.status === 'collecting_photos' && isTelegramDoneText(meta.text)) {
+        return markTelegramPhotosDone(session, meta);
+    }
+
+    if (session && session.status === 'awaiting_details') {
+        if (isTelegramDoneText(meta.text)) return submitTelegramListingSession(session, meta, rawMessage);
+        if (meta.text) return saveTelegramSessionDetails(session, meta, rawMessage);
+    }
+
+    if (meta.text) {
+        await sendTelegramMessage(meta.chatId, 'For Telegram import, send at least 4 photos first. Then click Done photos, send property details, and click Done details.');
+        await patchSupabaseRow('telegram_raw_messages', rawMessage.id, { processed_status: 'guided_waiting_for_photos' });
+        return { ok: true, waiting: 'photos_first' };
+    }
+
+    return null;
+}
+
 async function handleTelegramWebhook(update) {
     if (!hasSupabaseConfig()) {
         return { ok: false, error: "Supabase is not configured." };
@@ -1122,37 +1395,15 @@ async function handleTelegramWebhook(update) {
     if (!meta.updateId) return { ok: true, ignored: true, reason: "No Telegram update id." };
 
     const rawMessage = await saveRawTelegramMessage(meta);
+    const guidedResponse = await handleGuidedTelegramListing(meta, rawMessage);
+    if (guidedResponse) return guidedResponse;
+
     if (!meta.text && !meta.fileIds.length) {
         await patchSupabaseRow("telegram_raw_messages", rawMessage.id, { processed_status: "ignored_empty" });
-        await sendTelegramMessage(meta.chatId, "RealityGenius received the Telegram update, but there was no listing text or caption to extract. Please send a property post with price, location, size, and contact details.");
+        await sendTelegramMessage(meta.chatId, "Send at least 4 property photos first. Then click Done photos, send property details, and click Done details.");
         return { ok: true, ignored: true, rawMessageId: rawMessage.id };
     }
-
-    const extraction = await extractListingWithAI(meta.text || "[Telegram media post without caption]", meta);
-    const uploadedTelegramImages = await uploadTelegramMediaToStorage(meta);
-    if (uploadedTelegramImages.length) {
-        extraction.imageUrls = [...new Set([...uploadedTelegramImages, ...(extraction.imageUrls || [])])].slice(0, 12);
-        extraction.missingFields = (extraction.missingFields || []).filter((field) => field !== 'imageUrls');
-    }
-    const imported = await saveImportedListing(rawMessage, meta, extraction);
-    await patchSupabaseRow("telegram_raw_messages", rawMessage.id, {
-        processed_status: "imported",
-        ai_summary: extraction.title,
-        processed_at: new Date().toISOString()
-    });
-
-    await createAdminNotification(
-        "Telegram AI listing needs review",
-        `${extraction.title} was imported from ${meta.chatTitle || meta.chatId || "Telegram"} with ${extraction.confidenceScore}% confidence.`,
-        { importId: imported.id, rawMessageId: rawMessage.id, status: imported.status }
-    );
-
-    await sendTelegramMessage(
-        meta.chatId,
-        `RealityGenius received this listing: ${extraction.title}. Status: needs_review. Admin must verify it before it goes live.`
-    );
-
-    return { ok: true, importId: imported.id, status: imported.status, confidenceScore: extraction.confidenceScore };
+    return { ok: true, waiting: "guided_listing_flow" };
 }
 
 async function listAdminAiImports() {
