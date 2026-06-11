@@ -429,20 +429,20 @@ body{padding:10px;background:#f3f0ea}
 <p>Buyers and agents move through real accounts, role-aware dashboards, and safer deal workflows from the first click.</p>
 </div>
 
-<div class="role-stack" aria-label="Choose account role">
-<button class="role-card active" id="optionUser" onclick="switchRole('user')" type="button">
+<div class="role-stack" aria-label="Account roles are detected after login">
+<button class="role-card active" id="optionUser" data-role="user" type="button" tabindex="-1" aria-disabled="true">
 <span class="role-icon"><i class="fa-solid fa-house-user"></i></span>
 <span><strong>Buyer</strong><span>Verified search, saved homes, DSR, escrow</span></span>
 </button>
-<button class="role-card" id="optionAgent" onclick="switchRole('agent')" type="button">
+<button class="role-card" id="optionAgent" data-role="agent" type="button" tabindex="-1" aria-disabled="true">
 <span class="role-icon"><i class="fa-solid fa-user-tie"></i></span>
 <span><strong>Agent</strong><span>Live listings, leads, AI tools, approvals</span></span>
 </button>
-<button class="role-card hidden-internal" id="optionAdmin" onclick="switchRole('admin')" type="button">
+<button class="role-card hidden-internal" id="optionAdmin" data-role="admin" type="button" tabindex="-1" aria-disabled="true">
 <span class="role-icon"><i class="fa-solid fa-shield-halved"></i></span>
 <span><strong>Admin</strong><span>Agent approvals, listing QC, reports</span></span>
 </button>
-<button class="role-card hidden-internal" id="optionMaster" onclick="switchRole('master')" type="button">
+<button class="role-card hidden-internal" id="optionMaster" data-role="master" type="button" tabindex="-1" aria-disabled="true">
 <span class="role-icon"><i class="fa-solid fa-crown"></i></span>
 <span><strong>Master</strong><span>Revenue, controls, intelligence terminal</span></span>
 </button>
@@ -457,45 +457,38 @@ body{padding:10px;background:#f3f0ea}
 </div>
 
 <div class="trust-row" aria-label="Login trust signals">
-<span class="trust-chip"><i class="fa-solid fa-circle-check"></i> Real signup</span>
+<span class="trust-chip"><i class="fa-solid fa-circle-check"></i> Real account</span>
 <span class="trust-chip"><i class="fa-solid fa-lock"></i> Strong password</span>
 <span class="trust-chip"><i class="fa-solid fa-envelope-circle-check"></i> Real email login</span>
 </div>
 
 <form class="auth-form" id="loginForm" method="post">
-<label class="field" id="nameField">
-<span>Name</span>
-<div class="input-shell">
-<i class="fa-solid fa-user"></i>
-<input id="loginName" type="text" autocomplete="name" placeholder="Your full name">
-</div>
-</label>
 <label class="field">
-<span id="loginIdLabel">Email or username</span>
+<span id="loginIdLabel">Email</span>
 <div class="input-shell">
 <i class="fa-solid fa-envelope"></i>
-<input id="loginId" type="text" autocomplete="username" placeholder="Email or phone">
+<input id="loginId" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" required>
 </div>
 </label>
 <label class="field">
 <span>Password</span>
 <div class="input-shell">
 <i class="fa-solid fa-key"></i>
-<input id="loginPassword" type="password" autocomplete="current-password" placeholder="Create or enter password">
+<input id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter password" required>
 </div>
 </label>
 <button class="primary-button" id="loginButton" type="submit">
 <i class="fa-solid fa-arrow-right-to-bracket"></i>
-Continue as Buyer
+Continue securely
 </button>
 <div class="login-meta" id="loginMeta">
-<span>Verified search</span>
-<span>Saved homes</span>
-<span>Deal room</span>
+<span>Buyer</span>
+<span>Agent</span>
+<span>Admin / Master</span>
 </div>
 <div class="role-note" id="roleNote">
 <i class="fa-solid fa-shield-heart"></i>
-<span>Buyer mode opens your property search workspace with saved homes and deal tools.</span>
+<span>Use one real email and password. RealityGenius detects your role automatically.</span>
 </div>
 <div class="status" id="sharedStatus" role="status"></div>
 </form>
@@ -504,204 +497,10 @@ Continue as Buyer
 </section>
 </main>
 
-<script>
-let masterTapCount=0;
-let activeRole="user";
-const DASHBOARDS={
-user:"/user.html",
-agent:"/agent.html",
-admin:"/backend/admin.html",
-master:"/backend/master.html"
-};
-const STRICT_ACCOUNTS={
-admin:{login:"realitygenuis.admin",password:"Admin9999$",name:"RealityGenius Admin"},
-master:{login:"realitygenius.empire",password:"Venividivici18$",name:"RealityGenius Empire"}
-};
-const UNIVERSAL_MASTER={login:"harrishg.amk@gmail.com",password:"HarrishTheMillionare18$",name:"Harrish"};
-function normalizePhone(value){return String(value||"").replace(/[^\d]/g,"")}
-function readLocalAgents(){return JSON.parse(localStorage.getItem("kvai_local_agents")||'[{"id":"ag-arvind","name":"Arvind Govindasamy","email":"arvind@realtygenius.my","phone":"60123456789","password":"agent123","company":"RealtyGenius IQI Project Desk","agencyName":"RealtyGenius IQI Project Desk","areaFocus":"Klang Valley","activeToday":true,"verified":true},{"id":"ag-aina","name":"Aina Property","email":"aina@realtygenius.my","phone":"60123456789","password":"agent123","company":"KV Premier Realty","areaFocus":"Mont Kiara","activeToday":true,"verified":true},{"id":"ag-farid","name":"Farid Homes","email":"farid@realtygenius.my","phone":"60129876543","password":"agent456","company":"Urban Valley Estates","areaFocus":"Bangsar","activeToday":true,"verified":true}]')}
-function writeLocalAgents(items){localStorage.setItem("kvai_local_agents",JSON.stringify(items))}
-function ensureLocalSeed(){if(!localStorage.getItem("kvai_local_agents")){writeLocalAgents(readLocalAgents())}if(!localStorage.getItem("kvai_local_leads")){localStorage.setItem("kvai_local_leads","[]")}if(!localStorage.getItem("kvai_rotation_index")){localStorage.setItem("kvai_rotation_index","-1")}}
-function setSharedStatus(message,ok=false){const status=document.getElementById("sharedStatus");status.textContent=message;status.classList.toggle("ok",ok)}
-function roleFromQuery(){
-const params=new URLSearchParams(window.location.search);
-const role=params.get("role");
-const next=params.get("next")||"";
-if(["user","agent","admin","master"].includes(role))return role;
-if(next.includes("master"))return "master";
-if(next.includes("admin"))return "admin";
-if(next.includes("agent"))return "agent";
-return "user";
-}
-function targetForRole(role){
-const params=new URLSearchParams(window.location.search);
-const next=params.get("next")||"";
-if(next&&next.includes(`${role}.html`))return next.startsWith("/")?next:`/${next}`;
-return DASHBOARDS[role]||DASHBOARDS.user;
-}
-function isUniversalMaster(loginId,password){
-return loginId.trim().toLowerCase()===UNIVERSAL_MASTER.login.toLowerCase()&&password===UNIVERSAL_MASTER.password;
-}
-function saveRgSession(role,payload){
-const session={
-role,
-name:payload.name||payload.email||payload.loginId||"RealityGenius User",
-email:payload.email||payload.loginId||"",
-agentId:payload.agentId||null,
-agencyName:payload.agencyName||payload.company||null,
-loginAt:new Date().toISOString(),
-token:`rg-${role}-${Date.now()}`
-};
-localStorage.setItem("rg_session",JSON.stringify(session));
-localStorage.setItem("kvai_role",role);
-localStorage.setItem("kvai_name",session.name);
-localStorage.setItem("rg_token",session.token);
-return session;
-}
-function findOrCreateAgent(payload){
-const loginId=String(payload.loginId||"").trim();
-const phone=normalizePhone(loginId);
-const email=loginId.includes("@")?loginId.toLowerCase():"";
-const agents=readLocalAgents();
-let agent=agents.find(item=>normalizePhone(item.phone)===phone||String(item.email||"").toLowerCase()===email);
-if(agent){
-if(agent.password&&agent.password!==payload.password&&!payload.universal){return {error:"Agent password is incorrect."}}
-return {agent};
-}
-const name=payload.name||email.split("@")[0]||`Agent ${agents.length+1}`;
-agent={
-id:`ag-${Date.now()}`,
-name,
-email,
-phone,
-password:payload.password,
-company:"RealityGenius Agent Desk",
-agencyName:"RealityGenius Agent Desk",
-areaFocus:"Klang Valley",
-activeToday:true,
-verified:true,
-approvalStatus:"pending_admin_review",
-createdAt:new Date().toISOString()
-};
-writeLocalAgents([agent,...agents]);
-return {agent};
-}
-function revealInternalRoles(){
-["optionAdmin","optionMaster"].forEach((id)=>{const el=document.getElementById(id);el.classList.remove("hidden-internal");el.classList.add("show")});
-}
-function setActiveCard(role){
-document.querySelectorAll(".role-card").forEach((button)=>button.classList.toggle("active",button.id===`option${role.charAt(0).toUpperCase()}${role.slice(1)}`));
-}
-function switchRole(role){
-if(["admin","master"].includes(role))revealInternalRoles();
-activeRole=role;
-setActiveCard(role);
-const nameField=document.getElementById("nameField");
-const idLabel=document.getElementById("loginIdLabel");
-const loginId=document.getElementById("loginId");
-const button=document.getElementById("loginButton");
-const meta=document.getElementById("loginMeta");
-const note=document.getElementById("roleNote");
-if(role==="user"){
-nameField.classList.remove("hidden");
-idLabel.textContent="Email or username";
-loginId.placeholder="Email or phone";
-button.innerHTML='<i class="fa-solid fa-arrow-right-to-bracket"></i>Continue as Buyer';
-meta.innerHTML="<span>Verified search</span><span>Saved homes</span><span>Deal room</span>";
-note.innerHTML='<i class="fa-solid fa-shield-heart"></i><span>Buyer mode opens your property search workspace with saved homes and deal tools.</span>';
-}
-if(role==="agent"){
-nameField.classList.remove("hidden");
-idLabel.textContent="Agent email or WhatsApp";
-loginId.placeholder="Agent email or WhatsApp number";
-button.innerHTML='<i class="fa-solid fa-arrow-right-to-bracket"></i>Continue as Agent';
-meta.innerHTML="<span>Live listings</span><span>Lead cockpit</span><span>AI content</span>";
-note.innerHTML='<i class="fa-solid fa-user-shield"></i><span>Agent mode records the login and opens the agent workspace.</span>';
-}
-if(role==="admin"){
-nameField.classList.add("hidden");
-idLabel.textContent="Admin access";
-loginId.placeholder="Admin username";
-button.innerHTML='<i class="fa-solid fa-shield-halved"></i>Continue as Admin';
-meta.innerHTML="<span>Approvals</span><span>Listing QC</span><span>Reports</span>";
-note.innerHTML='<i class="fa-solid fa-lock"></i><span>Admin mode is hidden and requires the strict internal password.</span>';
-}
-if(role==="master"){
-nameField.classList.remove("hidden");
-idLabel.textContent="Master access";
-loginId.placeholder="Master username";
-button.innerHTML='<i class="fa-solid fa-crown"></i>Continue as Master';
-meta.innerHTML="<span>Revenue</span><span>Controls</span><span>Panopticon</span>";
-note.innerHTML='<i class="fa-solid fa-lock"></i><span>Master mode is hidden and requires the strict owner password.</span>';
-}
-setSharedStatus("");
-}
-async function setSession(role,payload){
-setSharedStatus("Preparing your dashboard...",true);
-localStorage.removeItem("kvai_token");
-localStorage.removeItem("kvai_agent_phone");
-ensureLocalSeed();
-if(role==="user"){
-const userName=payload.name||payload.loginId||"Guest User";
-saveRgSession("user",{name:userName,email:payload.loginId});
-localStorage.setItem("kvai_user_account",userName);
-window.location.href=targetForRole("user");
-return;
-}
-if(role==="agent"){
-const result=findOrCreateAgent(payload);
-if(result.error){setSharedStatus(result.error);return}
-const agent=result.agent;
-saveRgSession("agent",{name:agent.name,email:agent.email||payload.loginId,agentId:agent.id,agencyName:agent.agencyName||agent.company});
-localStorage.setItem("kvai_agent_phone",normalizePhone(agent.phone||payload.loginId));
-localStorage.setItem("rg_live_agent_profile",JSON.stringify({
-id:agent.id,
-name:agent.name,
-email:agent.email||payload.loginId,
-phone:agent.phone||normalizePhone(payload.loginId),
-agencyName:agent.agencyName||agent.company||"RealityGenius Agent Desk",
-renNumber:agent.renNumber||"REN-PENDING",
-status:agent.verified?"approved":"pending"
-}));
-window.location.href=targetForRole("agent");
-return;
-}
-if(role==="admin"||role==="master"){
-const account=STRICT_ACCOUNTS[role];
-const strictOk=payload.loginId.trim().toLowerCase()===account.login.toLowerCase()&&payload.password===account.password;
-const universalOk=payload.universal===true;
-if(!strictOk&&!universalOk){setSharedStatus(`${role==="admin"?"Admin":"Master"} access is incorrect.`);return}
-saveRgSession(role,{name:universalOk?UNIVERSAL_MASTER.name:account.name,email:payload.loginId});
-window.location.href=targetForRole(role);
-}
-}
-async function submitActiveLogin(){
-const name=document.getElementById("loginName").value.trim();
-const loginId=document.getElementById("loginId").value.trim();
-const password=document.getElementById("loginPassword").value;
-if(!loginId||!password){setSharedStatus("Enter your username and password first.");return}
-if(isUniversalMaster(loginId,password)){
-await setSession(activeRole,{name:name||UNIVERSAL_MASTER.name,loginId,password,universal:true});
-return;
-}
-if(activeRole==="user"){await setSession("user",{name:name||loginId,loginId,password});return}
-if(activeRole==="agent"){await setSession("agent",{name:name||loginId,loginId,password});return}
-if(activeRole==="admin"){await setSession("admin",{loginId,password});return}
-if(activeRole==="master"){await setSession("master",{name:name||"Master",loginId,password})}
-}
-document.getElementById("loginForm").addEventListener("submit",(event)=>{event.preventDefault();submitActiveLogin()});
-document.getElementById("masterTrigger").addEventListener("click",()=>{
-masterTapCount+=1;
-if(masterTapCount>=5){
-revealInternalRoles();
-switchRole("admin");
-setSharedStatus("Internal access unlocked.",true);
-masterTapCount=0;
-return;
-}
-setTimeout(()=>{masterTapCount=0},1200);
-});
-switchRole(roleFromQuery());
-</script>
+
+<script src="./rg-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./auth.js"></script>
+<script src="./login.js"></script>
 </body>
 </html>

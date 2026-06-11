@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="./master.css">
+  <script src="./rg-config.js"></script>
 </head>
 <body>
   <div class="master-alert" id="globalAlertPreview" hidden></div>
@@ -297,6 +298,9 @@
 
   <div class="toast" id="toast"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./auth.js"></script>
+  <script src="./auth-gate.js" data-required-role="master" data-login-path="/login.html"></script>
   <script src="./master.js"></script>
 </body>
 </html>

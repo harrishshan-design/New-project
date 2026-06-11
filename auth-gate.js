@@ -1,17 +1,32 @@
 (function () {
   const script = document.currentScript;
-  const requiredRole = script?.dataset.requiredRole || "";
-  const internalRole = requiredRole === "admin" || requiredRole === "master";
-  const configuredLoginPage = script?.dataset.loginPath || (internalRole ? "/" : "/");
-  const loginPage = configuredLoginPage === "/backend" ? "/" : configuredLoginPage;
-  const requireRealSession = false;
+  const requiredRole = String(script?.dataset.requiredRole || "").trim().toLowerCase();
+  const loginPage = script?.dataset.loginPath || "/login.html";
 
-  function readSession() {
-    try {
-      return JSON.parse(localStorage.getItem("rg_session") || "null");
-    } catch {
-      return null;
-    }
+  document.documentElement.classList.add("rg-auth-checking");
+
+  function injectAuthStyles() {
+    if (document.getElementById("realtyGeniusAuthStyles")) return;
+    const style = document.createElement("style");
+    style.id = "realtyGeniusAuthStyles";
+    style.textContent = `
+      .rg-auth-checking body{visibility:hidden}
+      .rg-session-pill{
+        display:inline-flex;align-items:center;gap:9px;min-height:42px;
+        padding:9px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.18);
+        background:rgba(255,255,255,.08);color:inherit;font-weight:800;white-space:nowrap
+      }
+      .rg-session-pill i{color:#23c2c7}
+      .rg-session-pill span{max-width:150px;overflow:hidden;text-overflow:ellipsis}
+      .rg-logout-button{
+        display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;
+        padding:9px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.18);
+        background:rgba(255,255,255,.08);color:inherit;font-weight:900;cursor:pointer
+      }
+      .rg-logout-button:hover{background:rgba(255,255,255,.14)}
+      @media (max-width:720px){.rg-session-pill span{max-width:96px}}
+    `;
+    document.head.appendChild(style);
   }
 
   function redirectToLogin() {
@@ -23,71 +38,11 @@
     window.location.replace(`${loginPage}?${query.toString()}`);
   }
 
-  const session = readSession();
-  
-  const token = String(session?.token || "");
-  const isLocalOnlySession = token.startsWith("demo-") || token.startsWith("local-");
-  const params = new URLSearchParams(window.location.search || "");
-  const isMasterSession = session?.role === "master";
-  const isExplicitMasterInspection = isMasterSession && requiredRole && requiredRole !== "master" && params.get("as") === requiredRole;
-  const hasRequiredRole = session?.role === requiredRole || isExplicitMasterInspection;
-
-  if (isMasterSession && requiredRole && requiredRole !== "master" && !isExplicitMasterInspection) {
-    window.location.replace("/backend/master.html");
-    return;
-  }
-
-  if (!session || !hasRequiredRole || (requireRealSession && isLocalOnlySession)) {
-    redirectToLogin();
-    return;
-  }
-
-  window.RealtyGeniusSession = session;
-
-  function injectSessionStyles() {
-    if (document.getElementById("realtyGeniusAuthStyles")) return;
-    const style = document.createElement("style");
-    style.id = "realtyGeniusAuthStyles";
-    style.textContent = `
-      .rg-session-pill{
-        display:inline-flex;
-        align-items:center;
-        gap:9px;
-        min-height:42px;
-        padding:9px 12px;
-        border-radius:999px;
-        border:1px solid rgba(255,255,255,.18);
-        background:rgba(255,255,255,.08);
-        color:inherit;
-        font-weight:800;
-        white-space:nowrap;
-      }
-      .rg-session-pill i{color:#23c2c7}
-      .rg-session-pill span{
-        max-width:150px;
-        overflow:hidden;
-        text-overflow:ellipsis;
-      }
-      .rg-logout-button{
-        display:inline-flex;
-        align-items:center;
-        justify-content:center;
-        gap:8px;
-        min-height:42px;
-        padding:9px 12px;
-        border-radius:999px;
-        border:1px solid rgba(255,255,255,.18);
-        background:rgba(255,255,255,.08);
-        color:inherit;
-        font-weight:900;
-        cursor:pointer;
-      }
-      .rg-logout-button:hover{background:rgba(255,255,255,.14)}
-      @media (max-width:720px){
-        .rg-session-pill span{max-width:96px}
-      }
-    `;
-    document.head.appendChild(style);
+  function sessionIcon(role) {
+    if (role === "admin") return "fa-solid fa-shield-halved";
+    if (role === "master") return "fa-solid fa-crown";
+    if (role === "agent") return "fa-solid fa-user-tie";
+    return "fa-solid fa-house-user";
   }
 
   async function clearSession() {
@@ -95,22 +50,11 @@
       const submitted = await window.RealityGeniusFeedbackGate.request({ reason: "logout" });
       if (!submitted) return;
     }
-
-    // If Supabase is available globally, sign out
-    if (typeof supabase !== 'undefined') {
-        try { await supabase.auth.signOut(); } catch(e) {}
-    }
-    
-    localStorage.removeItem("rg_session");
-    localStorage.removeItem("kvai_role");
-    localStorage.removeItem("kvai_name");
-    localStorage.removeItem("rg_token");
-    localStorage.removeItem("kvai_agent_phone");
+    await window.RealityGeniusAuth?.signOut?.();
     window.location.href = loginPage;
   }
 
-  function injectSessionControls() {
-    injectSessionStyles();
+  function injectSessionControls(session) {
     const target = document.querySelector(".top-actions") || document.querySelector(".main") || document.body;
     if (!target || document.getElementById("rgLogoutButton")) return;
 
@@ -118,16 +62,10 @@
     pill.className = "rg-session-pill";
 
     const icon = document.createElement("i");
-    icon.className = session.role === "admin"
-      ? "fa-solid fa-shield-halved"
-      : session.role === "agent"
-        ? "fa-solid fa-user-tie"
-        : "fa-solid fa-house-user";
+    icon.className = sessionIcon(session.role);
 
     const text = document.createElement("span");
     text.textContent = `${session.name || "User"} (${session.role})`;
-
-    pill.append(icon, text);
 
     const logout = document.createElement("button");
     logout.className = "rg-logout-button";
@@ -136,12 +74,27 @@
     logout.innerHTML = '<i class="fa-solid fa-arrow-right-from-bracket"></i><span>Logout</span>';
     logout.addEventListener("click", clearSession);
 
+    pill.append(icon, text);
     target.append(pill, logout);
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", injectSessionControls);
-  } else {
-    injectSessionControls();
+  async function boot() {
+    injectAuthStyles();
+    try {
+      if (!window.RealityGeniusAuth?.requireRole) throw new Error("Auth helper unavailable.");
+      const result = await window.RealityGeniusAuth.requireRole(requiredRole);
+      window.RealtyGeniusSession = result.legacySession;
+      document.documentElement.classList.remove("rg-auth-checking");
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", () => injectSessionControls(result.legacySession));
+      } else {
+        injectSessionControls(result.legacySession);
+      }
+    } catch {
+      await window.RealityGeniusAuth?.signOut?.();
+      redirectToLogin();
+    }
   }
+
+  boot();
 })();

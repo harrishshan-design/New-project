@@ -462,6 +462,75 @@ async function patchSupabaseRow(table, id, body) {
     return Array.isArray(rows) ? rows[0] : rows;
 }
 
+function normalizeAuthRole(role = '') {
+    const normalized = String(role || '').trim().toLowerCase();
+    if (normalized === 'buyer' || normalized === 'customer') return 'user';
+    if (['user', 'agent', 'admin', 'master'].includes(normalized)) return normalized;
+    return '';
+}
+
+function getBearerToken(req) {
+    return normalizeHeaderValue(req.headers.authorization).replace(/^Bearer\s+/i, '').trim();
+}
+
+async function getSupabaseAuthUser(accessToken) {
+    if (!SUPABASE_PROJECT_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+        throw new Error('Supabase Auth is not configured.');
+    }
+    const response = await fetch(`${SUPABASE_PROJECT_URL}/auth/v1/user`, {
+        headers: {
+            apikey: SUPABASE_SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/json'
+        }
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload?.id) {
+        throw new Error(payload?.msg || payload?.message || 'Invalid or expired session.');
+    }
+    return payload;
+}
+
+function profileFromAuthUser(authUser, row = null) {
+    const metadata = {
+        ...(authUser?.user_metadata || {}),
+        ...(authUser?.app_metadata || {}),
+        ...(row?.profile_json || {})
+    };
+    const role = normalizeAuthRole(row?.role || metadata.role || metadata.account_role);
+    return {
+        id: row?.id || authUser?.id || '',
+        auth_user_id: authUser?.id || '',
+        name: row?.name || metadata.name || metadata.full_name || String(authUser?.email || '').split('@')[0] || 'RealityGenius User',
+        email: row?.email || authUser?.email || '',
+        phone: row?.phone || metadata.phone || '',
+        role,
+        status: row?.status || metadata.status || 'active',
+        agency_name: row?.agency_name || metadata.agency_name || '',
+        ren_id: row?.ren_id || metadata.ren_id || '',
+        profile_json: row?.profile_json || {}
+    };
+}
+
+async function getAuthenticatedProfile(req) {
+    const accessToken = getBearerToken(req);
+    if (!accessToken) return { __status: 401, error: 'Bearer token is required.' };
+
+    const authUser = await getSupabaseAuthUser(accessToken);
+    let row = null;
+    if (authUser.email) {
+        const rows = await selectSupabaseRows(
+            'users',
+            `select=*&email=${supabaseEq(authUser.email)}&limit=1`
+        );
+        row = Array.isArray(rows) ? rows[0] || null : null;
+    }
+
+    const profile = profileFromAuthUser(authUser, row);
+    if (!profile.role) return { __status: 403, error: 'Account role is missing.', profile };
+    return { profile };
+}
+
 function extractUrls(text = '') {
     return String(text || '').match(/https?:\/\/[^\s)>\]]+/gi) || [];
 }
@@ -1653,6 +1722,7 @@ const server = http.createServer(async (req, res) => {
                 routes: [
                     "/api/telegram/webhook",
                     "/api/telegram/health",
+                    "/api/auth/me",
                     "/api/agent/listings",
                     "/api/admin/listings",
                     "/api/admin/listings/review",
@@ -1663,6 +1733,7 @@ const server = http.createServer(async (req, res) => {
                     supabase: hasSupabaseConfig(),
                     storage: hasStorageConfig(),
                     mediaBucket: SUPABASE_PROPERTY_MEDIA_BUCKET,
+                    authRoleLookup: true,
                     openai: Boolean(HAS_OPENAI && openai),
                     telegramBot: Boolean(TELEGRAM_BOT_TOKEN),
                     telegramWebhookSecret: Boolean(TELEGRAM_WEBHOOK_SECRET),
@@ -1679,6 +1750,10 @@ const server = http.createServer(async (req, res) => {
             const auth = requireTelegramSecret(req);
             if (!auth.ok) return { __status: auth.status, error: auth.error };
             return handleTelegramWebhook(payload);
+        }
+
+        if (url === '/api/auth/me') {
+            return getAuthenticatedProfile(req);
         }
 
         if (url === '/api/admin/ai-imports') {
