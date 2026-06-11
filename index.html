@@ -413,39 +413,516 @@ body{padding:10px;background:#f3f0ea}
 .primary-button{min-height:64px;border-radius:20px}
 .login-meta{grid-template-columns:1fr}
 }
+
+body{
+color:#f8fbff;
+background:
+radial-gradient(circle at 18% 8%,rgba(64,196,255,.24),transparent 30%),
+radial-gradient(circle at 82% 18%,rgba(151,71,255,.2),transparent 28%),
+radial-gradient(circle at 56% 88%,rgba(246,210,122,.16),transparent 36%),
+linear-gradient(135deg,#040814 0%,#081326 44%,#120b26 100%);
+}
+body::before{
+content:"";
+position:fixed;
+inset:-20%;
+z-index:-2;
+background:
+radial-gradient(circle at 20% 20%,rgba(28,174,255,.2),transparent 25%),
+radial-gradient(circle at 72% 28%,rgba(168,85,247,.18),transparent 26%),
+radial-gradient(circle at 50% 76%,rgba(246,210,122,.12),transparent 24%);
+animation:rgGradientFlow 14s ease-in-out infinite alternate;
+}
+body::after{
+content:"";
+position:fixed;
+inset:0;
+z-index:-1;
+background-image:
+linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
+linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+background-size:42px 42px;
+mask-image:radial-gradient(circle at 50% 40%,#000,transparent 74%);
+opacity:.55;
+}
+.login-page{
+grid-template-columns:minmax(0,1.24fr) minmax(410px,.76fr);
+}
+.story-panel{
+min-height:calc(100vh - 72px);
+padding:44px;
+gap:22px;
+background:
+linear-gradient(135deg,rgba(6,13,29,.78),rgba(17,24,49,.52)),
+radial-gradient(circle at 50% 40%,rgba(26,188,255,.18),transparent 44%);
+border:1px solid rgba(147,197,253,.22);
+box-shadow:0 45px 120px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.1);
+backdrop-filter:blur(22px);
+}
+.story-panel::after{
+right:4%;
+bottom:4%;
+width:220px;
+height:220px;
+background:radial-gradient(circle,rgba(246,210,122,.16),transparent 68%);
+}
+.brand-row{z-index:4}
+.brand-mark{
+border:1px solid rgba(255,255,255,.16);
+background:linear-gradient(145deg,rgba(8,34,54,.95),rgba(8,110,112,.7));
+box-shadow:0 28px 80px rgba(0,224,255,.2),inset 0 1px 0 rgba(255,255,255,.14);
+color:#ffd879;
+}
+.brand-motto{color:#e9d7aa;text-shadow:0 0 22px rgba(246,210,122,.22)}
+.hero-layout{
+position:relative;
+z-index:3;
+min-height:clamp(560px,calc(100vh - 170px),720px);
+display:grid;
+grid-template-columns:minmax(320px,.72fr) minmax(480px,1fr);
+gap:22px;
+align-items:center;
+}
+.hero-copy,.ai-scene,.auth-card{
+animation:revealLift .8s cubic-bezier(.2,.8,.2,1) both;
+}
+.ai-scene{animation-delay:.08s}
+.auth-card{animation-delay:.16s}
+.hero-copy{
+max-width:690px;
+align-self:center;
+}
+.hero-kicker{
+display:inline-flex;
+align-items:center;
+gap:10px;
+min-height:42px;
+padding:0 14px;
+border:1px solid rgba(125,211,252,.28);
+border-radius:999px;
+background:rgba(8,21,43,.56);
+color:#93e7ff;
+font-size:.84rem;
+font-weight:900;
+letter-spacing:.18em;
+text-transform:uppercase;
+box-shadow:0 0 34px rgba(34,211,238,.12);
+}
+.hero-copy h1{
+margin:26px 0 0;
+max-width:760px;
+font-size:clamp(3.9rem,5.7vw,7.1rem);
+line-height:.94;
+letter-spacing:-.075em;
+color:#f8fbff;
+text-shadow:0 0 48px rgba(56,189,248,.18);
+}
+.hero-copy p{
+max-width:650px;
+margin:24px 0 0;
+color:#c7d7f2;
+font-size:1.2rem;
+font-weight:700;
+line-height:1.65;
+}
+.hero-actions{
+display:flex;
+flex-wrap:wrap;
+gap:12px;
+margin-top:34px;
+}
+.hero-cta{
+min-height:58px;
+display:inline-flex;
+align-items:center;
+justify-content:center;
+gap:10px;
+padding:0 20px;
+border-radius:18px;
+border:1px solid rgba(255,255,255,.14);
+color:#f8fbff;
+background:rgba(255,255,255,.08);
+font-weight:900;
+text-decoration:none;
+box-shadow:0 18px 42px rgba(0,0,0,.22);
+transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background .2s ease;
+}
+.hero-cta.primary{
+background:linear-gradient(135deg,#10bdf7,#7c3aed 55%,#f6d27a);
+border-color:rgba(255,255,255,.2);
+box-shadow:0 0 34px rgba(34,211,238,.28),0 22px 48px rgba(59,130,246,.28);
+}
+.hero-cta:hover{
+transform:translateY(-3px);
+border-color:rgba(125,211,252,.55);
+box-shadow:0 0 42px rgba(34,211,238,.28),0 22px 54px rgba(0,0,0,.28);
+}
+.hero-cta:focus-visible{box-shadow:0 0 0 4px rgba(34,211,238,.26),0 0 44px rgba(34,211,238,.28)}
+.hero-proof{
+display:grid;
+grid-template-columns:repeat(3,minmax(0,1fr));
+gap:10px;
+margin-top:30px;
+max-width:620px;
+}
+.hero-proof span{
+min-height:72px;
+display:grid;
+gap:4px;
+align-content:center;
+padding:12px;
+border-radius:18px;
+background:rgba(255,255,255,.07);
+border:1px solid rgba(255,255,255,.12);
+color:#dbeafe;
+font-size:.78rem;
+font-weight:800;
+}
+.hero-proof strong{
+display:block;
+color:#fff;
+font-size:1.08rem;
+}
+.ai-scene{
+--mx:0;
+--my:0;
+position:relative;
+min-height:clamp(500px,calc(100vh - 170px),650px);
+perspective:1100px;
+transform-style:preserve-3d;
+isolation:isolate;
+}
+.scene-orbit{
+position:absolute;
+inset:6% 4% 4%;
+border-radius:44px;
+background:
+radial-gradient(circle at 50% 42%,rgba(34,211,238,.22),transparent 30%),
+linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.02));
+border:1px solid rgba(147,197,253,.14);
+box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 38px 100px rgba(0,0,0,.26);
+overflow:hidden;
+transform:rotateX(calc(var(--my) * -2deg)) rotateY(calc(var(--mx) * 2deg));
+transition:transform .18s ease-out;
+}
+.scene-orbit::before{
+content:"";
+position:absolute;
+left:50%;
+bottom:8%;
+width:86%;
+height:38%;
+transform:translateX(-50%) rotateX(68deg);
+background-image:
+linear-gradient(rgba(34,211,238,.25) 1px,transparent 1px),
+linear-gradient(90deg,rgba(34,211,238,.25) 1px,transparent 1px);
+background-size:38px 38px;
+border-radius:50%;
+box-shadow:0 0 60px rgba(34,211,238,.2);
+animation:gridDrift 7s linear infinite;
+}
+.scene-orbit::after{
+content:"";
+position:absolute;
+left:50%;
+top:46%;
+width:330px;
+height:330px;
+border-radius:50%;
+transform:translate(-50%,-50%) rotateX(68deg);
+border:1px solid rgba(34,211,238,.34);
+box-shadow:0 0 28px rgba(34,211,238,.24),inset 0 0 28px rgba(167,139,250,.16);
+animation:ringSpin 8s linear infinite;
+}
+.scan-ring{
+position:absolute;
+left:50%;
+top:43%;
+width:420px;
+height:420px;
+border:1px solid rgba(246,210,122,.38);
+border-radius:50%;
+transform:translate(-50%,-50%) rotateX(72deg);
+box-shadow:0 0 44px rgba(246,210,122,.22);
+animation:ringPulse 4.8s ease-in-out infinite;
+}
+.scan-ring.ring-two{
+width:250px;
+height:250px;
+border-color:rgba(34,211,238,.44);
+animation-delay:-1.8s;
+}
+.house-wrap{
+position:absolute;
+left:50%;
+top:43%;
+width:220px;
+height:220px;
+transform:translate3d(calc(-50% + var(--mx) * 18px),calc(-50% + var(--my) * 16px),80px) rotateX(58deg) rotateZ(-38deg);
+transform-style:preserve-3d;
+animation:houseFloat 5.4s ease-in-out infinite;
+filter:drop-shadow(0 46px 42px rgba(0,0,0,.36)) drop-shadow(0 0 35px rgba(34,211,238,.22));
+}
+.house-base{
+position:absolute;
+inset:42px 26px 24px;
+background:linear-gradient(145deg,#eef8ff,#a4e4ff 55%,#396b9b);
+border:1px solid rgba(255,255,255,.52);
+border-radius:18px;
+transform:translateZ(34px);
+box-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 0 42px rgba(34,211,238,.22);
+}
+.house-base::before{
+content:"";
+position:absolute;
+left:50%;
+top:-56px;
+width:145px;
+height:145px;
+background:linear-gradient(135deg,#16243f,#36d4ff 48%,#f6d27a);
+border:1px solid rgba(255,255,255,.38);
+transform:translateX(-50%) rotate(45deg);
+border-radius:18px 18px 6px 18px;
+box-shadow:0 0 38px rgba(124,58,237,.26);
+}
+.house-base::after{
+content:"";
+position:absolute;
+left:50%;
+bottom:18px;
+width:38px;
+height:58px;
+transform:translateX(-50%);
+border-radius:14px 14px 8px 8px;
+background:linear-gradient(180deg,#0b1d35,#051021);
+box-shadow:0 0 24px rgba(34,211,238,.35);
+}
+.house-window{
+position:absolute;
+z-index:2;
+top:78px;
+width:34px;
+height:30px;
+border-radius:9px;
+background:linear-gradient(135deg,#f6d27a,#64f4ff);
+box-shadow:0 0 24px rgba(246,210,122,.58);
+}
+.house-window.left{left:54px}
+.house-window.right{right:54px}
+.map-pin{
+position:absolute;
+width:18px;
+height:18px;
+border-radius:50% 50% 50% 0;
+background:#f6d27a;
+box-shadow:0 0 24px rgba(246,210,122,.72);
+transform:rotate(-45deg);
+animation:pinGlow 2.6s ease-in-out infinite;
+}
+.map-pin::after{
+content:"";
+position:absolute;
+inset:5px;
+border-radius:50%;
+background:#091323;
+}
+.pin-a{left:19%;bottom:28%}
+.pin-b{right:18%;bottom:31%;animation-delay:-.7s}
+.pin-c{left:66%;top:22%;animation-delay:-1.4s}
+.float-card{
+position:absolute;
+z-index:4;
+width:178px;
+padding:14px;
+border:1px solid rgba(255,255,255,.15);
+border-radius:22px;
+background:rgba(7,18,36,.68);
+backdrop-filter:blur(18px);
+box-shadow:0 24px 70px rgba(0,0,0,.32),0 0 26px rgba(34,211,238,.1);
+color:#eaf6ff;
+transform:translate3d(calc(var(--mx) * var(--px)),calc(var(--my) * var(--py)),120px);
+animation:cardFloat 5s ease-in-out infinite;
+}
+.float-card strong{
+display:block;
+font-size:.95rem;
+margin-bottom:5px;
+}
+.float-card span{
+display:block;
+color:#a8c9ee;
+font-size:.78rem;
+font-weight:800;
+}
+.float-card b{
+display:inline-flex;
+margin-top:10px;
+padding:7px 9px;
+border-radius:999px;
+background:rgba(34,211,238,.12);
+color:#7de9ff;
+font-size:.72rem;
+}
+.card-one{left:5%;top:17%;--px:16px;--py:-12px}
+.card-two{right:1%;top:27%;--px:-18px;--py:13px;animation-delay:-1.3s}
+.card-three{left:13%;bottom:12%;--px:12px;--py:18px;animation-delay:-2.1s}
+.particle{
+position:absolute;
+z-index:2;
+width:5px;
+height:5px;
+border-radius:50%;
+background:#7de9ff;
+box-shadow:0 0 16px rgba(125,233,255,.75);
+animation:particleMove 8s ease-in-out infinite;
+}
+.particle.p1{left:17%;top:22%}
+.particle.p2{right:22%;top:16%;animation-delay:-2s}
+.particle.p3{left:54%;bottom:14%;animation-delay:-3.3s}
+.particle.p4{right:12%;bottom:22%;animation-delay:-4.6s}
+.demo-ribbon{
+position:absolute;
+left:50%;
+bottom:8%;
+z-index:5;
+min-height:42px;
+display:flex;
+align-items:center;
+gap:10px;
+padding:0 14px;
+border-radius:999px;
+border:1px solid rgba(246,210,122,.3);
+background:rgba(12,18,32,.68);
+color:#fdebb7;
+font-size:.82rem;
+font-weight:900;
+transform:translateX(-50%);
+opacity:.9;
+}
+.scene-demo-pulse .scan-ring,
+.scene-demo-pulse .float-card,
+.scene-demo-pulse .house-wrap{animation-duration:1.8s}
+.auth-panel{
+background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(246,249,255,.78));
+border-color:rgba(255,255,255,.42);
+box-shadow:0 45px 120px rgba(0,0,0,.35);
+}
+@keyframes rgGradientFlow{from{transform:translate3d(-1.5%,-1%,0) scale(1)}to{transform:translate3d(1.5%,1%,0) scale(1.04)}}
+@keyframes gridDrift{to{background-position:38px 38px}}
+@keyframes ringSpin{to{transform:translate(-50%,-50%) rotateX(68deg) rotateZ(360deg)}}
+@keyframes ringPulse{0%,100%{transform:translate(-50%,-50%) rotateX(72deg) scale(.92);opacity:.52}50%{transform:translate(-50%,-50%) rotateX(72deg) scale(1.08);opacity:1}}
+@keyframes houseFloat{0%,100%{margin-top:0}50%{margin-top:-16px}}
+@keyframes cardFloat{0%,100%{margin-top:0}50%{margin-top:-12px}}
+@keyframes pinGlow{0%,100%{filter:brightness(1);opacity:.78}50%{filter:brightness(1.4);opacity:1}}
+@keyframes particleMove{0%,100%{transform:translate3d(0,0,0);opacity:.35}50%{transform:translate3d(22px,-28px,0);opacity:1}}
+@keyframes revealLift{from{opacity:0;transform:translateY(22px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media (max-width:1180px){
+.login-page{grid-template-columns:1fr}
+.story-panel{min-height:auto}
+.hero-layout{grid-template-columns:1fr;min-height:auto}
+.ai-scene{min-height:520px;order:-1}
+.hero-copy h1{font-size:clamp(3.2rem,9vw,5.6rem)}
+.auth-panel{background:rgba(255,255,255,.9)}
+}
+@media (max-width:700px){
+body{padding:10px;background:#050a15}
+.story-panel{padding:20px}
+.brand-row{align-items:center}
+.brand-motto{color:#e9d7aa}
+.hero-layout{gap:14px}
+.hero-copy h1{font-size:2.7rem}
+.hero-copy p{font-size:.98rem}
+.hero-actions{margin-top:22px}
+.hero-cta{width:100%;min-height:54px}
+.hero-proof{grid-template-columns:1fr;margin-top:18px}
+.ai-scene{min-height:390px}
+.scene-orbit{inset:2% 0 0;border-radius:30px}
+.house-wrap{width:160px;height:160px}
+.house-base{inset:34px 20px 18px}
+.house-base::before{width:104px;height:104px;top:-40px}
+.house-window{top:62px;width:26px;height:22px}
+.house-window.left{left:40px}
+.house-window.right{right:40px}
+.scan-ring{width:260px;height:260px}
+.scan-ring.ring-two{width:170px;height:170px}
+.scene-orbit::after{width:220px;height:220px}
+.float-card{width:146px;padding:11px}
+.card-one{left:2%;top:10%}
+.card-two{right:2%;top:17%}
+.card-three{display:none}
+.particle.p3,.particle.p4{display:none}
+.demo-ribbon{display:none}
+.auth-panel{padding:18px}
+}
+@media (prefers-reduced-motion:reduce){
+*,*::before,*::after{
+animation-duration:.01ms!important;
+animation-iteration-count:1!important;
+scroll-behavior:auto!important;
+transition:none!important;
+}
+}
 </style>
 </head>
 <body>
 <main class="login-page">
-<section class="story-panel" aria-label="RealityGenius platform story">
+<section class="story-panel" id="heroScene" aria-label="RealityGenius AI property hero">
 <header class="brand-row">
-<button class="brand-mark" id="masterTrigger" type="button" aria-label="RealityGenius internal access unlock">RealityGenius<sup>TM</sup></button>
+<div class="brand-mark" aria-label="RealityGenius">RealityGenius<sup>TM</sup></div>
 <div class="brand-motto">Build Beyond Reality</div>
 </header>
 
-<div class="story-copy">
-<p class="eyebrow">Malaysia AI Property OS</p>
-<h1>Enter a verified property ecosystem, not a normal login page.</h1>
-<p>Buyers and agents move through real accounts, role-aware dashboards, and safer deal workflows from the first click.</p>
+<div class="hero-layout">
+<div class="hero-copy">
+<span class="hero-kicker"><i class="fa-solid fa-sparkles"></i> Malaysia AI Property OS</span>
+<h1>Find Your Next Property with AI</h1>
+<p>RealityGenius helps buyers, agents, and admins discover, manage, and promote properties smarter.</p>
+<div class="hero-actions" aria-label="Homepage actions">
+<a class="hero-cta primary" href="/login.html?role=user&next=/user.html"><i class="fa-solid fa-magnifying-glass-location"></i>Explore Properties</a>
+<a class="hero-cta" href="/login.html?role=agent&next=/agent.html"><i class="fa-solid fa-user-tie"></i>Join as Agent</a>
+<button class="hero-cta" id="watchDemoButton" type="button"><i class="fa-solid fa-circle-play"></i>Watch Demo</button>
+</div>
+<div class="hero-proof" aria-label="RealityGenius platform highlights">
+<span><strong>Verified</strong>Login and role routing</span>
+<span><strong>AI-assisted</strong>Search, listings, and imports</span>
+<span><strong>Deal-ready</strong>Buyer and agent workflows</span>
+</div>
 </div>
 
-<div class="role-stack" aria-label="Account roles are detected after login">
-<button class="role-card active" id="optionUser" data-role="user" type="button" tabindex="-1" aria-disabled="true">
-<span class="role-icon"><i class="fa-solid fa-house-user"></i></span>
-<span><strong>Buyer</strong><span>Verified search, saved homes, DSR, escrow</span></span>
-</button>
-<button class="role-card" id="optionAgent" data-role="agent" type="button" tabindex="-1" aria-disabled="true">
-<span class="role-icon"><i class="fa-solid fa-user-tie"></i></span>
-<span><strong>Agent</strong><span>Live listings, leads, AI tools, approvals</span></span>
-</button>
-<button class="role-card hidden-internal" id="optionAdmin" data-role="admin" type="button" tabindex="-1" aria-disabled="true">
-<span class="role-icon"><i class="fa-solid fa-shield-halved"></i></span>
-<span><strong>Admin</strong><span>Agent approvals, listing QC, reports</span></span>
-</button>
-<button class="role-card hidden-internal" id="optionMaster" data-role="master" type="button" tabindex="-1" aria-disabled="true">
-<span class="role-icon"><i class="fa-solid fa-crown"></i></span>
-<span><strong>Master</strong><span>Revenue, controls, intelligence terminal</span></span>
-</button>
+<div class="ai-scene" id="aiScene" aria-hidden="true">
+<div class="scene-orbit">
+<div class="scan-ring"></div>
+<div class="scan-ring ring-two"></div>
+<div class="house-wrap">
+<div class="house-base"></div>
+<div class="house-window left"></div>
+<div class="house-window right"></div>
+</div>
+<span class="map-pin pin-a"></span>
+<span class="map-pin pin-b"></span>
+<span class="map-pin pin-c"></span>
+<article class="float-card card-one">
+<strong>KLCC Sky Suite</strong>
+<span>AI match 96%</span>
+<b>RM 1.28M</b>
+</article>
+<article class="float-card card-two">
+<strong>Bangsar Family Home</strong>
+<span>Verified agent</span>
+<b>Viewing ready</b>
+</article>
+<article class="float-card card-three">
+<strong>Mont Kiara Yield</strong>
+<span>Investor signal</span>
+<b>4.8% est.</b>
+</article>
+<span class="particle p1"></span>
+<span class="particle p2"></span>
+<span class="particle p3"></span>
+<span class="particle p4"></span>
+<div class="demo-ribbon" id="demoRibbon"><i class="fa-solid fa-wand-magic-sparkles"></i>AI scans location, price, trust, and buyer intent</div>
+</div>
+</div>
 </div>
 </section>
 
