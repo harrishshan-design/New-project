@@ -339,7 +339,7 @@ function readSession() {
 function hasBuyerSession() {
   const session = readSession();
   const token = String(session?.token || "");
-  return Boolean(session && token && (session.role === "user" || session.role === "master"));
+  return Boolean(session && token && session.role === "user");
 }
 
 function loginForCurrentExplore() {
@@ -348,7 +348,7 @@ function loginForCurrentExplore() {
     role: "user",
     next
   });
-  window.location.assign(`/?${query.toString()}`);
+  window.location.assign(`/login.html?${query.toString()}`);
 }
 
 function requireBuyerSessionForExplore() {
