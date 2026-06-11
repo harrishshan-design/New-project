@@ -173,6 +173,15 @@
               <i class="fa-solid fa-rotate"></i>
               Refresh Imports
             </button>
+            <div class="ai-import-date-row">
+              <label class="input-shell ai-import-date-shell" for="aiImportDateInput">
+                <i class="fa-solid fa-calendar-days"></i>
+                <input id="aiImportDateInput" type="date" aria-label="AI import review date">
+              </label>
+              <button class="ghost-button" id="todayAiImportsButton" type="button">
+                Today
+              </button>
+            </div>
             <p class="subtext" id="aiImportStatus">Paste the admin API key once on this device to review Telegram imports.</p>
           </form>
           <div class="report-list" id="aiImportList"></div>

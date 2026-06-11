@@ -58,6 +58,8 @@ const state = {
   section: "agents",
   activeListingId: null,
   activeAiImportId: null,
+  aiImportDate: getMalaysiaDateKey(),
+  aiImportTodayKey: getMalaysiaDateKey(),
   enhancerHydrated: false,
   agentListingsHydrated: false,
   aiImports: [],
@@ -89,6 +91,8 @@ const els = {
   adminApiKeyInput: document.getElementById("adminApiKeyInput"),
   saveAdminApiKeyButton: document.getElementById("saveAdminApiKeyButton"),
   refreshAiImportsButton: document.getElementById("refreshAiImportsButton"),
+  aiImportDateInput: document.getElementById("aiImportDateInput"),
+  todayAiImportsButton: document.getElementById("todayAiImportsButton"),
   aiImportStatus: document.getElementById("aiImportStatus"),
   aiImportList: document.getElementById("aiImportList"),
   aiImportPreview: document.getElementById("aiImportPreview"),
@@ -135,6 +139,61 @@ function escapeHtml(value = "") {
     "\"": "&quot;",
     "'": "&#039;"
   }[character]));
+}
+
+function getMalaysiaDateKey(date = new Date()) {
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kuala_Lumpur",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(date);
+    const map = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    return `${map.year}-${map.month}-${map.day}`;
+  } catch {
+    return new Date(date.getTime() + (8 * 60 * 60 * 1000)).toISOString().slice(0, 10);
+  }
+}
+
+function normalizeImportDateKey(value = "") {
+  const raw = String(value || "").trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : "";
+}
+
+function formatImportDateLabel(dateKey) {
+  const normalized = normalizeImportDateKey(dateKey);
+  if (!normalized) return "selected date";
+  try {
+    return new Date(`${normalized}T00:00:00+08:00`).toLocaleDateString("en-MY", {
+      day: "numeric",
+      month: "short",
+      year: "numeric"
+    });
+  } catch {
+    return normalized;
+  }
+}
+
+function getAdminHashState() {
+  const raw = decodeURIComponent(location.hash || "").replace(/^#/, "");
+  const [section = "", query = ""] = raw.split("?");
+  const params = new URLSearchParams(query);
+  return {
+    section,
+    reviewId: params.get("review") || "",
+    date: normalizeImportDateKey(params.get("date") || "")
+  };
+}
+
+function buildAdminHash(section, options = {}) {
+  const params = new URLSearchParams();
+  const date = normalizeImportDateKey(options.date || state.aiImportDate);
+  const reviewId = options.reviewId || "";
+  if (section === "ai-imports" && date) params.set("date", date);
+  if (section === "ai-imports" && reviewId) params.set("review", reviewId);
+  const suffix = params.toString();
+  return suffix ? `#${section}?${suffix}` : `#${section}`;
 }
 
 function adminApiBaseUrl() {
@@ -545,8 +604,44 @@ function aiImportStatusClass(status) {
   return "pending";
 }
 
+function isPlaceholderAiImport(item = {}) {
+  const title = String(item.title || "").trim().toLowerCase();
+  const raw = String(item.original_text || item.description || "").trim().toLowerCase();
+  const combined = `${title}\n${raw}`;
+  const hasTextDetails = raw.length > 30 && !combined.includes("media post without caption");
+  return (
+    !title
+    || combined.includes("[telegram media post without caption]")
+    || combined.includes("telegram media post without caption")
+    || combined.includes("media post without caption")
+    || (title === "ai imported property" && !hasTextDetails)
+  );
+}
+
+function isReviewableAiImport(item = {}) {
+  if (!item || isPlaceholderAiImport(item)) return false;
+  const imageUrls = Array.isArray(item.image_urls) ? item.image_urls : [];
+  const hasListingSignal = (
+    Number(item.price || 0) > 0
+    || Number(item.built_up_sqft || 0) > 0
+    || Number(item.bedrooms || 0) > 0
+    || Number(item.bathrooms || 0) > 0
+    || imageUrls.length >= 4
+    || /condo|apartment|residence|terrace|semi|bungalow|shop|office|factory|warehouse|landed|serviced/i.test(`${item.title || ""} ${item.property_type || ""} ${item.description || ""}`)
+  );
+  return Boolean(hasListingSignal);
+}
+
+function syncAiImportDateInput() {
+  if (els.aiImportDateInput) {
+    els.aiImportDateInput.value = normalizeImportDateKey(state.aiImportDate) || getMalaysiaDateKey();
+  }
+}
+
 async function loadAiImports() {
   if (!els.aiImportList) return;
+  state.aiImportDate = normalizeImportDateKey(state.aiImportDate) || getMalaysiaDateKey();
+  syncAiImportDateInput();
   if (!adminReviewApiKey()) {
     state.aiImports = [];
     renderAdminKeyState();
@@ -556,16 +651,17 @@ async function loadAiImports() {
   }
 
   renderAdminKeyState();
-  setAiImportStatus("Loading Telegram AI imports...");
+  setAiImportStatus(`Loading Telegram listings for ${formatImportDateLabel(state.aiImportDate)}...`);
   try {
-    const response = await fetch(aiImportApiUrl("/admin/ai-imports"), {
+    const query = new URLSearchParams({ date: state.aiImportDate });
+    const response = await fetch(aiImportApiUrl(`/admin/ai-imports?${query.toString()}`), {
       headers: adminJsonHeaders()
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload.error || "Unable to load AI imports.");
-    state.aiImports = Array.isArray(payload.items) ? payload.items : [];
+    state.aiImports = (Array.isArray(payload.items) ? payload.items : []).filter(isReviewableAiImport);
     if (!state.activeAiImportId && state.aiImports[0]) state.activeAiImportId = state.aiImports[0].id;
-    setAiImportStatus(`${state.aiImports.length} AI import${state.aiImports.length === 1 ? "" : "s"} loaded. Admin key is saved on this device.`);
+    setAiImportStatus(`${state.aiImports.length} listing import${state.aiImports.length === 1 ? "" : "s"} loaded for ${formatImportDateLabel(state.aiImportDate)}. Photo-only Telegram messages are hidden.`);
     renderAiImports();
   } catch (error) {
     const message = error instanceof TypeError
@@ -580,13 +676,13 @@ function renderAiImports() {
   if (!els.aiImportList || !els.aiImportPreview) return;
   const imports = state.aiImports || [];
   if (!imports.length) {
-    els.aiImportList.innerHTML = '<div class="empty-state">No Telegram imports loaded yet.</div>';
-    els.aiImportPreview.innerHTML = '<div class="subtext">Select an imported listing to review its AI extraction.</div>';
+    els.aiImportList.innerHTML = `<div class="empty-state">No listing imports for ${escapeHtml(formatImportDateLabel(state.aiImportDate))}.</div>`;
+    els.aiImportPreview.innerHTML = '<div class="subtext">Use the calendar to review another day, or send a complete Telegram listing with at least 4 photos.</div>';
     return;
   }
 
   els.aiImportList.innerHTML = imports.map((item) => `
-    <article class="report-card ${state.activeAiImportId === item.id ? "active" : ""}">
+    <article class="report-card ${state.activeAiImportId === item.id ? "active ai-import-review-target" : ""}">
       <div>
         <strong>${escapeHtml(item.title || "Untitled import")}</strong>
         <p>${escapeHtml(item.location || "Location pending")}</p>
@@ -594,15 +690,27 @@ function renderAiImports() {
       </div>
       <div class="report-meta">
         <span>${Number(item.confidence_score || 0)}% confidence</span>
+        <span>${escapeHtml(formatImportDateLabel(String(item.created_at || "").slice(0, 10) || state.aiImportDate))}</span>
         <span>${escapeHtml(item.source_chat_title || item.source_chat_id || "Telegram")}</span>
       </div>
-      <button class="ghost-button" data-action="select-ai-import" data-id="${item.id}" type="button">Review</button>
+      <button class="ghost-button" data-action="select-ai-import" data-id="${item.id}" type="button">Review / Approve</button>
     </article>
   `).join("");
 
   const active = imports.find((item) => item.id === state.activeAiImportId) || imports[0];
   state.activeAiImportId = active?.id || null;
   if (active) renderAiImportPreview(active);
+}
+
+function openAiImportReview(id) {
+  state.activeAiImportId = id;
+  switchSection("ai-imports", { reviewId: id, skipLoad: true });
+  renderAiImports();
+  requestAnimationFrame(() => {
+    els.aiImportPreview?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const titleInput = document.getElementById("aiImportTitle");
+    titleInput?.focus({ preventScroll: true });
+  });
 }
 
 function renderAiImportPreview(item) {
@@ -846,13 +954,13 @@ function runAiScan(shouldLog = true) {
   if (shouldLog) showToast("AI scan completed");
 }
 
-function switchSection(section) {
+function switchSection(section, options = {}) {
   state.section = section;
   els.navItems.forEach((item) => item.classList.toggle("active", item.dataset.section === section));
   els.panels.forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === section));
-  history.replaceState(null, "", `#${section}`);
+  history.replaceState(null, "", buildAdminHash(section, options));
   if (section === "listings") loadAgentQcListings();
-  if (section === "ai-imports") loadAiImports();
+  if (section === "ai-imports" && !options.skipLoad) loadAiImports();
 }
 
 function renderMetrics() {
@@ -1314,6 +1422,19 @@ function bindEvents() {
     loadAiImports();
   });
   els.refreshAiImportsButton?.addEventListener("click", loadAiImports);
+  els.aiImportDateInput?.addEventListener("change", () => {
+    const nextDate = normalizeImportDateKey(els.aiImportDateInput.value) || getMalaysiaDateKey();
+    state.aiImportDate = nextDate;
+    state.activeAiImportId = null;
+    history.replaceState(null, "", buildAdminHash("ai-imports"));
+    loadAiImports();
+  });
+  els.todayAiImportsButton?.addEventListener("click", () => {
+    state.aiImportDate = getMalaysiaDateKey();
+    state.activeAiImportId = null;
+    history.replaceState(null, "", buildAdminHash("ai-imports"));
+    loadAiImports();
+  });
 
   document.addEventListener("click", (event) => {
     const target = event.target instanceof Element ? event.target.closest("[data-action]") : null;
@@ -1334,8 +1455,7 @@ function bindEvents() {
     if (action === "warn-agent") warnAgent(id);
     if (action === "close-report") closeReport(id);
     if (action === "select-ai-import") {
-      state.activeAiImportId = id;
-      renderAiImports();
+      openAiImportReview(id);
     }
     if (action === "save-ai-import") reviewAiImport(id, "edit");
     if (action === "approve-ai-import") reviewAiImport(id, "approve");
@@ -1349,8 +1469,25 @@ function bindEvents() {
 }
 
 runAiScan(false);
-const initialSection = location.hash.replace("#", "") || "agents";
+const initialHash = getAdminHashState();
+if (initialHash.date) state.aiImportDate = initialHash.date;
+if (initialHash.reviewId) state.activeAiImportId = initialHash.reviewId;
+syncAiImportDateInput();
 renderAdminKeyState();
-switchSection(["agents", "listings", "ai-imports", "reports", "audit", "notifications"].includes(initialSection) ? initialSection : "agents");
+switchSection(["agents", "listings", "ai-imports", "reports", "audit", "notifications"].includes(initialHash.section) ? initialHash.section : "agents", {
+  reviewId: state.activeAiImportId || ""
+});
 bindEvents();
 hydrateListingEnhancements();
+
+setInterval(() => {
+  const today = getMalaysiaDateKey();
+  if (state.aiImportTodayKey === today) return;
+  const wasWatchingToday = state.aiImportDate === state.aiImportTodayKey;
+  state.aiImportTodayKey = today;
+  if (wasWatchingToday) {
+    state.aiImportDate = today;
+    state.activeAiImportId = null;
+    if (state.section === "ai-imports") loadAiImports();
+  }
+}, 60 * 1000);
