@@ -649,6 +649,65 @@ function createImportDedupHash(meta, extraction) {
     return crypto.createHash('sha256').update(key).digest('hex');
 }
 
+function malaysiaDateKey(date = new Date()) {
+    try {
+        const parts = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Kuala_Lumpur',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).formatToParts(date);
+        const map = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+        return `${map.year}-${map.month}-${map.day}`;
+    } catch {
+        return new Date(date.getTime() + (8 * 60 * 60 * 1000)).toISOString().slice(0, 10);
+    }
+}
+
+function normalizeDateKey(value = '') {
+    const raw = String(value || '').trim();
+    return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : '';
+}
+
+function malaysiaDateRange(dateKey) {
+    const normalized = normalizeDateKey(dateKey) || malaysiaDateKey();
+    const start = new Date(`${normalized}T00:00:00+08:00`);
+    const end = new Date(start.getTime() + (24 * 60 * 60 * 1000));
+    return {
+        date: normalized,
+        startIso: start.toISOString(),
+        endIso: end.toISOString()
+    };
+}
+
+function isPlaceholderImportedListing(item = {}) {
+    const title = String(item.title || '').trim().toLowerCase();
+    const raw = String(item.original_text || item.description || '').trim().toLowerCase();
+    const combined = `${title}\n${raw}`;
+    const hasTextDetails = raw.length > 30 && !combined.includes('media post without caption');
+    return (
+        !title
+        || combined.includes('[telegram media post without caption]')
+        || combined.includes('telegram media post without caption')
+        || combined.includes('media post without caption')
+        || (title === 'ai imported property' && !hasTextDetails)
+    );
+}
+
+function hasReviewableListingSignal(item = {}) {
+    if (!item || isPlaceholderImportedListing(item)) return false;
+    const imageUrls = Array.isArray(item.image_urls) ? item.image_urls : normalizeJsonArray(item.image_urls);
+    const searchable = `${item.title || ''} ${item.property_type || ''} ${item.description || ''} ${item.original_text || ''}`;
+    return Boolean(
+        Number(item.price || 0) > 0
+        || Number(item.built_up_sqft || 0) > 0
+        || Number(item.bedrooms || 0) > 0
+        || Number(item.bathrooms || 0) > 0
+        || imageUrls.length >= 4
+        || /condo|apartment|residence|terrace|semi|bungalow|shop|office|factory|warehouse|landed|serviced/i.test(searchable)
+    );
+}
+
 function numericPublicId(id) {
     const hash = crypto.createHash('md5').update(String(id)).digest('hex').slice(0, 8);
     return 700000 + (parseInt(hash, 16) % 200000);
@@ -1406,12 +1465,22 @@ async function handleTelegramWebhook(update) {
     return { ok: true, waiting: "guided_listing_flow" };
 }
 
-async function listAdminAiImports() {
+async function listAdminAiImports(params = {}) {
+    const range = malaysiaDateRange(params.date);
     const rows = await selectSupabaseRows(
         "ai_imported_listings",
-        "select=*&order=created_at.desc&limit=100"
+        [
+            "select=*",
+            `created_at=gte.${encodeURIComponent(range.startIso)}`,
+            `created_at=lt.${encodeURIComponent(range.endIso)}`,
+            "order=created_at.desc",
+            "limit=100"
+        ].join("&")
     );
-    return { items: rows || [] };
+    return {
+        date: range.date,
+        items: (rows || []).filter(hasReviewableListingSignal)
+    };
 }
 
 function pickImportEdits(payload = {}) {
@@ -1587,7 +1656,7 @@ const server = http.createServer(async (req, res) => {
                     "/api/agent/listings",
                     "/api/admin/listings",
                     "/api/admin/listings/review",
-                    "/api/admin/ai-imports",
+                    "/api/admin/ai-imports?date=YYYY-MM-DD",
                     "/api/properties"
                 ],
                 config: {
@@ -1598,6 +1667,7 @@ const server = http.createServer(async (req, res) => {
                     telegramBot: Boolean(TELEGRAM_BOT_TOKEN),
                     telegramWebhookSecret: Boolean(TELEGRAM_WEBHOOK_SECRET),
                     guidedTelegramListingFlow: true,
+                    dailyAiImportCalendar: true,
                     adminApiKey: Boolean(ADMIN_API_KEY),
                     frontendUrl: Boolean(FRONTEND_URL)
                 },
@@ -1614,7 +1684,7 @@ const server = http.createServer(async (req, res) => {
         if (url === '/api/admin/ai-imports') {
             const auth = requireAdminAccess(req);
             if (!auth.ok) return { __status: auth.status, error: auth.error };
-            return listAdminAiImports();
+            return listAdminAiImports(payload);
         }
 
         if (url === '/api/admin/ai-imports/review') {
@@ -1833,7 +1903,7 @@ Rank and explain best 3 properties.`;
 
     if (req.method === 'GET') {
         try {
-            const response = await routeManager(routePath, {});
+            const response = await routeManager(routePath, Object.fromEntries(requestUrl.searchParams.entries()));
             if (response) return sendJson(response.__status || (response.error ? 400 : 200), response);
             res.writeHead(200, { 'Content-Type': 'text/plain' });
             res.end('KVAI Agent Backend Active');
