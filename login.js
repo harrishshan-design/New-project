@@ -30,45 +30,6 @@
     });
   }
 
-  function initHeroScene() {
-    const scene = document.getElementById("aiScene");
-    const shell = document.getElementById("heroScene");
-    const demoButton = document.getElementById("watchDemoButton");
-    const demoRibbon = document.getElementById("demoRibbon");
-    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-    const compactMotion = window.matchMedia?.("(max-width: 700px), (pointer: coarse)")?.matches;
-    if (!scene || reduceMotion) return;
-
-    let frame = 0;
-    const updateParallax = (event) => {
-      if (compactMotion) return;
-      window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(() => {
-        const rect = shell.getBoundingClientRect();
-        const x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
-        const y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
-        scene.style.setProperty("--mx", x.toFixed(3));
-        scene.style.setProperty("--my", y.toFixed(3));
-      });
-    };
-
-    const resetParallax = () => {
-      scene.style.setProperty("--mx", "0");
-      scene.style.setProperty("--my", "0");
-    };
-
-    shell?.addEventListener("pointermove", updateParallax);
-    shell?.addEventListener("pointerleave", resetParallax);
-    demoButton?.addEventListener("click", () => {
-      scene.classList.add("scene-demo-pulse");
-      if (demoRibbon) {
-        demoRibbon.innerHTML = '<i class="fa-solid fa-circle-nodes"></i>Demo: AI ranks listings, checks trust, and routes each role securely';
-      }
-      document.getElementById("loginId")?.focus({ preventScroll: false });
-      window.setTimeout(() => scene.classList.remove("scene-demo-pulse"), 2200);
-    });
-  }
-
   function revealInternalRoleHints(role) {
     if (role !== "admin" && role !== "master") return;
     ["optionAdmin", "optionMaster"].forEach((id) => {
@@ -130,7 +91,6 @@
     revealInternalRoleHints(preferredRole);
     highlightRole(["user", "agent", "admin", "master"].includes(preferredRole) ? preferredRole : "user");
     form?.addEventListener("submit", submitLogin);
-    initHeroScene();
   }
 
   init();
