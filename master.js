@@ -4,6 +4,7 @@ const STORAGE_KEYS = {
   agentCobroke: "kvai_agent_cobroke",
   agentVault: "kvai_agent_document_vault",
   agentListings: "kvai_agent_listings",
+  listingAnalytics: "rg_listing_analytics",
   adminAgents: "rg_admin_agents",
   algorithmControls: "rg_master_algorithm_controls",
   killSwitches: "rg_master_kill_switches",
@@ -130,6 +131,18 @@ function writeStore(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+function getListingAnalytics() {
+  return readStore(STORAGE_KEYS.listingAnalytics, {});
+}
+
+function activeViewerCount(analytics = {}) {
+  const cutoff = Date.now() - 5 * 60 * 1000;
+  return Object.values(analytics.activeViewers || {}).filter((timestamp) => {
+    const time = new Date(timestamp).getTime();
+    return Number.isFinite(time) && time >= cutoff;
+  }).length;
+}
+
 function money(value) {
   return `RM ${Math.round(Number(value || 0)).toLocaleString("en-MY")}`;
 }
@@ -244,13 +257,34 @@ function buildEscrowLogs() {
   })));
 }
 
+function buildListingAnalyticsLogs() {
+  return Object.values(getListingAnalytics()).map((analytics) => ({
+    id: `listing-analytics-${analytics.listingId}`,
+    type: "analytics",
+    title: `Listing analytics: ${analytics.title || "Untitled listing"}`,
+    participants: `${analytics.agentName || "Agent"} -> Buyer activity stream`,
+    property: analytics.title || analytics.area || "Listing",
+    createdAt: analytics.updatedAt || new Date().toISOString(),
+    summary: `${Number(analytics.views || 0)} real views, ${activeViewerCount(analytics)} live viewing, ${Number(analytics.contacts || 0)} contacts, ${Number(analytics.bookings || 0)} bookings.`,
+    lines: [
+      { speaker: "Impressions", text: String(Number(analytics.impressions || 0)) },
+      { speaker: "Real views", text: String(Number(analytics.views || 0)) },
+      { speaker: "Live viewing", text: `${activeViewerCount(analytics)} active in the last 5 minutes` },
+      { speaker: "Contacts", text: String(Number(analytics.contacts || 0)) },
+      { speaker: "Bookings", text: String(Number(analytics.bookings || 0)) },
+      { speaker: "Saves", text: String(Number(analytics.saves || 0)) }
+    ]
+  }));
+}
+
 function getAllLogs() {
   return [
     ...buildAdminTaskLogs(),
     ...buildNegotiationLogs(),
     ...seedVoiceTranscripts,
     ...buildCobrokeLogs(),
-    ...buildEscrowLogs()
+    ...buildEscrowLogs(),
+    ...buildListingAnalyticsLogs()
   ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
 

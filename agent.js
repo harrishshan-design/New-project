@@ -14,6 +14,7 @@ const STORAGE_KEYS = {
   buyerLiveListings: "rg_live_buyer_listings",
   adminListings: "rg_admin_listings",
   adminNotifications: "rg_admin_notifications",
+  listingAnalytics: "rg_listing_analytics",
   leakProofDeals: "kvai_leak_proof_deals",
   globalAlert: "rg_global_platform_alert"
 };
@@ -563,6 +564,30 @@ function readStore(key, fallback) {
 
 function writeStore(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function readListingAnalyticsStore() {
+  return readStore(STORAGE_KEYS.listingAnalytics, {});
+}
+
+function activeViewerCount(analytics = {}) {
+  const cutoff = Date.now() - 5 * 60 * 1000;
+  return Object.values(analytics.activeViewers || {}).filter((timestamp) => {
+    const time = new Date(timestamp).getTime();
+    return Number.isFinite(time) && time >= cutoff;
+  }).length;
+}
+
+function listingAnalyticsFor(listing = {}) {
+  const store = readListingAnalyticsStore();
+  const keys = [
+    listing.id,
+    listing.backendId,
+    listing.agentListingId,
+    listing.sourceListingId,
+    listing.publicListingId
+  ].filter((value) => value != null).map(String);
+  return keys.map((key) => store[key]).find(Boolean) || {};
 }
 
 function normalizeColumnName(value) {
@@ -1613,6 +1638,8 @@ function renderListingGrid() {
 
   els.listingGrid.innerHTML = state.listings.map(getEnhancedListing).map((listing) => {
     const media = getGalleryStats(listing);
+    const analytics = listingAnalyticsFor(listing);
+    const liveViewing = activeViewerCount(analytics);
     const statusAction = listing.status === "Live"
       ? "Mark Reserved"
       : listing.status === "Reserved"
@@ -1646,7 +1673,11 @@ function renderListingGrid() {
       </div>
       <div class="listing-price">${money(listing.price)}</div>
       <div class="meta-row">
-        <span class="meta-pill">${listing.enquiries} enquiries</span>
+        <span class="meta-pill"><i class="fa-solid fa-eye"></i> ${Number(analytics.views || 0)} real views</span>
+        <span class="meta-pill"><i class="fa-solid fa-signal"></i> ${liveViewing} live viewing</span>
+        <span class="meta-pill"><i class="fa-brands fa-whatsapp"></i> ${Number(analytics.contacts || 0)} contacts</span>
+        <span class="meta-pill"><i class="fa-solid fa-calendar-check"></i> ${Number(analytics.bookings || 0)} bookings</span>
+        <span class="meta-pill"><i class="fa-solid fa-heart"></i> ${Number(analytics.saves || 0)} saves</span>
         ${listing.status === "Live" ? `<span class="meta-pill live-ready-pill"><i class="fa-solid fa-bolt"></i> Live for buyers</span>` : ""}
         ${listing.status === "Pending QC" ? `<span class="meta-pill live-ready-pill"><i class="fa-solid fa-user-shield"></i> Admin QC pending</span>` : ""}
         <span class="meta-pill"><i class="fa-solid fa-images"></i> ${media.verified >= LISTING_MIN_PHOTO_COUNT ? "Minimum 4 ready" : `${LISTING_MIN_PHOTO_COUNT - media.verified} photo(s) needed`}</span>
@@ -4962,6 +4993,10 @@ function bindEvents() {
 
     if (event.key === STORAGE_KEYS.globalAlert) {
       renderGlobalPlatformAlert();
+    }
+
+    if (event.key === STORAGE_KEYS.listingAnalytics) {
+      renderListingGrid();
     }
   });
 
