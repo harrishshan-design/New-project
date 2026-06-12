@@ -30,16 +30,6 @@
     });
   }
 
-  function revealInternalRoleHints(role) {
-    if (role !== "admin" && role !== "master") return;
-    ["optionAdmin", "optionMaster"].forEach((id) => {
-      const element = document.getElementById(id);
-      if (!element) return;
-      element.classList.remove("hidden-internal");
-      element.classList.add("show");
-    });
-  }
-
   async function submitLogin(event) {
     event.preventDefault();
     const email = emailInput?.value.trim().toLowerCase() || "";
@@ -84,11 +74,10 @@
       note.innerHTML = '<i class="fa-solid fa-shield-heart"></i><span>Use one real email and password. RealityGenius detects your role automatically.</span>';
     }
     const meta = document.getElementById("loginMeta");
-    if (meta) meta.innerHTML = "<span>Buyer</span><span>Agent</span><span>Admin / Master</span>";
+    if (meta) meta.innerHTML = "<span>Buyer</span><span>Agent</span>";
     setLoading(false);
 
     const preferredRole = readPreferredRoleFromQuery();
-    revealInternalRoleHints(preferredRole);
     highlightRole(["user", "agent", "admin", "master"].includes(preferredRole) ? preferredRole : "user");
     form?.addEventListener("submit", submitLogin);
   }
