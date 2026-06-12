@@ -406,6 +406,42 @@
           <input id="listingImageLink" type="url" placeholder="Google Drive image link">
         </div>
         <div class="input-shell">
+          <i class="fa-solid fa-location-arrow"></i>
+          <input id="listingTopViewLink" type="url" placeholder="Top view photo link">
+        </div>
+        <div class="input-shell">
+          <i class="fa-solid fa-bed"></i>
+          <input id="listingRoom1Link" type="url" placeholder="Room 1 photo link">
+        </div>
+        <div class="input-shell">
+          <i class="fa-solid fa-bath"></i>
+          <input id="listingBathroomLink" type="url" placeholder="Bathroom photo link">
+        </div>
+        <div class="input-shell">
+          <i class="fa-solid fa-kitchen-set"></i>
+          <input id="listingKitchenLink" type="url" placeholder="Kitchen photo link">
+        </div>
+        <div class="input-shell full-width">
+          <i class="fa-solid fa-images"></i>
+          <textarea id="listingExtraPhotoLinks" rows="3" placeholder="Optional extra photo links, one per line"></textarea>
+        </div>
+        <div class="input-shell full-width">
+          <i class="fa-solid fa-layer-group"></i>
+          <textarea id="listingBulkPhotoLinks" rows="3" placeholder="Paste 4-10 Google Drive photo links here, then auto-fill"></textarea>
+        </div>
+        <button class="ghost-button full-width" id="autoFillListingPhotos" type="button">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          Auto-fill photo slots
+        </button>
+        <label class="device-photo-upload full-width">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+          <span>Upload photos from device</span>
+          <small>Minimum 4 photos. Best order: front view, top view, room, bathroom, kitchen.</small>
+          <input id="listingDevicePhotos" type="file" accept="image/*" multiple>
+        </label>
+        <div class="device-photo-status full-width" id="listingDevicePhotoStatus">No device photos selected yet.</div>
+        <div class="device-photo-preview full-width" id="listingDevicePhotoPreview"></div>
+        <div class="input-shell">
           <i class="fa-solid fa-cube"></i>
           <input id="listingArLink" type="url" placeholder="AR model link (.glb/.gltf or Google Drive)">
         </div>
