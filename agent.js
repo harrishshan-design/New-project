@@ -63,95 +63,14 @@ const seedSubscription = {
   amount: 0,
   currency: "MYR",
   status: "free",
-  testMode: true,
+  testMode: false,
   startedAt: new Date().toISOString(),
   checkoutId: "free_agent"
 };
 
-const seedLeads = [
-  {
-    id: 1,
-    name: "Alya Tan",
-    phone: "60123456789",
-    area: "Mont Kiara",
-    stage: "New",
-    temperature: "Hot",
-    budget: 1200000,
-    probability: 86,
-    note: "Viewed the same luxury condo three times and asked about negotiation range."
-  },
-  {
-    id: 2,
-    name: "Daniel Wong",
-    phone: "60199887766",
-    area: "Bukit Jalil",
-    stage: "Contacted",
-    temperature: "Warm",
-    budget: 780000,
-    probability: 64,
-    note: "Comparing transit-linked units for yield and wants fast WhatsApp replies."
-  },
-  {
-    id: 3,
-    name: "Nur Iman",
-    phone: "60112233445",
-    area: "Desa ParkCity",
-    stage: "Viewing",
-    temperature: "Hot",
-    budget: 1700000,
-    probability: 79,
-    note: "Family buyer with strong intent and a likely two-week closing window."
-  },
-  {
-    id: 4,
-    name: "Harith Lim",
-    phone: "60176655443",
-    area: "Petaling Jaya",
-    stage: "Negotiation",
-    temperature: "Warm",
-    budget: 820000,
-    probability: 71,
-    note: "Price-sensitive buyer who responds well to comp-based framing."
-  },
-  {
-    id: 5,
-    name: "Megan Lee",
-    phone: "60137771234",
-    area: "Bangsar",
-    stage: "New",
-    temperature: "Cold",
-    budget: 1500000,
-    probability: 34,
-    note: "High-value profile but low reply speed; needs a sharper hook."
-  }
-];
+const seedLeads = [];
 
-const seedClients = [
-  {
-    id: 101,
-    name: "Alya Tan",
-    stage: "Offer prep",
-    nextStep: "Send offer justification tonight",
-    area: "Mont Kiara",
-    value: 1180000
-  },
-  {
-    id: 102,
-    name: "Nur Iman",
-    stage: "Viewing arranged",
-    nextStep: "Confirm family walkthrough route",
-    area: "Desa ParkCity",
-    value: 1680000
-  },
-  {
-    id: 103,
-    name: "Harith Lim",
-    stage: "Negotiation",
-    nextStep: "Push revised offer with comp sheet",
-    area: "Petaling Jaya",
-    value: 760000
-  }
-];
+const seedClients = [];
 
 const seedListings = window.RealtyGeniusAgentListings || [];
 
@@ -267,61 +186,23 @@ const areaRouteProfiles = {
 
 const listingRouteEnhancements = {};
 
-const seedNotifications = [
-  {
-    id: Date.now() - 300000,
-    title: "IQI project inventory loaded",
-    message: "Your uploaded IQI Global CSV projects are loaded into the listing desk for admin QC control.",
-    createdAt: new Date(Date.now() - 300000).toISOString()
-  },
-  {
-    id: Date.now() - 120000,
-    title: "Developer package checks needed",
-    message: "Confirm maintenance, rebates, and availability before sending buyer-facing project details.",
-    createdAt: new Date(Date.now() - 120000).toISOString()
-  }
-];
+const seedNotifications = [];
 
 const seedAutomation = {
   overnight: {
-    bookedViewings: 2,
-    leadJumps: 3,
-    landlordWins: 1,
-    whatsappReplies: 7,
-    contractsPrepared: 2
+    bookedViewings: 0,
+    leadJumps: 0,
+    landlordWins: 0,
+    whatsappReplies: 0,
+    contractsPrepared: 0
   },
-  channels: [
-    {
-      id: "voice-qualification",
-      title: "AI Voice Assistant - Lead Qualification",
-      metric: "3 leads above 90%",
-      detail: "The voice assistant filtered the casual browsers and surfaced only buyers who sounded ready to move this week.",
-      actionLabel: "Open Hot Leads",
-      targetSection: "leads"
-    },
-    {
-      id: "whatsapp-automation",
-      title: "WhatsApp Outreach Automation",
-      metric: "7 overnight replies",
-      detail: "Personalized nudges pulled buyers back into the funnel while you were offline, including one price-sensitive buyer asking for comps.",
-      actionLabel: "Reply From Lead Desk",
-      targetSection: "leads"
-    },
-    {
-      id: "landlord-voice",
-      title: "AI Voice Agent - Landlord Outreach",
-      metric: "1 new listing secured",
-      detail: "A landlord in Mont Kiara agreed to a listing call after the AI voice agent handled the first outreach round for you.",
-      actionLabel: "Listen to Call Recap",
-      recap: "Owner liked the yield framing, asked for a sharper valuation deck, and agreed to reconnect tonight at 8 PM."
-    }
-  ]
+  channels: []
 };
 
 const seedDocumentVault = {
   magicLink: "",
-  buyerName: "Aina Rahman",
-  buyerPhone: "60123456789",
+  buyerName: "",
+  buyerPhone: "",
   docs: [
     { type: "IC", fileName: "Waiting for upload", status: "Missing", extracted: "Identity verification pending" },
     { type: "Payslip", fileName: "Waiting for upload", status: "Missing", extracted: "Salary not extracted" },
@@ -334,11 +215,11 @@ const nextSaturday = new Date();
 nextSaturday.setDate(nextSaturday.getDate() + ((6 - nextSaturday.getDay() + 7) % 7 || 7));
 
 const seedItinerary = {
-  buyerName: "Alya Tan",
+  buyerName: "",
   date: nextSaturday.toISOString().slice(0, 10),
   startTime: "10:00",
   startArea: "KL Sentral",
-  selectedIds: [201, 203, 202],
+  selectedIds: [],
   shareLink: "",
   routeProvider: "Google Maps API ready",
   totalTravelMinutes: 0,
@@ -347,18 +228,18 @@ const seedItinerary = {
 
 const seedCobroke = {
   requirements: {
-    location: "Bangsar",
-    budget: 1500000,
+    location: "",
+    budget: 0,
     propertyType: "Condo",
-    buyerAgent: "Agent Farah"
+    buyerAgent: ""
   },
   selectedMatchId: null,
   matches: []
 };
 
 const seedCheatSheet = {
-  propertyId: 203,
-  generatedBy: "Local fallback",
+  propertyId: null,
+  generatedBy: "",
   content: null
 };
 
@@ -366,12 +247,12 @@ const defaultReferralCloseDate = new Date();
 defaultReferralCloseDate.setFullYear(defaultReferralCloseDate.getFullYear() - 1);
 
 const seedReferral = {
-  clientName: "Nur Iman",
-  clientPhone: "60112233445",
-  clientEmail: "nur.iman@example.com",
-  propertyId: 203,
+  clientName: "",
+  clientPhone: "",
+  clientEmail: "",
+  propertyId: null,
   closeDate: defaultReferralCloseDate.toISOString().slice(0, 10),
-  closedPrice: 1320000,
+  closedPrice: 0,
   scheduler: {
     cron: "0 9 * * *",
     timezone: "Asia/Kuala_Lumpur",
@@ -406,6 +287,36 @@ const state = {
   contentCreator: readStore(STORAGE_KEYS.agentContentCreator, seedContentCreator),
   subscription: readStore(STORAGE_KEYS.agentSubscription, seedSubscription)
 };
+
+function removeAgentDemoRows() {
+  const demoNames = new Set(["Alya Tan", "Daniel Wong", "Nur Iman", "Harith Lim", "Megan Lee"]);
+  const demoNotificationTitles = new Set(["IQI project inventory loaded", "Developer package checks needed"]);
+  state.leads = state.leads.filter((lead) => !demoNames.has(lead.name));
+  state.clients = state.clients.filter((client) => !demoNames.has(client.name));
+  state.notifications = state.notifications.filter((notice) => !demoNotificationTitles.has(notice.title));
+  if (!state.automation?.channels?.length) {
+    state.automation = seedAutomation;
+  } else {
+    state.automation = {
+      ...state.automation,
+      channels: state.automation.channels.filter((channel) => !["voice-qualification", "whatsapp-automation", "landlord-voice"].includes(channel.id))
+    };
+  }
+  if (state.documentVault?.buyerName === "Aina Rahman") state.documentVault = seedDocumentVault;
+  if (state.itinerary?.buyerName === "Alya Tan") state.itinerary = seedItinerary;
+  if (state.cobroke?.requirements?.buyerAgent === "Agent Farah") state.cobroke = seedCobroke;
+  if (state.referral?.clientName === "Nur Iman") state.referral = seedReferral;
+  if (state.subscription?.testMode || state.subscription?.status === "test_active") state.subscription = seedSubscription;
+  writeStore(STORAGE_KEYS.agentLeads, state.leads);
+  writeStore(STORAGE_KEYS.agentClients, state.clients);
+  writeStore(STORAGE_KEYS.agentNotifications, state.notifications);
+  writeStore(STORAGE_KEYS.agentAutomation, state.automation);
+  writeStore(STORAGE_KEYS.agentDocumentVault, state.documentVault);
+  writeStore(STORAGE_KEYS.agentItinerary, state.itinerary);
+  writeStore(STORAGE_KEYS.agentCobroke, state.cobroke);
+  writeStore(STORAGE_KEYS.agentReferral, state.referral);
+  writeStore(STORAGE_KEYS.agentSubscription, state.subscription);
+}
 
 let contentHistoryHydrated = false;
 let listingDevicePhotos = [];
@@ -985,7 +896,7 @@ function listingToBuyerProperty(listing) {
     image: listing.image,
     gallery,
     galleryCount: gallery.length,
-    liveNow: Math.max(3, Number(listing.enquiries || 0) + 3),
+    liveNow: 0,
     aiScore: Number(listing.confidenceScore || 88),
     yield: Number(listing.yield || 4.3),
     growth: Number(listing.growth || 5.2),
@@ -1404,11 +1315,18 @@ function renderMetrics() {
 
 function renderCommandCenter() {
   const snapshot = getMorningSnapshot();
+  const hasRealActivity = snapshot.bookedViewings
+    || snapshot.leadJumps
+    || snapshot.whatsappReplies
+    || snapshot.landlordWins
+    || snapshot.activeThreads
+    || state.leads.length
+    || state.clients.length;
 
   els.commandBrief.innerHTML = `
-    <span class="command-tag">Morning brief</span>
-    <h4>AI booked ${snapshot.bookedViewings} viewings, pushed ${snapshot.leadJumps} leads toward conviction, and pulled ${snapshot.whatsappReplies} replies back into your funnel overnight.</h4>
-    <p>If you handle the top queue before lunch, this dashboard will feel less like admin and more like a money printer.</p>
+    <span class="command-tag">Live brief</span>
+    <h4>${hasRealActivity ? `${snapshot.bookedViewings} real viewing requests, ${snapshot.leadJumps} lead movements, and ${snapshot.activeThreads} open negotiations.` : "No real buyer activity has been captured yet."}</h4>
+    <p>${hasRealActivity ? "Use this queue to act on live leads, listings, and negotiation records." : "Upload listings, get admin approval, then real buyer leads and analytics will appear here."}</p>
   `;
 
   els.commandCards.innerHTML = [
@@ -1425,7 +1343,7 @@ function renderCommandCenter() {
     {
       label: "AI outreach wins",
       value: `${snapshot.landlordWins} new listing`,
-      detail: "Voice agent secured a callback"
+      detail: "Confirmed from real workflow records"
     },
     {
       label: "Live urgency",
@@ -1441,7 +1359,7 @@ function renderCommandCenter() {
   `).join("");
 
   const hottest = snapshot.hottestLeads;
-  els.actionQueue.innerHTML = [
+  const queueItems = [
     hottest[0] ? {
       title: `Call ${hottest[0].name} now`,
       body: `${hottest[0].probability}% close probability in ${hottest[0].area}. ${hottest[0].note}`,
@@ -1454,19 +1372,15 @@ function renderCommandCenter() {
       action: "Jump to Leads",
       section: "leads"
     } : null,
-    {
-      title: "Listen to the landlord outreach recap",
-      body: "Your voice agent opened a new listing conversation in Mont Kiara. Catch the recap before another agent gets there first.",
-      action: "Play recap",
-      recap: state.automation.channels.find((item) => item.id === "landlord-voice")?.recap || "Listing recap ready."
-    },
-    {
+    commissionTotals().pending ? {
       title: "Protect today's commission window",
       body: `${money(Math.round(commissionTotals().pending))} is sitting inside active deals. Push the negotiation and viewing stages before you open anything else.`,
       action: "Open Commission",
       section: "commission"
-    }
-  ].filter(Boolean).map((item) => `
+    } : null
+  ].filter(Boolean);
+
+  els.actionQueue.innerHTML = queueItems.length ? queueItems.map((item) => `
     <article class="action-card">
       <strong>${item.title}</strong>
       <p>${item.body}</p>
@@ -1474,11 +1388,11 @@ function renderCommandCenter() {
         ? `<button class="ghost-button" data-action="jump-section" data-section="${item.section}" type="button">${item.action}</button>`
         : `<button class="ghost-button" data-action="play-recap" data-message="${item.recap}" type="button">${item.action}</button>`}
     </article>
-  `).join("");
+  `).join("") : `<article class="action-card"><strong>No action queue yet</strong><p>Real buyer actions, approved listings, and negotiations will create tasks here.</p></article>`;
 }
 
 function renderAutomationBoard() {
-  els.automationBoard.innerHTML = state.automation.channels.map((channel) => `
+  els.automationBoard.innerHTML = state.automation.channels.length ? state.automation.channels.map((channel) => `
     <article class="automation-card">
       <div class="automation-card-head">
         <span class="automation-pill">Automation</span>
@@ -1490,7 +1404,7 @@ function renderAutomationBoard() {
         ? `<button class="ghost-button" data-action="jump-section" data-section="${channel.targetSection}" type="button">${channel.actionLabel}</button>`
         : `<button class="ghost-button" data-action="play-recap" data-message="${channel.recap}" type="button">${channel.actionLabel}</button>`}
     </article>
-  `).join("");
+  `).join("") : `<article class="automation-card"><div class="automation-card-head"><span class="automation-pill">Automation</span><strong>0 live automations</strong></div><h4>No real automation records yet</h4><p>When WhatsApp, voice, document, or referral automations run, their real results will appear here.</p></article>`;
 }
 
 function renderRoadmapBoard() {
@@ -1610,7 +1524,7 @@ function renderLeadListLegacy() {
 }
 
 function renderClientList() {
-  els.clientList.innerHTML = state.clients.map((client) => `
+  els.clientList.innerHTML = state.clients.length ? state.clients.map((client) => `
     <article class="client-card">
       <div class="client-head">
         <div>
@@ -1625,11 +1539,11 @@ function renderClientList() {
         <span class="meta-pill">Commission ${money(Math.round(client.value * 0.03))}</span>
       </div>
     </article>
-  `).join("");
+  `).join("") : `<div class="subtext">No real clients yet.</div>`;
 }
 
 function renderCommissionTable() {
-  els.commissionTable.innerHTML = state.clients.map((client) => `
+  els.commissionTable.innerHTML = state.clients.length ? state.clients.map((client) => `
     <article class="commission-row">
       <div>
         <strong>${client.name}</strong>
@@ -1639,7 +1553,7 @@ function renderCommissionTable() {
       <div>${money(Math.round(client.value * 0.03))}</div>
       <div>${client.stage}</div>
     </article>
-  `).join("");
+  `).join("") : `<div class="subtext">No commission records yet.</div>`;
 }
 
 function renderListingGrid() {
@@ -1737,7 +1651,7 @@ function renderNotifications() {
         <p>${item.message}</p>
         <time>${new Date(item.createdAt).toLocaleString("en-MY", { dateStyle: "medium", timeStyle: "short" })}</time>
       </article>
-    `).join("");
+    `).join("") || `<div class="empty-state">No real agent notifications yet.</div>`;
 }
 
 function pushNotifications(title, message) {
@@ -1781,8 +1695,6 @@ function activePlanTier() {
 
 function billingStatusLabel() {
   if (state.subscription?.status === "live_active" || state.subscription?.status === "active") return "Stripe active";
-  if (state.subscription?.status === "test_active") return "Test active";
-  if (state.subscription?.status === "test_processing") return "Processing";
   if (state.subscription?.status === "checkout_processing") return "Opening Stripe";
   if (state.subscription?.status === "checkout_cancelled") return "Checkout cancelled";
   return "Free";
@@ -1834,7 +1746,7 @@ function renderAgentBilling() {
 
   if (!els.agentTierGrid) return;
   els.agentTierGrid.innerHTML = AGENT_PLAN_TIERS.map((tier) => {
-    const isActive = tier.id === plan.id && ["test_active", "live_active", "active"].includes(state.subscription?.status);
+    const isActive = tier.id === plan.id && ["live_active", "active"].includes(state.subscription?.status);
     return `
       <article class="billing-tier-card ${tier.id === "premium" ? "recommended" : ""} ${isActive ? "active" : ""}">
         <div class="billing-tier-head">
@@ -1916,29 +1828,14 @@ async function activateAgentPlan(planId) {
     }
 
     if (data.testMode || data.status === "test_active") {
-      state.subscription = {
-        planId: plan.id,
-        planName: plan.name,
-        amount: plan.price,
-        currency: "MYR",
-        status: "test_active",
-        testMode: true,
-        startedAt: new Date().toISOString(),
-        checkoutId: data.checkoutId || `local_test_${Date.now()}`
-      };
-      persistAll();
-      renderAgentBilling();
-      pushNotifications("Agent plan activated", `${plan.name} is active in test mode. No real charge was made.`);
-      renderNotifications();
-      showToast(`${plan.name} test plan active`);
-      return;
+      throw new Error("Billing returned test mode. Real activation requires a live Stripe checkout.");
     }
   } catch (error) {
     if (window.RGLogError) window.RGLogError(error, { feature: "agent_billing_checkout", planId: plan.id });
     state.subscription = {
       ...state.subscription,
       status: "checkout_cancelled",
-      testMode: true
+      testMode: false
     };
     persistAll();
     renderAgentBilling();
@@ -5115,6 +5012,7 @@ function applyBillingReturn() {
 }
 
 applyBillingReturn();
+removeAgentDemoRows();
 bindEvents();
 renderListingDevicePhotoPreview();
 renderListingEnhancerPhotoPreview();
