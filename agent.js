@@ -1250,9 +1250,16 @@ function getHotLeads() {
     .sort((a, b) => b.probability - a.probability);
 }
 
+function getNegotiationThreads() {
+  return typeof window.KVNegotiationStore?.getAll === "function"
+    ? window.KVNegotiationStore.getAll()
+    : [];
+}
+
 function getMorningSnapshot() {
   const hotLeads = getHotLeads();
-  const activeThreads = window.KVNegotiationStore.getAll().filter((thread) => thread.status === "open").length;
+  const negotiationThreads = getNegotiationThreads();
+  const activeThreads = negotiationThreads.filter((thread) => thread.status === "open").length;
   const landedListings = state.automation.channels.filter((channel) => channel.id === "landlord-voice").length;
   return {
     bookedViewings: state.automation.overnight.bookedViewings,
@@ -1688,10 +1695,12 @@ function pushNotifications(title, message) {
     ...readStore(STORAGE_KEYS.agentNotifications, [])
   ];
   writeStore(STORAGE_KEYS.agentNotifications, state.notifications);
-  window.RealtyGeniusPush?.notify(title, message, {
-    tag: `rg-agent-${String(title).toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
-    url: new URL("agent.html", location.href).href
-  });
+  if (typeof window.RealtyGeniusPush?.notify === "function") {
+    window.RealtyGeniusPush.notify(title, message, {
+      tag: `rg-agent-${String(title).toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+      url: new URL("agent.html", location.href).href
+    });
+  }
 }
 
 function pushUserNotification(title, message) {
@@ -2081,7 +2090,7 @@ function releaseEscrow(id) {
 }
 
 function renderNegotiationDeskLegacy() {
-  const threads = window.KVNegotiationStore.getAll()
+  const threads = getNegotiationThreads()
     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
   els.agentNegotiationList.innerHTML = threads.length ? threads.map((thread) => {
@@ -2204,7 +2213,7 @@ function renderLeadList() {
 }
 
 function renderNegotiationDesk() {
-  const threads = window.KVNegotiationStore.getAll()
+  const threads = getNegotiationThreads()
     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
   els.agentNegotiationList.innerHTML = threads.length ? threads.map((thread) => {
@@ -3478,10 +3487,11 @@ function renderCobrokeAgreement() {
 }
 
 function updateCobrokeMatch(id, updater) {
+  const matchId = String(id);
   state.cobroke.matches = (state.cobroke.matches || []).map((match) => (
-    match.id === id ? updater(match) : match
+    String(match.id) === matchId ? updater(match) : match
   ));
-  state.cobroke.selectedMatchId = `match-${id}`;
+  state.cobroke.selectedMatchId = `match-${matchId}`;
   persistAll();
   renderCobrokeMatchmaker();
 }
@@ -3521,6 +3531,7 @@ function signCobroke(id, side) {
 }
 
 function transactionFallback(listing) {
+  if (!listing) return [];
   if (listing.transactions?.length) return listing.transactions;
   return [
     { date: "Recent", price: Math.round(listing.price * 0.98), note: "Comparable unit" },
@@ -3530,13 +3541,23 @@ function transactionFallback(listing) {
 }
 
 function listingForCheatSheet(propertyId) {
-  return itineraryListings().find((listing) => String(listing.id) === String(propertyId)) || itineraryListings()[0];
+  const listings = itineraryListings();
+  return listings.find((listing) => String(listing.id) === String(propertyId)) || listings[0] || {
+    id: "placeholder",
+    title: "Add a listing first",
+    area: "Malaysia",
+    price: 0,
+    propertyType: "Property",
+    maintenanceFee: "Pending",
+    developer: "Pending",
+    transactions: []
+  };
 }
 
 function generateFallbackCheatSheet(listing) {
   const transactions = transactionFallback(listing);
-  const latest = transactions[0]?.price || listing.price;
-  const premium = ((listing.price - latest) / latest) * 100;
+  const latest = transactions[0]?.price || listing.price || 0;
+  const premium = latest ? ((listing.price - latest) / latest) * 100 : 0;
 
   return {
     recentTransactions: transactions,
@@ -4674,6 +4695,10 @@ function contentHistoryItem(id) {
 }
 
 function useContentDraft(id) {
+  if (!els.contentPropertyTitle || !els.contentOutput) {
+    showToast("AI Content Creator is not available on this agent screen");
+    return;
+  }
   const item = contentHistoryItem(id);
   if (!item) return;
   const input = item.inputJson || {};
@@ -4703,6 +4728,10 @@ function copyContentDraft(id) {
 }
 
 function loadContentFromTopListing() {
+  if (!els.contentPropertyTitle || !els.contentHighlights) {
+    showToast("AI Content Creator is not available on this agent screen");
+    return;
+  }
   const listing = [...itineraryListings()]
     .sort((a, b) => Number(b.enquiries || 0) - Number(a.enquiries || 0))[0];
 
@@ -4812,7 +4841,7 @@ function bindEvents() {
   els.cobrokeForm.addEventListener("submit", createCobrokeMatches);
   els.cheatSheetForm.addEventListener("submit", createCheatSheet);
   els.referralForm.addEventListener("submit", createReferralAutomation);
-  els.contentCreatorForm.addEventListener("submit", generateAgentContent);
+  els.contentCreatorForm?.addEventListener("submit", generateAgentContent);
   els.contentTypeButtons.forEach((button) => {
     button.addEventListener("click", () => {
       state.contentCreator.contentType = button.dataset.contentType;
@@ -4822,7 +4851,7 @@ function bindEvents() {
       renderContentCreator();
     });
   });
-  els.copyContentButton.addEventListener("click", copyContentOutput);
+  els.copyContentButton?.addEventListener("click", copyContentOutput);
   els.saveEnhancedListingButton?.addEventListener("click", saveEnhancedListingDraft);
   els.submitEnhancedListingButton?.addEventListener("click", submitEnhancedListingForReview);
   els.itineraryPropertyList.addEventListener("change", (event) => {
@@ -4869,15 +4898,15 @@ function bindEvents() {
       renderCobrokeMatchmaker();
       openModal("cobrokeModal");
     }
-    if (action === "accept-cobroke") acceptCobroke(id);
-    if (action === "reject-cobroke") rejectCobroke(id);
+    if (action === "accept-cobroke") acceptCobroke(rawId);
+    if (action === "reject-cobroke") rejectCobroke(rawId);
     if (action === "select-cobroke-agreement") {
-      state.cobroke.selectedMatchId = `match-${id}`;
+      state.cobroke.selectedMatchId = `match-${rawId}`;
       persistAll();
       renderCobrokeAgreement();
     }
-    if (action === "sign-cobroke-listing") signCobroke(id, "listingAgent");
-    if (action === "sign-cobroke-buyer") signCobroke(id, "buyerAgent");
+    if (action === "sign-cobroke-listing") signCobroke(rawId, "listingAgent");
+    if (action === "sign-cobroke-buyer") signCobroke(rawId, "buyerAgent");
     if (action === "open-cheat-sheet") {
       renderCheatSheet();
       openModal("cheatSheetModal");
