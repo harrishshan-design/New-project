@@ -18,7 +18,7 @@ const rootExtensions = new Set([
   ".glb",
   ".usdz"
 ]);
-const rootDirs = new Set(["backend", "components", "css", "dashboard", "js", "styles"]);
+const rootDirs = new Set(["backend", "css", "dashboard", "js"]);
 const skipDirs = new Set([
   ".git",
   ".vercel",
