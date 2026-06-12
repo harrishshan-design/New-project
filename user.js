@@ -12,6 +12,7 @@ const STORAGE_KEYS = {
   leakProofDeals: "kvai_leak_proof_deals",
   buyerLiveListings: "rg_live_buyer_listings",
   backendBuyerListings: "rg_backend_buyer_listings",
+  listingAnalytics: "rg_listing_analytics",
   globalAlert: "rg_global_platform_alert",
   algorithmControls: "rg_master_algorithm_controls"
 };
@@ -23,6 +24,9 @@ const DEFAULT_MASTER_ALGORITHM = {
 };
 
 const SESSION_INTEREST_KEY = "rg_session_property_interest";
+const BUYER_SESSION_KEY = "rg_buyer_session_id";
+const LISTING_IMPRESSIONS_SEEN_KEY = "rg_listing_impressions_seen";
+const ACTIVE_VIEWER_WINDOW_MS = 5 * 60 * 1000;
 const SESSION_INTEREST_MIN = 3;
 const SESSION_INTEREST_MAX = 19;
 
@@ -70,6 +74,90 @@ function sessionInterestForProperty(property) {
     writeSessionInterestStore(store);
   }
   return Number(store[key]);
+}
+
+function buyerSessionId() {
+  try {
+    let sessionId = sessionStorage.getItem(BUYER_SESSION_KEY);
+    if (!sessionId) {
+      sessionId = `buyer-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      sessionStorage.setItem(BUYER_SESSION_KEY, sessionId);
+    }
+    return sessionId;
+  } catch {
+    return "buyer-session";
+  }
+}
+
+function readListingAnalyticsStore() {
+  return readJsonStore(STORAGE_KEYS.listingAnalytics, {});
+}
+
+function writeListingAnalyticsStore(store) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.listingAnalytics, JSON.stringify(store));
+  } catch {
+    // Analytics should never block buyer actions.
+  }
+}
+
+function rememberListingImpression(listingId) {
+  const key = String(listingId);
+  try {
+    const seen = JSON.parse(sessionStorage.getItem(LISTING_IMPRESSIONS_SEEN_KEY) || "{}");
+    if (seen[key]) return false;
+    seen[key] = new Date().toISOString();
+    sessionStorage.setItem(LISTING_IMPRESSIONS_SEEN_KEY, JSON.stringify(seen));
+    return true;
+  } catch {
+    return true;
+  }
+}
+
+function getPropertyAgentId(property = {}) {
+  return String(property.agentId || property.agent_id || property.listingAgentId || property.sourceAgentId || "unassigned-agent");
+}
+
+function trackListingAnalytics(property, eventType, options = {}) {
+  if (!property?.id) return;
+  if (eventType === "impression" && !rememberListingImpression(property.id)) return;
+
+  const now = new Date().toISOString();
+  const sessionId = buyerSessionId();
+  const listingId = String(property.id);
+  const store = readListingAnalyticsStore();
+  const current = store[listingId] || {};
+  const activeViewers = { ...(current.activeViewers || {}) };
+  Object.entries(activeViewers).forEach(([id, timestamp]) => {
+    if (Date.now() - new Date(timestamp).getTime() > ACTIVE_VIEWER_WINDOW_MS) delete activeViewers[id];
+  });
+
+  if (["view", "contact", "booking"].includes(eventType) || options.active) {
+    activeViewers[sessionId] = now;
+  }
+
+  const next = {
+    ...current,
+    listingId,
+    title: property.title || current.title || "Untitled listing",
+    area: property.area || property.location || current.area || "Malaysia",
+    agentId: getPropertyAgentId(property),
+    agentName: property.agentName || property.agent_name || current.agentName || "Assigned agent",
+    updatedAt: now,
+    impressions: Number(current.impressions || 0) + (eventType === "impression" ? 1 : 0),
+    views: Number(current.views || 0) + (eventType === "view" ? 1 : 0),
+    saves: Number(current.saves || 0) + (eventType === "save" ? 1 : 0),
+    contacts: Number(current.contacts || 0) + (eventType === "contact" ? 1 : 0),
+    bookings: Number(current.bookings || 0) + (eventType === "booking" ? 1 : 0),
+    activeViewers,
+    lastEvents: [
+      { type: eventType, source: options.source || "buyer_dashboard", at: now },
+      ...(current.lastEvents || [])
+    ].slice(0, 20)
+  };
+
+  store[listingId] = next;
+  writeListingAnalyticsStore(store);
 }
 
 function isAdminApprovedLiveListing(item) {
@@ -781,6 +869,7 @@ function getGuessResult(propertyId) {
 }
 
 function renderPropertyCardMarkup(property, index) {
+  trackListingAnalytics(property, "impression", { source: "buyer_feed" });
   const pack = getDecision(property);
   const saved = state.favorites.includes(property.id);
   const { verified, total } = getGalleryCompleteness(property);
@@ -1636,7 +1725,7 @@ function renderEngagement() {
     },
     {
       title: trend ? `Top momentum: ${trend.area}` : "Momentum waiting",
-      body: trend ? `${trend.liveNow} buyers are exploring this area right now, which makes it a strong exploration zone tonight.` : "Once you browse, we will surface the hottest pocket in your feed."
+      body: trend ? `${trend.label} is showing stronger buyer interest, so it is worth comparing real options there tonight.` : "Once you browse, we will surface the strongest pocket in your feed."
     },
     {
       title: unlocked ? "Secret property unlocked" : "Unlock after 3 saves",
@@ -2010,7 +2099,10 @@ function toggleFavorite(id) {
   }
 
   showToast(exists ? "Removed from shortlist" : "Saved to your shortlist");
-  if (!exists) checkGamificationMilestones("save");
+  if (!exists) {
+    trackListingAnalytics(property, "save", { source: "buyer_save_button" });
+    checkGamificationMilestones("save");
+  }
 }
 
 function incrementView(id) {
@@ -2027,6 +2119,7 @@ function openPropertyModal(id) {
 
   state.activePropertyId = id;
   incrementView(id);
+  trackListingAnalytics(property, "view", { source: "property_detail_modal", active: true });
 
   const decision = getDecision(property);
   els.modalBadge.textContent = property.area;
@@ -2602,6 +2695,7 @@ function submitBooking(event) {
 
   state.bookings = [booking, ...state.bookings];
   writeStore(STORAGE_KEYS.bookings, state.bookings);
+  trackListingAnalytics(property, "booking", { source: "buyer_booking_form", active: true });
   pushUserNotification("Viewing request sent", `Your request for ${property.title} on ${booking.date} at ${booking.time} is now in motion.`);
 
   sendLeadAutomation(buildLeadAutomationPayload(property, {
@@ -2791,6 +2885,12 @@ function bindEvents() {
 
     const cardTarget = target?.closest("[data-click-card]");
     const interactiveTarget = target?.closest("a, button, input, select, textarea, label");
+    const contactTarget = target?.closest(".quick-contact-card");
+    if (contactTarget) {
+      const contactCard = contactTarget.closest("[data-click-card]");
+      const property = properties.find((item) => String(item.id) === String(contactCard?.dataset.id));
+      if (property) trackListingAnalytics(property, "contact", { source: "buyer_feed_whatsapp", active: true });
+    }
     if (cardTarget && !interactiveTarget) {
       if (requireBuyerSessionForExplore()) openPropertyModal(Number(cardTarget.dataset.id));
       return;
@@ -2830,6 +2930,7 @@ function bindEvents() {
     if (state.activePropertyId == null) return;
     const property = properties.find((item) => item.id === state.activePropertyId);
     if (!property) return;
+    trackListingAnalytics(property, "contact", { source: "property_modal_whatsapp", active: true });
     sendLeadAutomation(buildLeadAutomationPayload(property, {
       inquiryType: "quick_contact_click",
       source: "user_whatsapp_contact",

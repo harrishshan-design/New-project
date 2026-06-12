@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   notifications: "rg_admin_notifications",
   agentListings: "kvai_agent_listings",
   buyerLiveListings: "rg_live_buyer_listings",
+  listingAnalytics: "rg_listing_analytics",
   adminApiKey: "rg_admin_api_key"
 };
 
@@ -122,6 +123,30 @@ function readStore(key, fallback) {
 
 function writeStore(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function readListingAnalyticsStore() {
+  return readStore(STORAGE_KEYS.listingAnalytics, {});
+}
+
+function activeViewerCount(analytics = {}) {
+  const cutoff = Date.now() - 5 * 60 * 1000;
+  return Object.values(analytics.activeViewers || {}).filter((timestamp) => {
+    const time = new Date(timestamp).getTime();
+    return Number.isFinite(time) && time >= cutoff;
+  }).length;
+}
+
+function listingAnalyticsFor(listing = {}) {
+  const store = readListingAnalyticsStore();
+  const keys = [
+    listing.id,
+    listing.backendId,
+    listing.agentListingId,
+    listing.sourceListingId,
+    listing.publicListingId
+  ].filter((value) => value != null).map(String);
+  return keys.map((key) => store[key]).find(Boolean) || {};
 }
 
 function slugify(value) {
@@ -1032,12 +1057,13 @@ function renderListings() {
 
   els.listingQueue.innerHTML = listings.map((listing) => {
     const flags = listing.aiFlags || scanListing(listing);
+    const analytics = listingAnalyticsFor(listing);
     return `
       <article class="listing-card ${String(listing.id) === String(state.activeListingId) ? "active" : ""}" data-action="select-listing" data-id="${listing.id}">
         <span class="status-pill ${listing.status}">${listing.status}</span>
         <h4>${listing.title}</h4>
         <p>${listing.location} - ${money(listing.price)}</p>
-        <p>${flags.length ? `${flags.length} QC warning${flags.length > 1 ? "s" : ""}` : "No QC warnings"}</p>
+        <p>${flags.length ? `${flags.length} QC warning${flags.length > 1 ? "s" : ""}` : "No QC warnings"} - ${Number(analytics.views || 0)} real views</p>
       </article>
     `;
   }).join("");
@@ -1052,6 +1078,8 @@ function renderListings() {
   const agent = findAgent(listing.agentId);
   const average = marketAverages[listing.location] || listing.price;
   const flags = listing.aiFlags || scanListing(listing);
+  const analytics = listingAnalyticsFor(listing);
+  const liveViewing = activeViewerCount(analytics);
   els.listingPreview.innerHTML = `
     <img class="listing-image" src="${listing.imageUrl}" alt="${listing.title}">
     <h4>${listing.title}</h4>
@@ -1062,6 +1090,11 @@ function renderListings() {
       <div><span>Image quality</span><strong>${listing.imageScore ? `${listing.imageScore}/100` : `${listing.imageResolution}px`}</strong></div>
       <div><span>SEO score</span><strong>${listing.seoScore ?? "Manual QC"}</strong></div>
       <div><span>Status</span><strong>${listing.status.replace(/_/g, " ")}</strong></div>
+      <div><span>Real views</span><strong>${Number(analytics.views || 0)}</strong></div>
+      <div><span>Live viewing</span><strong>${liveViewing}</strong></div>
+      <div><span>Contacts</span><strong>${Number(analytics.contacts || 0)}</strong></div>
+      <div><span>Bookings</span><strong>${Number(analytics.bookings || 0)}</strong></div>
+      <div><span>Saves</span><strong>${Number(analytics.saves || 0)}</strong></div>
     </div>
     ${listing.optimizedDescription ? `<article class="drawer-card"><strong>Enhanced description</strong><p>${listing.optimizedDescription}</p></article>` : ""}
   `;
@@ -1479,6 +1512,12 @@ switchSection(["agents", "listings", "ai-imports", "reports", "audit", "notifica
 });
 bindEvents();
 hydrateListingEnhancements();
+
+window.addEventListener("storage", (event) => {
+  if (event.key === STORAGE_KEYS.listingAnalytics) {
+    renderListings();
+  }
+});
 
 setInterval(() => {
   const today = getMalaysiaDateKey();
