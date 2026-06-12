@@ -5,6 +5,8 @@ const STORAGE_KEYS = {
   agentVault: "kvai_agent_document_vault",
   agentListings: "kvai_agent_listings",
   listingAnalytics: "rg_listing_analytics",
+  listingCollabs: "rg_listing_agent_collabs",
+  buyerLiveListings: "rg_live_buyer_listings",
   adminAgents: "rg_admin_agents",
   algorithmControls: "rg_master_algorithm_controls",
   killSwitches: "rg_master_kill_switches",
@@ -141,6 +143,42 @@ function activeViewerCount(analytics = {}) {
     const time = new Date(timestamp).getTime();
     return Number.isFinite(time) && time >= cutoff;
   }).length;
+}
+
+function escapeHtml(value = "") {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#039;"
+  }[character]));
+}
+
+function readListingCollabsStore() {
+  return readStore(STORAGE_KEYS.listingCollabs, {});
+}
+
+function writeListingCollabsStore(store) {
+  writeStore(STORAGE_KEYS.listingCollabs, store);
+}
+
+function approvedAgents() {
+  return getAdminAgents().filter((agent) => agent.status === "approved");
+}
+
+function collabsForListingId(listingId) {
+  const record = readListingCollabsStore()[String(listingId)] || {};
+  return Array.isArray(record.agents) ? record.agents : [];
+}
+
+function syncBuyerListingCollabs(listingId, agents) {
+  const key = String(listingId);
+  const buyerListings = readStore(STORAGE_KEYS.buyerLiveListings, []).map((item) => {
+    const keys = [item.id, item.agentListingId, item.backendId].filter(Boolean).map(String);
+    return keys.includes(key) ? { ...item, collabAgents: agents } : item;
+  });
+  writeStore(STORAGE_KEYS.buyerLiveListings, buyerListings);
 }
 
 function money(value) {
@@ -402,6 +440,48 @@ function addAudit(action, details) {
   writeStore(STORAGE_KEYS.ownerAudit, state.ownerAudit);
 }
 
+function assignMasterCollabAgent(listingId) {
+  const agentId = document.getElementById("masterCollabAgentSelect")?.value;
+  const agent = approvedAgents().find((item) => item.id === agentId);
+  const analytics = getListingAnalytics()[String(listingId)] || {};
+  if (!agent) {
+    showToast("Select an approved agent first");
+    return;
+  }
+
+  const store = readListingCollabsStore();
+  const record = store[String(listingId)] || {
+    listingId: String(listingId),
+    propertyTitle: analytics.title || "Listing",
+    createdAt: new Date().toISOString(),
+    agents: []
+  };
+  const nextAgent = {
+    id: agent.id,
+    name: agent.name,
+    email: agent.email,
+    phone: agent.phone || agent.phoneNumber || "",
+    renNumber: agent.renNumber,
+    agencyName: agent.agencyName,
+    assignedAt: new Date().toISOString(),
+    assignedBy: "master"
+  };
+  const agents = [
+    nextAgent,
+    ...(record.agents || []).filter((item) => item.id !== agent.id)
+  ];
+  store[String(listingId)] = {
+    ...record,
+    agents,
+    updatedAt: new Date().toISOString()
+  };
+  writeListingCollabsStore(store);
+  syncBuyerListingCollabs(listingId, agents);
+  addAudit("listing_collab_assigned", `Owner assigned ${agent.name} to ${analytics.title || listingId}.`);
+  renderAll();
+  showToast(`${agent.name} assigned`);
+}
+
 function switchSection(section) {
   state.section = section;
   els.navItems.forEach((item) => item.classList.toggle("active", item.dataset.section === section));
@@ -468,6 +548,34 @@ function renderPanopticon() {
           <p>${line.text}</p>
         </div>
       `).join("")}
+    </div>
+    ${selected.type === "analytics" ? renderMasterCollabControls(selected) : ""}
+  `;
+}
+
+function renderMasterCollabControls(selected) {
+  const listingId = String(selected.id || "").replace("listing-analytics-", "");
+  const agents = approvedAgents();
+  const assigned = collabsForListingId(listingId);
+  return `
+    <div class="terminal-board compact">
+      <div><span>COLLAB ROUTING</span><strong>${assigned[0]?.name || "Primary agent"}</strong></div>
+      <div><span>ASSIGNED</span><strong>${assigned.length}</strong></div>
+    </div>
+    <div class="row-actions">
+      <select class="field" id="masterCollabAgentSelect" aria-label="Select collaboration agent">
+        <option value="">Select approved agent</option>
+        ${agents.map((agent) => `<option value="${escapeHtml(agent.id)}">${escapeHtml(agent.name)} - ${escapeHtml(agent.agencyName || "Agency")}</option>`).join("")}
+      </select>
+      <button class="primary-button" data-master-assign-listing="${escapeHtml(listingId)}" type="button">Assign Collab</button>
+    </div>
+    <div class="transcript">
+      ${assigned.length ? assigned.map((agent) => `
+        <div class="transcript-line">
+          <span>${escapeHtml(agent.name)}</span>
+          <p>${escapeHtml(agent.email || "No email")} - ${escapeHtml(agent.phone || agent.renNumber || "No phone")}</p>
+        </div>
+      `).join("") : `<div class="transcript-line"><span>No collab</span><p>Owner can assign an approved agent when this listing becomes hot.</p></div>`}
     </div>
   `;
 }
@@ -724,8 +832,12 @@ function bindEvents() {
 
   document.addEventListener("click", (event) => {
     const target = event.target instanceof Element ? event.target.closest("[data-master-task-status]") : null;
-    if (!target) return;
-    updateMasterTaskStatus(target.dataset.masterTaskStatus, target.dataset.status || "reviewing");
+    if (target) {
+      updateMasterTaskStatus(target.dataset.masterTaskStatus, target.dataset.status || "reviewing");
+      return;
+    }
+    const assignTarget = event.target instanceof Element ? event.target.closest("[data-master-assign-listing]") : null;
+    if (assignTarget) assignMasterCollabAgent(assignTarget.dataset.masterAssignListing);
   });
 
   window.addEventListener("storage", (event) => {
