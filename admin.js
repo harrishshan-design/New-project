@@ -36,26 +36,9 @@ const seedListings = window.RealtyGeniusAdminListings || [];
 
 const seedReports = window.RealtyGeniusAdminReports || [];
 
-const seedAuditLogs = [
-  {
-    id: "al-1",
-    actor: ADMIN_ID,
-    action: "system_scan",
-    targetType: "marketplace",
-    targetId: "initial",
-    notes: "Initial gatekeeper scan completed.",
-    timestamp: "2026-05-03T09:05:00+08:00"
-  }
-];
+const seedAuditLogs = [];
 
-const seedNotifications = [
-  {
-    id: "nt-1",
-    title: "IQI project import ready",
-    message: `${seedListings.length} uploaded IQI Global projects are waiting in the Listing QC desk.`,
-    createdAt: new Date().toISOString()
-  }
-];
+const seedNotifications = [];
 
 const state = {
   section: "agents",
@@ -125,6 +108,14 @@ function readStore(key, fallback) {
 
 function writeStore(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function removeAdminDemoRows() {
+  const demoNotificationTitles = new Set(["IQI project import ready"]);
+  state.auditLogs = state.auditLogs.filter((log) => log.action !== "system_scan" && log.action !== "demo_reset");
+  state.notifications = state.notifications.filter((notice) => !demoNotificationTitles.has(notice.title));
+  writeStore(STORAGE_KEYS.auditLogs, state.auditLogs);
+  writeStore(STORAGE_KEYS.notifications, state.notifications);
 }
 
 function readListingAnalyticsStore() {
@@ -379,7 +370,7 @@ function buildBuyerListingFromApproved(adminListing) {
     image,
     gallery,
     galleryCount: gallery.length,
-    liveNow: Math.max(3, Number(source.enquiries || 0) + 3),
+    liveNow: 0,
     aiScore: Number(source.confidenceScore || storedPayload.confidenceScore || 92),
     yield: Number(source.yield || 4.3),
     growth: Number(source.growth || 5.2),
@@ -1626,7 +1617,7 @@ function submitNotice(event) {
   showToast("Admin notice sent");
 }
 
-function resetDemo() {
+function resetLocalAdminData() {
   localStorage.removeItem(STORAGE_KEYS.agents);
   localStorage.removeItem(STORAGE_KEYS.verificationLogs);
   localStorage.removeItem(STORAGE_KEYS.listings);
@@ -1639,9 +1630,9 @@ function resetDemo() {
   state.reports = structuredClone(seedReports);
   state.auditLogs = structuredClone(seedAuditLogs);
   state.notifications = structuredClone(seedNotifications);
-  addAudit("demo_reset", "admin", ADMIN_ID, "Admin demo data was reset.");
+  addAudit("admin_local_data_cleared", "admin", ADMIN_ID, "Local admin queues were cleared.");
   runAiScan(false);
-  showToast("Admin demo reset");
+  showToast("Local admin data cleared");
 }
 
 function showToast(message) {
@@ -1659,7 +1650,7 @@ function bindEvents() {
   });
 
   els.runScanButton.addEventListener("click", runAiScan);
-  els.resetDemoButton.addEventListener("click", resetDemo);
+  els.resetDemoButton.addEventListener("click", resetLocalAdminData);
   window.RealtyGeniusPush?.installButton(els.pushPermissionButton, (result) => {
     if (result === "granted") showToast("Admin push notifications enabled");
     else if (result === "denied") showToast("Browser blocked push notifications");
@@ -1738,6 +1729,7 @@ if (initialHash.date) state.aiImportDate = initialHash.date;
 if (initialHash.reviewId) state.activeAiImportId = initialHash.reviewId;
 syncAiImportDateInput();
 renderAdminKeyState();
+removeAdminDemoRows();
 switchSection(["agents", "listings", "ai-imports", "reports", "audit", "notifications"].includes(initialHash.section) ? initialHash.section : "agents", {
   reviewId: state.activeAiImportId || ""
 });

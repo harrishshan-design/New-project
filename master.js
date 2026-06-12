@@ -12,6 +12,7 @@ const STORAGE_KEYS = {
   algorithmControls: "rg_master_algorithm_controls",
   killSwitches: "rg_master_kill_switches",
   ownerAudit: "rg_master_owner_audit",
+  subscriptions: "rg_master_subscriptions",
   globalAlert: "rg_global_platform_alert",
   agencyBans: "rg_master_agency_bans",
   adminMasterTasks: "rg_master_admin_tasks"
@@ -28,40 +29,7 @@ const DEFAULT_KILL_SWITCHES = {
   frozenAt: null
 };
 
-const seedVoiceTranscripts = [
-  {
-    id: "voice-001",
-    type: "voice",
-    title: "AI Voice Agent project availability call",
-    participants: "AI Voice Agent -> Mr Lim",
-    property: "Dwi Aurora Residence @ Petaling Jaya",
-    createdAt: new Date(Date.now() - 34 * 60000).toISOString(),
-    lines: [
-      { speaker: "AI Voice", text: "Hi, I am calling from RealtyGenius about Dwi Aurora Residence @ Petaling Jaya. Can we confirm latest package and viewing availability this week?" },
-      { speaker: "Project Desk", text: "Please verify the buyer profile first and share the preferred date." },
-      { speaker: "AI Voice", text: "Understood. The buyer can complete DSR screening before the agent requests a slot." }
-    ]
-  },
-  {
-    id: "voice-002",
-    type: "voice",
-    title: "AI Voice Agent lead qualification",
-    participants: "AI Voice Agent -> Buyer Alya",
-    property: "Emerald Residences",
-    createdAt: new Date(Date.now() - 78 * 60000).toISOString(),
-    lines: [
-      { speaker: "AI Voice", text: "Are you buying for own stay, investment, or both?" },
-      { speaker: "Buyer", text: "Own stay, but I care about resale." },
-      { speaker: "AI Voice", text: "I will route you to listings with stronger transaction history and agent verification." }
-    ]
-  }
-];
-
-const seedSubscriptions = [
-  { id: "sub-1", agentName: "Alex Wong", agencyName: "PrimeNest Realty", amount: 299, paidAt: new Date().toISOString() },
-  { id: "sub-2", agentName: "Sarah Lee", agencyName: "PrimeNest Realty", amount: 299, paidAt: new Date().toISOString() },
-  { id: "sub-3", agentName: "Ben Tan", agencyName: "PrimeNest Realty", amount: 299, paidAt: new Date(Date.now() - 3 * 3600000).toISOString() }
-];
+const REAL_DATA_ONLY_NOTICE = "No real platform records yet.";
 
 const state = {
   section: "panopticon",
@@ -71,7 +39,7 @@ const state = {
   algorithm: readStore(STORAGE_KEYS.algorithmControls, DEFAULT_ALGORITHM),
   killSwitches: readStore(STORAGE_KEYS.killSwitches, DEFAULT_KILL_SWITCHES),
   ownerAudit: readStore(STORAGE_KEYS.ownerAudit, []),
-  subscriptions: seedSubscriptions
+  subscriptions: readStore(STORAGE_KEYS.subscriptions, [])
 };
 
 const els = {
@@ -363,7 +331,6 @@ function getAllLogs() {
   return [
     ...buildAdminTaskLogs(),
     ...buildNegotiationLogs(),
-    ...seedVoiceTranscripts,
     ...buildCobrokeLogs(),
     ...buildEscrowLogs(),
     ...buildListingAnalyticsLogs(),
@@ -775,8 +742,10 @@ function resetAlgorithm() {
 function renderAgencies() {
   const listingAgencies = getAgentListings().map((listing) => listing.agencyName).filter(Boolean);
   const adminAgencies = getAdminAgents().map((agent) => agent.agencyName).filter(Boolean);
-  const agencies = [...new Set([...listingAgencies, ...adminAgencies, "PrimeNest Realty", "Metro Axis Realty"])];
-  els.agencySelect.innerHTML = agencies.map((agency) => `<option value="${agency}">${agency}</option>`).join("");
+  const agencies = [...new Set([...listingAgencies, ...adminAgencies])].filter(Boolean);
+  els.agencySelect.innerHTML = agencies.length
+    ? agencies.map((agency) => `<option value="${agency}">${agency}</option>`).join("")
+    : `<option value="">${REAL_DATA_ONLY_NOTICE}</option>`;
 }
 
 function renderKillStatus() {
@@ -802,7 +771,10 @@ function renderKillStatus() {
 
 function banAgency() {
   const agency = els.agencySelect.value;
-  if (!agency) return;
+  if (!agency) {
+    showToast("No real agency records available");
+    return;
+  }
   const bans = readStore(STORAGE_KEYS.agencyBans, []);
   writeStore(STORAGE_KEYS.agencyBans, [...new Set([agency, ...bans])]);
 
