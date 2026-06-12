@@ -13,6 +13,9 @@ const STORAGE_KEYS = {
   buyerLiveListings: "rg_live_buyer_listings",
   backendBuyerListings: "rg_backend_buyer_listings",
   listingAnalytics: "rg_listing_analytics",
+  listingCollabs: "rg_listing_agent_collabs",
+  adminNotifications: "rg_admin_notifications",
+  masterTasks: "rg_master_admin_tasks",
   globalAlert: "rg_global_platform_alert",
   algorithmControls: "rg_master_algorithm_controls"
 };
@@ -26,6 +29,7 @@ const DEFAULT_MASTER_ALGORITHM = {
 const SESSION_INTEREST_KEY = "rg_session_property_interest";
 const BUYER_SESSION_KEY = "rg_buyer_session_id";
 const LISTING_IMPRESSIONS_SEEN_KEY = "rg_listing_impressions_seen";
+const HOT_LISTING_ALERTS_KEY = "rg_hot_listing_alerts";
 const ACTIVE_VIEWER_WINDOW_MS = 5 * 60 * 1000;
 const SESSION_INTEREST_MIN = 3;
 const SESSION_INTEREST_MAX = 19;
@@ -101,6 +105,91 @@ function writeListingAnalyticsStore(store) {
   }
 }
 
+function readListingCollabsStore() {
+  return readJsonStore(STORAGE_KEYS.listingCollabs, {});
+}
+
+function listingCollabAgents(property = {}) {
+  if (Array.isArray(property.collabAgents) && property.collabAgents.length) return property.collabAgents;
+  const collabs = readListingCollabsStore();
+  const record = collabs[String(property.id)] || collabs[String(property.agentListingId)] || {};
+  return Array.isArray(record.agents) ? record.agents : [];
+}
+
+function pushControlNotification(title, message, property, analytics) {
+  const now = new Date().toISOString();
+  const alertKey = String(property.id);
+  const sent = readJsonStore(HOT_LISTING_ALERTS_KEY, {});
+  const lastSentAt = sent[alertKey] ? new Date(sent[alertKey]).getTime() : 0;
+  if (Number.isFinite(lastSentAt) && Date.now() - lastSentAt < 10 * 60 * 1000) return;
+  sent[alertKey] = now;
+  try {
+    localStorage.setItem(HOT_LISTING_ALERTS_KEY, JSON.stringify(sent));
+  } catch {
+    // Notification dedupe is best-effort only.
+  }
+
+  const adminNotifications = readJsonStore(STORAGE_KEYS.adminNotifications, []);
+  const notification = {
+    id: `hot-${Date.now()}`,
+    title,
+    message,
+    listingId: property.id,
+    propertyTitle: property.title,
+    analytics,
+    createdAt: now
+  };
+  try {
+    localStorage.setItem(STORAGE_KEYS.adminNotifications, JSON.stringify([notification, ...adminNotifications]));
+  } catch {
+    // Keep buyer action smooth even if storage is full.
+  }
+
+  const masterTasks = readJsonStore(STORAGE_KEYS.masterTasks, []);
+  const task = {
+    id: `hot-listing-${Date.now()}`,
+    title: `Hot listing: ${property.title}`,
+    message,
+    priority: analytics.bookings || analytics.contacts ? "high" : "normal",
+    status: "open",
+    agentName: analytics.agentName || property.agentName || "Assigned agent",
+    agentEmail: "",
+    listingId: property.id,
+    propertyTitle: property.title,
+    createdAt: now
+  };
+  try {
+    localStorage.setItem(STORAGE_KEYS.masterTasks, JSON.stringify([task, ...masterTasks]));
+  } catch {
+    // Non-critical owner alert.
+  }
+
+  window.RealtyGeniusPush?.notify(title, message, {
+    tag: `rg-hot-listing-${property.id}`,
+    url: location.origin && location.origin !== "null"
+      ? `${location.origin}/backend/admin.html`
+      : new URL("admin.html", location.href).href
+  });
+}
+
+function maybeAlertHotListing(property, analytics) {
+  const liveViewing = Object.values(analytics.activeViewers || {}).filter((timestamp) => {
+    const time = new Date(timestamp).getTime();
+    return Number.isFinite(time) && Date.now() - time <= ACTIVE_VIEWER_WINDOW_MS;
+  }).length;
+  const isHot = Number(analytics.bookings || 0) >= 1
+    || Number(analytics.contacts || 0) >= 1
+    || liveViewing >= 1
+    || Number(analytics.views || 0) >= 3;
+  if (!isHot) return;
+  pushControlNotification(
+    "Hot buyer activity detected",
+    `${property.title}: ${Number(analytics.views || 0)} real views, ${liveViewing} live viewing, ${Number(analytics.contacts || 0)} contacts, ${Number(analytics.bookings || 0)} bookings. Assign a collab agent if needed.`,
+    property,
+    { ...analytics, liveViewing }
+  );
+}
+
 function rememberListingImpression(listingId) {
   const key = String(listingId);
   try {
@@ -158,6 +247,7 @@ function trackListingAnalytics(property, eventType, options = {}) {
 
   store[listingId] = next;
   writeListingAnalyticsStore(store);
+  maybeAlertHotListing(property, next);
 }
 
 function isAdminApprovedLiveListing(item) {
@@ -1321,8 +1411,11 @@ function getPersonalizedReason(property, profile) {
 }
 
 function getWhatsAppLink(property, source = "dashboard") {
-  const text = `Hi, I want more details about ${property.title} in ${property.area}. I found it through the ${source} view on RealityGenius.`;
-  return `https://wa.me/${property.whatsapp}?text=${encodeURIComponent(text)}`;
+  const collab = listingCollabAgents(property).find((agent) => agent.phone);
+  const phone = collab?.phone || property.whatsapp || property.agentPhone || "60123456789";
+  const routingLine = collab ? ` Please route me to ${collab.name}.` : "";
+  const text = `Hi, I want more details about ${property.title} in ${property.area}. I found it through the ${source} view on RealityGenius.${routingLine}`;
+  return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
 }
 
 function getMasterAlgorithmControls() {

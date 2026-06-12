@@ -15,6 +15,7 @@ const STORAGE_KEYS = {
   adminListings: "rg_admin_listings",
   adminNotifications: "rg_admin_notifications",
   listingAnalytics: "rg_listing_analytics",
+  listingCollabs: "rg_listing_agent_collabs",
   leakProofDeals: "kvai_leak_proof_deals",
   globalAlert: "rg_global_platform_alert"
 };
@@ -588,6 +589,19 @@ function listingAnalyticsFor(listing = {}) {
     listing.publicListingId
   ].filter((value) => value != null).map(String);
   return keys.map((key) => store[key]).find(Boolean) || {};
+}
+
+function collabsForListing(listing = {}) {
+  const store = readStore(STORAGE_KEYS.listingCollabs, {});
+  const keys = [
+    listing.id,
+    listing.backendId,
+    listing.agentListingId,
+    listing.sourceListingId,
+    listing.publicListingId
+  ].filter((value) => value != null).map(String);
+  const record = keys.map((key) => store[key]).find(Boolean) || {};
+  return Array.isArray(record.agents) ? record.agents : [];
 }
 
 function normalizeColumnName(value) {
@@ -1640,6 +1654,7 @@ function renderListingGrid() {
     const media = getGalleryStats(listing);
     const analytics = listingAnalyticsFor(listing);
     const liveViewing = activeViewerCount(analytics);
+    const collabAgents = collabsForListing(listing);
     const statusAction = listing.status === "Live"
       ? "Mark Reserved"
       : listing.status === "Reserved"
@@ -1678,6 +1693,7 @@ function renderListingGrid() {
         <span class="meta-pill"><i class="fa-brands fa-whatsapp"></i> ${Number(analytics.contacts || 0)} contacts</span>
         <span class="meta-pill"><i class="fa-solid fa-calendar-check"></i> ${Number(analytics.bookings || 0)} bookings</span>
         <span class="meta-pill"><i class="fa-solid fa-heart"></i> ${Number(analytics.saves || 0)} saves</span>
+        ${collabAgents.length ? `<span class="meta-pill"><i class="fa-solid fa-handshake"></i> ${collabAgents.length} collab agent${collabAgents.length === 1 ? "" : "s"}</span>` : ""}
         ${listing.status === "Live" ? `<span class="meta-pill live-ready-pill"><i class="fa-solid fa-bolt"></i> Live for buyers</span>` : ""}
         ${listing.status === "Pending QC" ? `<span class="meta-pill live-ready-pill"><i class="fa-solid fa-user-shield"></i> Admin QC pending</span>` : ""}
         <span class="meta-pill"><i class="fa-solid fa-images"></i> ${media.verified >= LISTING_MIN_PHOTO_COUNT ? "Minimum 4 ready" : `${LISTING_MIN_PHOTO_COUNT - media.verified} photo(s) needed`}</span>
@@ -4996,6 +5012,10 @@ function bindEvents() {
     }
 
     if (event.key === STORAGE_KEYS.listingAnalytics) {
+      renderListingGrid();
+    }
+
+    if (event.key === STORAGE_KEYS.listingCollabs) {
       renderListingGrid();
     }
   });

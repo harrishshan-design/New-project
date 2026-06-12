@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
   agentListings: "kvai_agent_listings",
   buyerLiveListings: "rg_live_buyer_listings",
   listingAnalytics: "rg_listing_analytics",
+  listingCollabs: "rg_listing_agent_collabs",
   adminApiKey: "rg_admin_api_key"
 };
 
@@ -147,6 +148,36 @@ function listingAnalyticsFor(listing = {}) {
     listing.publicListingId
   ].filter((value) => value != null).map(String);
   return keys.map((key) => store[key]).find(Boolean) || {};
+}
+
+function readListingCollabsStore() {
+  return readStore(STORAGE_KEYS.listingCollabs, {});
+}
+
+function writeListingCollabsStore(store) {
+  writeStore(STORAGE_KEYS.listingCollabs, store);
+}
+
+function listingCollabKey(listing = {}) {
+  return String(listing.id || listing.backendId || listing.agentListingId || "");
+}
+
+function approvedAgents() {
+  return state.agents.filter((agent) => agent.status === "approved");
+}
+
+function collabsForListing(listing = {}) {
+  const record = readListingCollabsStore()[listingCollabKey(listing)] || {};
+  return Array.isArray(record.agents) ? record.agents : [];
+}
+
+function syncBuyerListingCollabs(listing, agents) {
+  const keys = new Set([listing.id, listing.backendId, listing.agentListingId].filter(Boolean).map(String));
+  const buyerListings = readStore(STORAGE_KEYS.buyerLiveListings, []).map((item) => {
+    const itemKeys = [item.id, item.agentListingId, item.backendId].filter(Boolean).map(String);
+    return itemKeys.some((key) => keys.has(key)) ? { ...item, collabAgents: agents } : item;
+  });
+  writeStore(STORAGE_KEYS.buyerLiveListings, buyerListings);
 }
 
 function slugify(value) {
@@ -898,6 +929,76 @@ function addNotification(title, message) {
   });
 }
 
+function addListingCollabAgent(listingId) {
+  const listing = findListing(listingId);
+  if (!listing) return;
+  const agentId = document.getElementById("listingCollabAgentSelect")?.value;
+  const agent = state.agents.find((item) => item.id === agentId && item.status === "approved");
+  if (!agent) {
+    showToast("Select an approved agent first");
+    return;
+  }
+
+  const store = readListingCollabsStore();
+  const key = listingCollabKey(listing);
+  const record = store[key] || {
+    listingId: key,
+    propertyTitle: listing.title,
+    createdAt: new Date().toISOString(),
+    agents: []
+  };
+  const nextAgent = {
+    id: agent.id,
+    name: agent.name,
+    email: agent.email,
+    phone: agent.phone || agent.phoneNumber || "",
+    renNumber: agent.renNumber,
+    agencyName: agent.agencyName,
+    assignedAt: new Date().toISOString(),
+    assignedBy: ADMIN_ID
+  };
+  const agents = [
+    nextAgent,
+    ...(record.agents || []).filter((item) => item.id !== agent.id)
+  ];
+  store[key] = {
+    ...record,
+    agents,
+    updatedAt: new Date().toISOString()
+  };
+  writeListingCollabsStore(store);
+  syncBuyerListingCollabs(listing, agents);
+  addAudit("listing_collab_assigned", "listing", listing.id, `${agent.name} assigned to ${listing.title}.`);
+  addNotification("Collab agent assigned", `${agent.name} can now handle buyer enquiries for ${listing.title}.`);
+  persistAll();
+  renderListings();
+  renderNotifications();
+  showToast(`${agent.name} assigned`);
+}
+
+function removeListingCollabAgent(listingId, agentId) {
+  const listing = findListing(listingId);
+  if (!listing) return;
+  const store = readListingCollabsStore();
+  const key = listingCollabKey(listing);
+  const record = store[key] || { agents: [] };
+  const removed = (record.agents || []).find((item) => item.id === agentId);
+  const agents = (record.agents || []).filter((item) => item.id !== agentId);
+  store[key] = {
+    ...record,
+    agents,
+    updatedAt: new Date().toISOString()
+  };
+  writeListingCollabsStore(store);
+  syncBuyerListingCollabs(listing, agents);
+  addAudit("listing_collab_removed", "listing", listing.id, `${removed?.name || agentId} removed from ${listing.title}.`);
+  addNotification("Collab agent removed", `${removed?.name || "Agent"} was removed from ${listing.title}.`);
+  persistAll();
+  renderListings();
+  renderNotifications();
+  showToast("Collab agent removed");
+}
+
 function scanAgent(agent) {
   const flags = [];
   const renMatches = state.agents.filter((item) => item.id !== agent.id && item.renNumber === agent.renNumber);
@@ -1080,6 +1181,8 @@ function renderListings() {
   const flags = listing.aiFlags || scanListing(listing);
   const analytics = listingAnalyticsFor(listing);
   const liveViewing = activeViewerCount(analytics);
+  const collabAgents = collabsForListing(listing);
+  const assignableAgents = approvedAgents();
   els.listingPreview.innerHTML = `
     <img class="listing-image" src="${listing.imageUrl}" alt="${listing.title}">
     <h4>${listing.title}</h4>
@@ -1096,6 +1199,30 @@ function renderListings() {
       <div><span>Bookings</span><strong>${Number(analytics.bookings || 0)}</strong></div>
       <div><span>Saves</span><strong>${Number(analytics.saves || 0)}</strong></div>
     </div>
+    <article class="drawer-card">
+      <strong>Collab agents for hot buyers</strong>
+      <p>Assign approved agents who are allowed to handle buyer/user enquiries for this listing.</p>
+      <div class="listing-meta-grid">
+        <div><span>Assigned collabs</span><strong>${collabAgents.length || 0}</strong></div>
+        <div><span>Buyer route</span><strong>${collabAgents[0]?.name || agent?.name || listing.agentName || "Primary agent"}</strong></div>
+      </div>
+      <div class="drawer-actions">
+        <select class="field" id="listingCollabAgentSelect" aria-label="Select collaboration agent">
+          <option value="">Select approved agent</option>
+          ${assignableAgents.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)} - ${escapeHtml(item.agencyName || "Agency")}</option>`).join("")}
+        </select>
+        <button class="primary-button" data-action="assign-listing-collab" data-id="${listing.id}" type="button">Add Collab Agent</button>
+      </div>
+      <div class="flag-list">
+        ${collabAgents.length ? collabAgents.map((item) => `
+          <article class="flag-card">
+            <strong>${escapeHtml(item.name)}</strong>
+            <p>${escapeHtml(item.email || "No email")} - ${escapeHtml(item.phone || item.renNumber || "No phone")}</p>
+            <button class="ghost-button" data-action="remove-listing-collab" data-id="${listing.id}" data-agent-id="${escapeHtml(item.id)}" type="button">Remove</button>
+          </article>
+        `).join("") : `<article class="flag-card"><strong>No collab agent assigned</strong><p>Primary listing agent handles this buyer path until admin adds collaborators.</p></article>`}
+      </div>
+    </article>
     ${listing.optimizedDescription ? `<article class="drawer-card"><strong>Enhanced description</strong><p>${listing.optimizedDescription}</p></article>` : ""}
   `;
 
@@ -1481,6 +1608,8 @@ function bindEvents() {
     if (action === "reject-agent") updateAgentStatus(id, "rejected");
     if (action === "suspend-agent") updateAgentStatus(id, "suspended");
     if (action === "select-listing") setActiveListing(id);
+    if (action === "assign-listing-collab") addListingCollabAgent(id);
+    if (action === "remove-listing-collab") removeListingCollabAgent(id, target.dataset.agentId);
     if (action === "approve-listing") approveListing(id);
     if (action === "reject-listing") rejectListing(id);
     if (action === "suspend-listing") suspendListingFromReport(id);
@@ -1516,6 +1645,13 @@ hydrateListingEnhancements();
 window.addEventListener("storage", (event) => {
   if (event.key === STORAGE_KEYS.listingAnalytics) {
     renderListings();
+  }
+  if (event.key === STORAGE_KEYS.listingCollabs) {
+    renderListings();
+  }
+  if (event.key === STORAGE_KEYS.notifications) {
+    state.notifications = readStore(STORAGE_KEYS.notifications, state.notifications);
+    renderNotifications();
   }
 });
 
