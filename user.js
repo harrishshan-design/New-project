@@ -22,6 +22,10 @@ const DEFAULT_MASTER_ALGORITHM = {
   highYieldInvestorPriority: 35
 };
 
+const SESSION_INTEREST_KEY = "rg_session_property_interest";
+const SESSION_INTEREST_MIN = 3;
+const SESSION_INTEREST_MAX = 19;
+
 const BASE_PROPERTIES = window.RealtyGeniusPropertyListings || [];
 const FORCE_BACKEND_BUYER_FEED = ["realitygenius.company", "www.realitygenius.company"].includes(window.location.hostname);
 let backendListingFeedReady = FORCE_BACKEND_BUYER_FEED;
@@ -33,6 +37,39 @@ function readJsonStore(key, fallback) {
   } catch {
     return fallback;
   }
+}
+
+function readSessionInterestStore() {
+  try {
+    return JSON.parse(sessionStorage.getItem(SESSION_INTEREST_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function writeSessionInterestStore(store) {
+  try {
+    sessionStorage.setItem(SESSION_INTEREST_KEY, JSON.stringify(store));
+  } catch {
+    // Non-critical visual signal only.
+  }
+}
+
+function sessionInterestForProperty(property) {
+  const key = String(property?.id || property?.title || "property");
+  const store = readSessionInterestStore();
+  if (!Number.isFinite(Number(store[key]))) {
+    const seed = `${key}:${Date.now()}:${Math.random()}`;
+    let hash = 0;
+    for (let index = 0; index < seed.length; index += 1) {
+      hash = ((hash << 5) - hash) + seed.charCodeAt(index);
+      hash |= 0;
+    }
+    const range = SESSION_INTEREST_MAX - SESSION_INTEREST_MIN + 1;
+    store[key] = SESSION_INTEREST_MIN + (Math.abs(hash) % range);
+    writeSessionInterestStore(store);
+  }
+  return Number(store[key]);
 }
 
 function isAdminApprovedLiveListing(item) {
@@ -748,12 +785,14 @@ function renderPropertyCardMarkup(property, index) {
   const saved = state.favorites.includes(property.id);
   const { verified, total } = getGalleryCompleteness(property);
   const heroImage = getHeroImage(property);
+  const interestCount = sessionInterestForProperty(property);
   return `
     <article class="property-card property-card--reveal" style="animation-delay:${index * 70}ms" data-tilt-card data-click-card data-id="${property.id}" tabindex="0" aria-label="Explore ${property.title}">
       <div class="feed-media">
         <img src="${heroImage}" alt="${property.title}" loading="lazy">
         <span class="area-pill">${property.area}</span>
         <span class="score-pill score-pill--match">AI ${property.aiScore}% Match</span>
+        <span class="interest-pill" title="Session-based buyer interest estimate, not a live viewer count"><i class="fa-solid fa-users-viewfinder"></i> ${interestCount} interest estimate</span>
         <span class="photo-count-pill"><i class="fa-solid fa-images"></i> ${verified}/${total}</span>
       </div>
       <div class="card-body">

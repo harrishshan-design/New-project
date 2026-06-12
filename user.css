@@ -1265,6 +1265,7 @@ a{
 
 .area-pill,
 .score-pill,
+.interest-pill,
 .live-pill,
 .photo-count-pill{
   position:absolute;
@@ -1765,6 +1766,18 @@ a{
   align-items:center;
   gap:12px;
   margin-bottom:16px;
+}
+
+.interest-pill{
+  left:14px;
+  bottom:14px;
+  top:auto;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  background:rgba(255,255,255,0.92);
+  color:var(--text);
+  backdrop-filter:blur(12px);
 }
 
 .modal-state-row{
@@ -3399,6 +3412,7 @@ model-viewer{
 
   .area-pill,
   .score-pill,
+  .interest-pill,
   .live-pill,
   .photo-count-pill{
     padding:8px 11px;
