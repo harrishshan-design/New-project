@@ -9,6 +9,7 @@ const STORAGE_KEYS = {
   buyerLiveListings: "rg_live_buyer_listings",
   listingAnalytics: "rg_listing_analytics",
   listingCollabs: "rg_listing_agent_collabs",
+  collabRequests: "rg_agent_collab_requests",
   adminApiKey: "rg_admin_api_key"
 };
 
@@ -178,6 +179,14 @@ function syncBuyerListingCollabs(listing, agents) {
     return itemKeys.some((key) => keys.has(key)) ? { ...item, collabAgents: agents } : item;
   });
   writeStore(STORAGE_KEYS.buyerLiveListings, buyerListings);
+}
+
+function readCollabRequests() {
+  return readStore(STORAGE_KEYS.collabRequests, []);
+}
+
+function writeCollabRequests(requests) {
+  writeStore(STORAGE_KEYS.collabRequests, requests);
 }
 
 function slugify(value) {
@@ -999,6 +1008,82 @@ function removeListingCollabAgent(listingId, agentId) {
   showToast("Collab agent removed");
 }
 
+function collabAgentFromRequest(request) {
+  return {
+    id: request.requesterAgentId || request.requesterEmail || request.id,
+    name: request.requesterName || request.buyerAgent || "Buyer agent",
+    email: request.requesterEmail || "",
+    phone: request.requesterPhone || "",
+    renNumber: request.requesterRenNumber || "",
+    agencyName: request.requesterAgency || "",
+    buyerAgent: request.buyerAgent || request.requesterName || "",
+    assignedAt: new Date().toISOString(),
+    assignedBy: ADMIN_ID,
+    sourceRequestId: request.id
+  };
+}
+
+function approveCollabRequest(requestId) {
+  const requests = readCollabRequests();
+  const request = requests.find((item) => item.id === requestId);
+  if (!request) return;
+  const listing = findListing(request.listingId) || {
+    id: request.listingId,
+    title: request.listingTitle
+  };
+  const store = readListingCollabsStore();
+  const key = listingCollabKey(listing);
+  const record = store[key] || {
+    listingId: key,
+    propertyTitle: request.listingTitle,
+    createdAt: new Date().toISOString(),
+    agents: []
+  };
+  const nextAgent = collabAgentFromRequest(request);
+  const agents = [
+    nextAgent,
+    ...(record.agents || []).filter((item) => item.id !== nextAgent.id)
+  ];
+  store[key] = {
+    ...record,
+    agents,
+    updatedAt: new Date().toISOString()
+  };
+  writeListingCollabsStore(store);
+  syncBuyerListingCollabs(listing, agents);
+  writeCollabRequests(requests.map((item) => item.id === requestId ? {
+    ...item,
+    status: "approved",
+    reviewedBy: ADMIN_ID,
+    reviewedAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  } : item));
+  addAudit("collab_request_approved", "listing", request.listingId, `${nextAgent.name} approved for ${request.listingTitle}.`);
+  addNotification("Co-broke approved", `${nextAgent.name} can now collaborate on ${request.listingTitle}.`);
+  persistAll();
+  renderAll();
+  showToast("Collab request approved");
+}
+
+function rejectCollabRequest(requestId) {
+  const requests = readCollabRequests();
+  const request = requests.find((item) => item.id === requestId);
+  writeCollabRequests(requests.map((item) => item.id === requestId ? {
+    ...item,
+    status: "rejected",
+    reviewedBy: ADMIN_ID,
+    reviewedAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  } : item));
+  if (request) {
+    addAudit("collab_request_rejected", "listing", request.listingId, `${request.requesterName || "Agent"} rejected for ${request.listingTitle}.`);
+    addNotification("Co-broke rejected", `${request.requesterName || "Agent"} was rejected for ${request.listingTitle}.`);
+  }
+  persistAll();
+  renderAll();
+  showToast("Collab request rejected");
+}
+
 function scanAgent(agent) {
   const flags = [];
   const renMatches = state.agents.filter((item) => item.id !== agent.id && item.renNumber === agent.renNumber);
@@ -1300,13 +1385,28 @@ function renderAuditLogs() {
 }
 
 function renderNotifications() {
-  els.notificationList.innerHTML = state.notifications.length ? state.notifications.map((notice) => `
+  const pendingRequests = readCollabRequests().filter((request) => request.status === "pending_admin");
+  const requestMarkup = pendingRequests.map((request) => `
+    <article class="notification-item">
+      <strong>Co-broke approval needed</strong>
+      <p>${escapeHtml(request.requesterName || "Agent")} has a buyer for ${escapeHtml(request.listingTitle || "this listing")} (${Number(request.matchScore || 0)}% match).</p>
+      <p>${escapeHtml(request.requirements?.location || "Any location")} - ${escapeHtml(request.requirements?.propertyType || "Property")} - ${money(request.requirements?.budget || 0)}</p>
+      <div class="row-actions">
+        <button class="primary-button" data-action="approve-collab-request" data-id="${escapeHtml(request.id)}" type="button">Approve Collab</button>
+        <button class="danger-button" data-action="reject-collab-request" data-id="${escapeHtml(request.id)}" type="button">Reject</button>
+      </div>
+    </article>
+  `).join("");
+  const noticeMarkup = state.notifications.length ? state.notifications.map((notice) => `
     <article class="notification-item">
       <strong>${notice.title}</strong>
       <p>${notice.message}</p>
       <time>${dateTime(notice.createdAt)}</time>
     </article>
-  `).join("") : `<div class="notification-item"><strong>No notifications</strong><p>Trust operation alerts will appear here.</p></div>`;
+  `).join("") : "";
+  els.notificationList.innerHTML = requestMarkup || noticeMarkup
+    ? `${requestMarkup}${noticeMarkup}`
+    : `<div class="notification-item"><strong>No notifications</strong><p>Trust operation alerts will appear here.</p></div>`;
 }
 
 function renderAll() {
@@ -1610,6 +1710,8 @@ function bindEvents() {
     if (action === "select-listing") setActiveListing(id);
     if (action === "assign-listing-collab") addListingCollabAgent(id);
     if (action === "remove-listing-collab") removeListingCollabAgent(id, target.dataset.agentId);
+    if (action === "approve-collab-request") approveCollabRequest(id);
+    if (action === "reject-collab-request") rejectCollabRequest(id);
     if (action === "approve-listing") approveListing(id);
     if (action === "reject-listing") rejectListing(id);
     if (action === "suspend-listing") suspendListingFromReport(id);
@@ -1651,6 +1753,9 @@ window.addEventListener("storage", (event) => {
   }
   if (event.key === STORAGE_KEYS.notifications) {
     state.notifications = readStore(STORAGE_KEYS.notifications, state.notifications);
+    renderNotifications();
+  }
+  if (event.key === STORAGE_KEYS.collabRequests) {
     renderNotifications();
   }
 });

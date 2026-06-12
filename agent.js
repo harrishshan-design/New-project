@@ -16,6 +16,7 @@ const STORAGE_KEYS = {
   adminNotifications: "rg_admin_notifications",
   listingAnalytics: "rg_listing_analytics",
   listingCollabs: "rg_listing_agent_collabs",
+  collabRequests: "rg_agent_collab_requests",
   leakProofDeals: "kvai_leak_proof_deals",
   globalAlert: "rg_global_platform_alert"
 };
@@ -602,6 +603,14 @@ function collabsForListing(listing = {}) {
   ].filter((value) => value != null).map(String);
   const record = keys.map((key) => store[key]).find(Boolean) || {};
   return Array.isArray(record.agents) ? record.agents : [];
+}
+
+function readCollabRequests() {
+  return readStore(STORAGE_KEYS.collabRequests, []);
+}
+
+function writeCollabRequests(requests) {
+  writeStore(STORAGE_KEYS.collabRequests, requests);
 }
 
 function normalizeColumnName(value) {
@@ -3475,7 +3484,7 @@ function renderCobrokeMatchmaker() {
       </div>
       <span class="cobroke-status ${match.status.replace(/\s+/g, "-")}">${match.status}</span>
       <div class="action-row">
-        <button class="primary-button" data-action="accept-cobroke" data-id="${match.id}" type="button">Accept 50/50</button>
+        <button class="primary-button" data-action="accept-cobroke" data-id="${match.id}" type="button">${match.status === "pending admin approval" ? "Approval Pending" : "Request Admin Approval"}</button>
         <button class="ghost-button" data-action="reject-cobroke" data-id="${match.id}" type="button">Reject</button>
         <button class="ghost-button" data-action="select-cobroke-agreement" data-id="${match.id}" type="button">View Agreement</button>
       </div>
@@ -3544,14 +3553,52 @@ function updateCobrokeMatch(id, updater) {
 }
 
 function acceptCobroke(id) {
-  updateCobrokeMatch(id, (match) => ({
-    ...match,
-    status: "accepted",
-    agreement: match.agreement || generateCobrokeAgreement(match)
+  const match = (state.cobroke.matches || []).find((item) => String(item.id) === String(id));
+  if (!match) return;
+  const agent = readLiveAgentProfile();
+  const requests = readCollabRequests();
+  const existing = requests.find((request) => (
+    String(request.listingId) === String(match.id)
+    && request.requesterEmail === agent.email
+    && ["pending_admin", "approved"].includes(request.status)
+  ));
+  if (existing) {
+    showToast(existing.status === "approved" ? "Collab already approved" : "Collab request already pending");
+    return;
+  }
+
+  const request = {
+    id: `collab-${Date.now()}`,
+    listingId: match.id,
+    listingTitle: match.title,
+    listingArea: match.area,
+    listingPrice: match.price,
+    buyerAgent: match.buyerAgent || agent.name,
+    requesterAgentId: agent.id || "agent-live",
+    requesterName: agent.name,
+    requesterEmail: agent.email,
+    requesterPhone: agent.phone || "",
+    requesterAgency: agent.agencyName,
+    requirements: match.requirements,
+    matchScore: match.score,
+    reasons: match.reasons || [],
+    status: "pending_admin",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  writeCollabRequests([request, ...requests]);
+  updateCobrokeMatch(id, (current) => ({
+    ...current,
+    status: "pending admin approval",
+    collabRequestId: request.id
   }));
-  pushNotifications("Co-broke accepted", "50/50 commission agreement generated and ready for e-sign.");
+  pushAdminListingNotification(
+    "Co-broke approval requested",
+    `${agent.name} has a buyer for ${match.title}. Admin/master approval is required before collaboration is active.`
+  );
+  pushNotifications("Co-broke request sent", "Admin/master must approve before this collab can handle the buyer.");
   renderNotifications();
-  showToast("Co-broke accepted");
+  showToast("Collab request sent for approval");
 }
 
 function rejectCobroke(id) {
