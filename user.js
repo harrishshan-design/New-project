@@ -1048,7 +1048,7 @@ function beginArPromptCountdown() {
   arPromptTimer = setTimeout(() => {
     arPromptShown = true;
     arPromptTimer = null;
-    showToast("Loved the space? Book a real viewing now!");
+    showToast("Loved the space? Book a real viewing.");
     els.bookingForm?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, 5000);
 }
