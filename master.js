@@ -6,6 +6,7 @@ const STORAGE_KEYS = {
   agentListings: "kvai_agent_listings",
   listingAnalytics: "rg_listing_analytics",
   listingCollabs: "rg_listing_agent_collabs",
+  collabRequests: "rg_agent_collab_requests",
   buyerLiveListings: "rg_live_buyer_listings",
   adminAgents: "rg_admin_agents",
   algorithmControls: "rg_master_algorithm_controls",
@@ -163,6 +164,14 @@ function writeListingCollabsStore(store) {
   writeStore(STORAGE_KEYS.listingCollabs, store);
 }
 
+function readCollabRequests() {
+  return readStore(STORAGE_KEYS.collabRequests, []);
+}
+
+function writeCollabRequests(requests) {
+  writeStore(STORAGE_KEYS.collabRequests, requests);
+}
+
 function approvedAgents() {
   return getAdminAgents().filter((agent) => agent.status === "approved");
 }
@@ -179,6 +188,21 @@ function syncBuyerListingCollabs(listingId, agents) {
     return keys.includes(key) ? { ...item, collabAgents: agents } : item;
   });
   writeStore(STORAGE_KEYS.buyerLiveListings, buyerListings);
+}
+
+function collabAgentFromRequest(request) {
+  return {
+    id: request.requesterAgentId || request.requesterEmail || request.id,
+    name: request.requesterName || request.buyerAgent || "Buyer agent",
+    email: request.requesterEmail || "",
+    phone: request.requesterPhone || "",
+    renNumber: request.requesterRenNumber || "",
+    agencyName: request.requesterAgency || "",
+    buyerAgent: request.buyerAgent || request.requesterName || "",
+    assignedAt: new Date().toISOString(),
+    assignedBy: "master",
+    sourceRequestId: request.id
+  };
 }
 
 function money(value) {
@@ -315,6 +339,26 @@ function buildListingAnalyticsLogs() {
   }));
 }
 
+function buildCollabRequestLogs() {
+  return readCollabRequests().map((request) => ({
+    id: `collab-request-${request.id}`,
+    type: "collab_request",
+    title: `Co-broke request: ${request.listingTitle || "Listing"}`,
+    participants: `${request.requesterName || "Buyer agent"} -> Admin/Master approval`,
+    property: request.listingTitle || request.listingId,
+    createdAt: request.updatedAt || request.createdAt || new Date().toISOString(),
+    summary: `${statusText(request.status)} - ${Number(request.matchScore || 0)}% match for ${request.requirements?.location || "buyer requirement"}.`,
+    requestId: request.id,
+    lines: [
+      { speaker: "Requester", text: `${request.requesterName || "Agent"} ${request.requesterEmail ? `<${request.requesterEmail}>` : ""}` },
+      { speaker: "Buyer agent", text: request.buyerAgent || request.requesterName || "Buyer agent" },
+      { speaker: "Requirement", text: `${request.requirements?.location || "Any location"}, ${request.requirements?.propertyType || "Property"}, up to ${money(request.requirements?.budget || 0)}` },
+      { speaker: "Reasons", text: (request.reasons || []).join(", ") || "Agent has a buyer and requested collaboration." },
+      { speaker: "Status", text: statusText(request.status) }
+    ]
+  }));
+}
+
 function getAllLogs() {
   return [
     ...buildAdminTaskLogs(),
@@ -322,7 +366,8 @@ function getAllLogs() {
     ...seedVoiceTranscripts,
     ...buildCobrokeLogs(),
     ...buildEscrowLogs(),
-    ...buildListingAnalyticsLogs()
+    ...buildListingAnalyticsLogs(),
+    ...buildCollabRequestLogs()
   ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
 
@@ -482,6 +527,57 @@ function assignMasterCollabAgent(listingId) {
   showToast(`${agent.name} assigned`);
 }
 
+function approveMasterCollabRequest(requestId) {
+  const requests = readCollabRequests();
+  const request = requests.find((item) => item.id === requestId);
+  if (!request) return;
+  const store = readListingCollabsStore();
+  const key = String(request.listingId);
+  const record = store[key] || {
+    listingId: key,
+    propertyTitle: request.listingTitle,
+    createdAt: new Date().toISOString(),
+    agents: []
+  };
+  const nextAgent = collabAgentFromRequest(request);
+  const agents = [
+    nextAgent,
+    ...(record.agents || []).filter((item) => item.id !== nextAgent.id)
+  ];
+  store[key] = {
+    ...record,
+    agents,
+    updatedAt: new Date().toISOString()
+  };
+  writeListingCollabsStore(store);
+  syncBuyerListingCollabs(key, agents);
+  writeCollabRequests(requests.map((item) => item.id === requestId ? {
+    ...item,
+    status: "approved",
+    reviewedBy: "master",
+    reviewedAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  } : item));
+  addAudit("collab_request_approved", `Owner approved ${nextAgent.name} for ${request.listingTitle}.`);
+  renderAll();
+  showToast("Collab request approved");
+}
+
+function rejectMasterCollabRequest(requestId) {
+  const requests = readCollabRequests();
+  const request = requests.find((item) => item.id === requestId);
+  writeCollabRequests(requests.map((item) => item.id === requestId ? {
+    ...item,
+    status: "rejected",
+    reviewedBy: "master",
+    reviewedAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  } : item));
+  addAudit("collab_request_rejected", `Owner rejected ${request?.requesterName || "agent"} for ${request?.listingTitle || requestId}.`);
+  renderAll();
+  showToast("Collab request rejected");
+}
+
 function switchSection(section) {
   state.section = section;
   els.navItems.forEach((item) => item.classList.toggle("active", item.dataset.section === section));
@@ -550,6 +646,23 @@ function renderPanopticon() {
       `).join("")}
     </div>
     ${selected.type === "analytics" ? renderMasterCollabControls(selected) : ""}
+    ${selected.type === "collab_request" ? renderMasterCollabRequestControls(selected) : ""}
+  `;
+}
+
+function renderMasterCollabRequestControls(selected) {
+  const request = readCollabRequests().find((item) => item.id === selected.requestId);
+  if (!request) return "";
+  const locked = request.status !== "pending_admin";
+  return `
+    <div class="terminal-board compact">
+      <div><span>REQUEST STATUS</span><strong>${escapeHtml(statusText(request.status))}</strong></div>
+      <div><span>MATCH</span><strong>${Number(request.matchScore || 0)}%</strong></div>
+    </div>
+    <div class="row-actions">
+      <button class="primary-button" data-master-approve-collab="${escapeHtml(request.id)}" type="button" ${locked ? "disabled" : ""}>Approve Collab</button>
+      <button class="ghost-button" data-master-reject-collab="${escapeHtml(request.id)}" type="button" ${locked ? "disabled" : ""}>Reject</button>
+    </div>
   `;
 }
 
@@ -837,7 +950,17 @@ function bindEvents() {
       return;
     }
     const assignTarget = event.target instanceof Element ? event.target.closest("[data-master-assign-listing]") : null;
-    if (assignTarget) assignMasterCollabAgent(assignTarget.dataset.masterAssignListing);
+    if (assignTarget) {
+      assignMasterCollabAgent(assignTarget.dataset.masterAssignListing);
+      return;
+    }
+    const approveCollabTarget = event.target instanceof Element ? event.target.closest("[data-master-approve-collab]") : null;
+    if (approveCollabTarget) {
+      approveMasterCollabRequest(approveCollabTarget.dataset.masterApproveCollab);
+      return;
+    }
+    const rejectCollabTarget = event.target instanceof Element ? event.target.closest("[data-master-reject-collab]") : null;
+    if (rejectCollabTarget) rejectMasterCollabRequest(rejectCollabTarget.dataset.masterRejectCollab);
   });
 
   window.addEventListener("storage", (event) => {
