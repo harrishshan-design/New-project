@@ -754,7 +754,6 @@ function renderPropertyCardMarkup(property, index) {
         <img src="${heroImage}" alt="${property.title}" loading="lazy">
         <span class="area-pill">${property.area}</span>
         <span class="score-pill score-pill--match">AI ${property.aiScore}% Match</span>
-        <span class="live-pill"><i class="fa-solid fa-fire"></i> ${property.liveNow} viewing now</span>
         <span class="photo-count-pill"><i class="fa-solid fa-images"></i> ${verified}/${total}</span>
       </div>
       <div class="card-body">
@@ -854,7 +853,7 @@ function renderVideoFeedMarkup(property) {
       <div class="video-feed-overlay">
         <div class="video-feed-topline">
           <span class="reel-pill">${getPropertyClipLabel(property)}</span>
-          <span class="reel-pill">${property.liveNow} watching now</span>
+          <span class="reel-pill">Verified listing</span>
         </div>
         <div class="video-feed-copy">
           <span class="video-feed-location">${property.area}</span>
@@ -1194,7 +1193,7 @@ function getPersonalizedReason(property, profile) {
 }
 
 function getWhatsAppLink(property, source = "dashboard") {
-  const text = `Hi, I want more details about ${property.title} in ${property.area}. I found it through the ${source} view on Klang Valley AI.`;
+  const text = `Hi, I want more details about ${property.title} in ${property.area}. I found it through the ${source} view on RealityGenius.`;
   return `https://wa.me/${property.whatsapp}?text=${encodeURIComponent(text)}`;
 }
 

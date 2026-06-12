@@ -78,7 +78,7 @@
     setLoading(false);
 
     const preferredRole = readPreferredRoleFromQuery();
-    highlightRole(["user", "agent", "admin", "master"].includes(preferredRole) ? preferredRole : "user");
+    highlightRole(["user", "agent"].includes(preferredRole) ? preferredRole : "user");
     form?.addEventListener("submit", submitLogin);
   }
 
