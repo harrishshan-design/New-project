@@ -3,6 +3,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const Stripe = require('stripe');
 
 const PORT = process.env.PORT || 3000;
 const DB_FILE = path.join(__dirname, 'kvai_database.json');
@@ -17,7 +18,22 @@ const SUPABASE_PROPERTY_MEDIA_BUCKET = readEnv('SUPABASE_PROPERTY_MEDIA_BUCKET')
 const TELEGRAM_BOT_TOKEN = readEnv('TELEGRAM_BOT_TOKEN');
 const TELEGRAM_WEBHOOK_SECRET = readEnv('TELEGRAM_WEBHOOK_SECRET');
 const ADMIN_API_KEY = readEnv('ADMIN_API_KEY');
+const STRIPE_SECRET_KEY = readEnv('STRIPE_SECRET_KEY');
+const STRIPE_WEBHOOK_SECRET = readEnv('STRIPE_WEBHOOK_SECRET');
+const STRIPE_STARTER_PRICE_ID = readEnv('STRIPE_STARTER_PRICE_ID');
+const STRIPE_PRO_PRICE_ID = readEnv('STRIPE_PRO_PRICE_ID');
+const STRIPE_ELITE_PRICE_ID = readEnv('STRIPE_ELITE_PRICE_ID');
+const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2026-02-25.clover' }) : null;
 const { OpenAI } = require('openai');
+const {
+    DEMO_IMAGES: AR_DEMO_IMAGES,
+    imageDataUrl: arImageDataUrl,
+    makeArProjectId,
+    normalizeStyle: normalizeArStyle,
+    parseMultipart: parseArMultipart,
+    stagingPrompt: arStagingPrompt,
+    tryOpenAiImageEdit
+} = require('./api/ar/_utils');
 let openai;
 if (HAS_OPENAI) {
     openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -473,6 +489,143 @@ function getBearerToken(req) {
     return normalizeHeaderValue(req.headers.authorization).replace(/^Bearer\s+/i, '').trim();
 }
 
+function stripePriceMap() {
+    return {
+        starter: STRIPE_STARTER_PRICE_ID,
+        pro: STRIPE_PRO_PRICE_ID,
+        elite: STRIPE_ELITE_PRICE_ID,
+        premium: STRIPE_ELITE_PRICE_ID
+    };
+}
+
+function normalizeStripePlan(plan = '') {
+    const normalized = String(plan || '').trim().toLowerCase();
+    if (normalized === 'premium') return 'elite';
+    if (['starter', 'pro', 'elite'].includes(normalized)) return normalized;
+    return '';
+}
+
+async function findUserByEmail(email = '') {
+    const cleanEmail = String(email || '').trim().toLowerCase();
+    if (!cleanEmail) return null;
+    const rows = await selectSupabaseRows(
+        'users',
+        `select=*&email=${supabaseEq(cleanEmail)}&limit=1`
+    );
+    return Array.isArray(rows) ? rows[0] || null : null;
+}
+
+async function updateAgentStripePlan({ email, userId, plan, status, customerId, subscriptionId, checkoutSessionId }) {
+    const cleanPlan = normalizeStripePlan(plan);
+    let user = null;
+    if (userId) {
+        const rows = await selectSupabaseRows('users', `select=*&id=${supabaseEq(userId)}&limit=1`);
+        user = Array.isArray(rows) ? rows[0] || null : null;
+    } else {
+        user = await findUserByEmail(email);
+    }
+    if (!user?.id || !cleanPlan) return null;
+    const currentProfile = typeof user.profile_json === 'string' ? safeJsonParse(user.profile_json, {}) : user.profile_json || {};
+    return patchSupabaseRow('users', user.id, {
+        profile_json: {
+            ...currentProfile,
+            subscription: {
+                planId: cleanPlan,
+                status,
+                provider: 'stripe',
+                customerId: customerId || currentProfile.subscription?.customerId || '',
+                subscriptionId: subscriptionId || currentProfile.subscription?.subscriptionId || '',
+                checkoutSessionId: checkoutSessionId || currentProfile.subscription?.checkoutSessionId || '',
+                updatedAt: new Date().toISOString()
+            }
+        },
+        updated_at: new Date().toISOString()
+    });
+}
+
+async function createStripeCheckoutSession(payload = {}, req = null) {
+    if (!stripe) return { __status: 500, error: 'STRIPE_SECRET_KEY is not configured.' };
+    const plan = normalizeStripePlan(payload.plan || payload.planId);
+    const price = stripePriceMap()[plan];
+    if (!plan) return { __status: 400, error: 'Choose starter, pro, or elite.' };
+    if (!price) return { __status: 500, error: `Stripe price id is missing for ${plan}.` };
+
+    let profile = null;
+    const token = req ? getBearerToken(req) : '';
+    if (token) {
+        try {
+            const authUser = await getSupabaseAuthUser(token);
+            profile = profileFromAuthUser(authUser, await findUserByEmail(authUser.email));
+        } catch {
+            profile = null;
+        }
+    }
+
+    const email = profile?.email || String(payload.email || '').trim().toLowerCase();
+    const origin = FRONTEND_URL || 'https://realitygenius.company';
+    const session = await stripe.checkout.sessions.create({
+        mode: 'subscription',
+        customer_email: email || undefined,
+        client_reference_id: profile?.id || undefined,
+        line_items: [{ price, quantity: 1 }],
+        success_url: `${origin}/agent.html?success=true&billing=success&plan=${encodeURIComponent(plan)}&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/agent.html?cancelled=true&billing=cancelled&plan=${encodeURIComponent(plan)}`,
+        metadata: {
+            plan,
+            email,
+            userId: profile?.id || ''
+        },
+        subscription_data: {
+            metadata: {
+                plan,
+                email,
+                userId: profile?.id || ''
+            }
+        }
+    });
+
+    return { id: session.id, url: session.url };
+}
+
+async function handleStripeWebhook(rawBody, signature) {
+    if (!stripe) return { __status: 500, error: 'STRIPE_SECRET_KEY is not configured.' };
+    if (!STRIPE_WEBHOOK_SECRET) return { __status: 500, error: 'STRIPE_WEBHOOK_SECRET is not configured.' };
+
+    let event;
+    try {
+        event = stripe.webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET);
+    } catch (error) {
+        return { __status: 400, error: `Stripe webhook signature failed: ${error.message}` };
+    }
+
+    if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
+        await updateAgentStripePlan({
+            email: session.customer_details?.email || session.metadata?.email,
+            userId: session.metadata?.userId || session.client_reference_id,
+            plan: session.metadata?.plan,
+            status: 'active',
+            customerId: session.customer,
+            subscriptionId: session.subscription,
+            checkoutSessionId: session.id
+        });
+    }
+
+    if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
+        const subscription = event.data.object;
+        await updateAgentStripePlan({
+            email: subscription.metadata?.email,
+            userId: subscription.metadata?.userId,
+            plan: subscription.metadata?.plan,
+            status: event.type === 'customer.subscription.deleted' ? 'cancelled' : subscription.status,
+            customerId: subscription.customer,
+            subscriptionId: subscription.id
+        });
+    }
+
+    return { received: true, type: event.type };
+}
+
 async function getSupabaseAuthUser(accessToken) {
     if (!SUPABASE_PROJECT_URL || !SUPABASE_SERVICE_ROLE_KEY) {
         throw new Error('Supabase Auth is not configured.');
@@ -787,6 +940,9 @@ function importedListingToPublicProperty(item) {
     const price = Number(item.price || 0);
     const propertyType = item.property_type || "Residential";
     const imageUrls = Array.isArray(item.image_urls) ? item.image_urls : [];
+    const agentProfile = typeof item.agent_profile_json === "string"
+        ? safeJsonParse(item.agent_profile_json, {})
+        : item.agent_profile_json || {};
     const image = imageUrls[0] || "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=80";
     const area = item.location || "Malaysia";
     return {
@@ -815,7 +971,7 @@ function importedListingToPublicProperty(item) {
             status: "needs_admin_verification"
         })),
         galleryCount: Math.max(1, imageUrls.length),
-        whatsapp: item.contact_phone || "",
+        whatsapp: agentProfile.phone || item.contact_phone || "",
         liveNow: 4,
         aiScore: Number(item.confidence_score || 70),
         confidenceScore: Number(item.confidence_score || 70),
@@ -833,8 +989,8 @@ function importedListingToPublicProperty(item) {
         createdAt: item.created_at,
         updatedAt: item.updated_at || item.created_at,
         mapLink: `https://www.google.com/maps/search/${encodeURIComponent(item.map_query || item.location || item.title || "Malaysia")}`,
-        agentName: "RealityGenius AI Import Desk",
-        agencyName: "RealityGenius"
+        agentName: agentProfile.name || "RealityGenius AI Import Desk",
+        agencyName: agentProfile.agencyName || "RealityGenius"
     };
 }
 
@@ -990,7 +1146,7 @@ function parseListingPrice(value) {
 
 function normalizeAgentListingStatus(value = 'pending_qc') {
     const normalized = String(value || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
-    if (['approve', 'approved'].includes(normalized)) return 'live';
+    if (['approve', 'approved'].includes(normalized)) return 'approved';
     if (normalized === 'live') return 'live';
     if (normalized === 'reject' || normalized === 'rejected') return 'rejected';
     return 'pending_qc';
@@ -1043,8 +1199,8 @@ function agentListingToPublicProperty(item) {
     return {
         id: numericPublicId(`agent-${item.id}`),
         agentListingId: item.id,
-        source: "agent_live_upload",
-        badge: "live-agent",
+        source: "admin_approved_agent_listing",
+        badge: "verified-agent",
         title: item.title || "Agent Property Listing",
         area,
         location: item.address || area,
@@ -1128,6 +1284,7 @@ async function saveImportedListing(rawMessage, meta, extraction) {
         source: "telegram",
         source_chat_id: meta.chatId,
         source_chat_title: meta.chatTitle,
+        source_sender_id: meta.senderId,
         source_message_id: meta.messageId,
         dedup_hash: dedupHash,
         original_text: meta.text,
@@ -1265,6 +1422,94 @@ function isTelegramDoneText(text = '') {
 
 function isTelegramNewListingText(text = '') {
     return /^(\/newlisting|\/new|new listing|listing baru)$/i.test(String(text || '').trim());
+}
+
+function isValidProfileEmail(value = '') {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+}
+
+function cleanRenId(value = '') {
+    const text = String(value || '').trim();
+    if (/^skip$/i.test(text)) return '';
+    return text;
+}
+
+async function getOrCreateTelegramAgentProfile(meta) {
+    if (!meta.senderId) return null;
+    const rows = await selectSupabaseRows(
+        'telegram_agent_profiles',
+        `select=*&telegram_user_id=${supabaseEq(meta.senderId)}&limit=1`
+    );
+    if (Array.isArray(rows) && rows[0]) return rows[0];
+    return insertSupabaseRow('telegram_agent_profiles', {
+        telegram_user_id: meta.senderId,
+        chat_id: meta.chatId,
+        chat_title: meta.chatTitle || null,
+        username: meta.senderUsername || null,
+        onboarding_step: 'full_name',
+        updated_at: new Date().toISOString()
+    });
+}
+
+async function updateTelegramAgentProfile(profile, updates) {
+    return patchSupabaseRow('telegram_agent_profiles', profile.id, {
+        ...updates,
+        updated_at: new Date().toISOString()
+    });
+}
+
+async function handleTelegramAgentOnboarding(meta) {
+    const profile = await getOrCreateTelegramAgentProfile(meta);
+    if (!profile || profile.onboarding_step === 'complete') return null;
+
+    const text = String(meta.text || '').trim();
+    if (!text || /^\/start\b/i.test(text)) {
+        await sendTelegramMessage(meta.chatId, 'Welcome to RealityGenius. Before your first listing upload, what is your full name?');
+        return { ok: true, onboarding: true, step: profile.onboarding_step };
+    }
+
+    if (profile.onboarding_step === 'full_name') {
+        if (text.length < 2) {
+            await sendTelegramMessage(meta.chatId, 'Please send your full name first.');
+            return { ok: true, onboarding: true, step: 'full_name' };
+        }
+        await updateTelegramAgentProfile(profile, { full_name: text, onboarding_step: 'email' });
+        await sendTelegramMessage(meta.chatId, 'Thanks. What is your email address?');
+        return { ok: true, onboarding: true, step: 'email' };
+    }
+
+    if (profile.onboarding_step === 'email') {
+        if (!isValidProfileEmail(text)) {
+            await sendTelegramMessage(meta.chatId, 'Please send a valid email address, for example name@example.com.');
+            return { ok: true, onboarding: true, step: 'email' };
+        }
+        await updateTelegramAgentProfile(profile, { email: text.toLowerCase(), onboarding_step: 'phone' });
+        await sendTelegramMessage(meta.chatId, 'Got it. What is your phone number?');
+        return { ok: true, onboarding: true, step: 'phone' };
+    }
+
+    if (profile.onboarding_step === 'phone') {
+        const phone = cleanPhone(text);
+        if (!phone) {
+            await sendTelegramMessage(meta.chatId, 'Please send a valid phone number. Example: +60123456789.');
+            return { ok: true, onboarding: true, step: 'phone' };
+        }
+        await updateTelegramAgentProfile(profile, { phone, onboarding_step: 'ren_id' });
+        await sendTelegramMessage(meta.chatId, 'Last step: send your REN ID. If you do not have it now, type skip.');
+        return { ok: true, onboarding: true, step: 'ren_id' };
+    }
+
+    if (profile.onboarding_step === 'ren_id') {
+        await updateTelegramAgentProfile(profile, {
+            ren_id: cleanRenId(text) || null,
+            onboarding_step: 'complete',
+            onboarding_completed_at: new Date().toISOString()
+        });
+        await sendTelegramMessage(meta.chatId, 'Profile received. Now upload your listing: send at least 4 property photos first, then click Done photos.');
+        return { ok: true, onboarding: true, step: 'complete' };
+    }
+
+    return null;
 }
 
 function telegramInlineKeyboard(buttons = []) {
@@ -1523,6 +1768,12 @@ async function handleTelegramWebhook(update) {
     if (!meta.updateId) return { ok: true, ignored: true, reason: "No Telegram update id." };
 
     const rawMessage = await saveRawTelegramMessage(meta);
+    const onboardingResponse = await handleTelegramAgentOnboarding(meta);
+    if (onboardingResponse) {
+        await patchSupabaseRow("telegram_raw_messages", rawMessage.id, { processed_status: "agent_onboarding" });
+        return onboardingResponse;
+    }
+
     const guidedResponse = await handleGuidedTelegramListing(meta, rawMessage);
     if (guidedResponse) return guidedResponse;
 
@@ -1546,10 +1797,116 @@ async function listAdminAiImports(params = {}) {
             "limit=100"
         ].join("&")
     );
+    const items = await attachTelegramProfilesToImports((rows || []).filter(hasReviewableListingSignal));
     return {
         date: range.date,
-        items: (rows || []).filter(hasReviewableListingSignal)
+        items
     };
+}
+
+async function attachTelegramProfilesToImports(items = []) {
+    const senderIds = [...new Set(items.map((item) => item.source_sender_id).filter(Boolean))];
+    if (!senderIds.length) return items;
+    try {
+        const profileRows = await selectSupabaseRows(
+            "telegram_agent_profiles",
+            `select=*&telegram_user_id=in.(${senderIds.map((id) => `"${String(id).replace(/"/g, '\\"')}"`).join(",")})`
+        );
+        const profilesBySender = new Map((profileRows || []).map((profile) => [String(profile.telegram_user_id), profile]));
+        return items.map((item) => ({
+            ...item,
+            telegram_profile: profilesBySender.get(String(item.source_sender_id)) || null
+        }));
+    } catch (error) {
+        console.error("[ADMIN AI IMPORTS] Unable to attach Telegram profiles:", error.message);
+        return items;
+    }
+}
+
+function pickAgentProfileEdits(payload = {}) {
+    const edits = payload.agentProfile || payload.profile || {};
+    const cleanEmail = String(edits.email || "").trim().toLowerCase();
+    return {
+        full_name: String(edits.fullName || edits.full_name || "").trim(),
+        email: cleanEmail,
+        phone: cleanPhone(edits.phone || ""),
+        ren_id: /^skip$/i.test(String(edits.renId || edits.ren_id || "").trim()) ? "" : String(edits.renId || edits.ren_id || "").trim(),
+        agency_name: String(edits.agencyName || edits.agency_name || "RealityGenius Telegram Desk").trim()
+    };
+}
+
+function isValidEmailAddress(value = "") {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+}
+
+async function resolveImportTelegramProfile(importRow) {
+    if (!importRow?.source_sender_id) return null;
+    const rows = await selectSupabaseRows(
+        "telegram_agent_profiles",
+        `select=*&telegram_user_id=${supabaseEq(importRow.source_sender_id)}&limit=1`
+    );
+    return Array.isArray(rows) ? rows[0] || null : null;
+}
+
+async function createOrUpdateAgentFromTelegramProfile(importRow, payload) {
+    const telegramProfile = await resolveImportTelegramProfile(importRow);
+    const edits = pickAgentProfileEdits(payload);
+    const name = edits.full_name || telegramProfile?.full_name || "";
+    const email = edits.email || telegramProfile?.email || "";
+    const phone = edits.phone || telegramProfile?.phone || importRow.contact_phone || "";
+    const renId = edits.ren_id || telegramProfile?.ren_id || "";
+    const agencyName = edits.agency_name || "RealityGenius Telegram Desk";
+
+    if (!name || name.length < 2) throw new Error("Agent full name is required before approving.");
+    if (!isValidEmailAddress(email)) throw new Error("Valid agent email is required before approving.");
+    if (!phone || phone.length < 7) throw new Error("Agent phone is required before approving.");
+
+    if (telegramProfile?.id) {
+        await patchSupabaseRow("telegram_agent_profiles", telegramProfile.id, {
+            full_name: name,
+            email,
+            phone,
+            ren_id: renId || null,
+            onboarding_step: "complete",
+            onboarding_completed_at: telegramProfile.onboarding_completed_at || new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        });
+    }
+
+    const existing = await selectSupabaseRows(
+        "users",
+        `select=*&email=${supabaseEq(email)}&limit=1`
+    );
+    const profileJson = {
+        source: "telegram_admin_qc",
+        telegramUserId: importRow.source_sender_id || telegramProfile?.telegram_user_id || null,
+        telegramProfileId: telegramProfile?.id || null,
+        sourceChatId: importRow.source_chat_id || null,
+        sourceChatTitle: importRow.source_chat_title || null,
+        approvedImportId: importRow.id,
+        approvedAt: new Date().toISOString()
+    };
+    const userPayload = {
+        name,
+        email,
+        phone,
+        role: "agent",
+        status: "active",
+        agency_name: agencyName,
+        ren_id: renId || null,
+        profile_json: profileJson,
+        updated_at: new Date().toISOString()
+    };
+
+    const user = Array.isArray(existing) && existing[0]
+        ? await patchSupabaseRow("users", existing[0].id, userPayload)
+        : await insertSupabaseRow("users", {
+            ...userPayload,
+            password_hash: `telegram-qc:${crypto.randomUUID()}`,
+            created_at: new Date().toISOString()
+        });
+
+    return { user, telegramProfile, cleanedProfile: { name, email, phone, renId, agencyName } };
 }
 
 function pickImportEdits(payload = {}) {
@@ -1592,10 +1949,27 @@ async function reviewAiImport(payload) {
     };
     if (!(action in statusByAction)) return { error: "Invalid action." };
 
+    const currentRows = await selectSupabaseRows(
+        "ai_imported_listings",
+        `select=*&id=${supabaseEq(id)}&limit=1`
+    );
+    const currentImport = Array.isArray(currentRows) ? currentRows[0] : null;
+    if (!currentImport) return { __status: 404, error: "AI import was not found." };
+
+    let agentApproval = null;
+    if (["approve", "approved", "live"].includes(action)) {
+        agentApproval = await createOrUpdateAgentFromTelegramProfile(currentImport, payload);
+    }
+
     const updates = {
         ...pickImportEdits(payload),
         updated_at: new Date().toISOString()
     };
+    if (agentApproval?.user) {
+        updates.approved_agent_user_id = agentApproval.user.id;
+        updates.telegram_profile_id = agentApproval.telegramProfile?.id || null;
+        updates.agent_profile_json = agentApproval.cleanedProfile;
+    }
     const status = statusByAction[action];
     if (status) {
         updates.status = status;
@@ -1606,10 +1980,10 @@ async function reviewAiImport(payload) {
     const row = await patchSupabaseRow("ai_imported_listings", id, updates);
     await createAdminNotification(
         `AI import ${status || "edited"}`,
-        `${row?.title || "Imported listing"} is now ${status || "edited"}.`,
-        { importId: id, action }
+        `${row?.title || "Imported listing"} is now ${status || "edited"}${agentApproval?.user ? ` for ${agentApproval.user.name}` : ""}.`,
+        { importId: id, action, agentUserId: agentApproval?.user?.id || null }
     );
-    return { item: row };
+    return { item: { ...row, telegram_profile: agentApproval?.telegramProfile || null, approved_agent: agentApproval?.user || null } };
 }
 
 async function createAgentListing(payload = {}) {
@@ -1727,7 +2101,12 @@ const server = http.createServer(async (req, res) => {
                     "/api/admin/listings",
                     "/api/admin/listings/review",
                     "/api/admin/ai-imports?date=YYYY-MM-DD",
-                    "/api/properties"
+                    "/api/create-checkout-session",
+                    "/api/stripe/create-checkout-session",
+                    "/api/stripe/webhook",
+                    "/api/properties",
+                    "/api/ar/generate",
+                    "/api/ar/save"
                 ],
                 config: {
                     supabase: hasSupabaseConfig(),
@@ -1740,6 +2119,7 @@ const server = http.createServer(async (req, res) => {
                     guidedTelegramListingFlow: true,
                     dailyAiImportCalendar: true,
                     adminApiKey: Boolean(ADMIN_API_KEY),
+                    stripe: Boolean(stripe),
                     frontendUrl: Boolean(FRONTEND_URL)
                 },
                 checkedAt: new Date().toISOString()
@@ -1754,6 +2134,10 @@ const server = http.createServer(async (req, res) => {
 
         if (url === '/api/auth/me') {
             return getAuthenticatedProfile(req);
+        }
+
+        if (url === '/api/create-checkout-session' || url === '/api/stripe/create-checkout-session') {
+            return createStripeCheckoutSession(payload, req);
         }
 
         if (url === '/api/admin/ai-imports') {
@@ -1786,6 +2170,52 @@ const server = http.createServer(async (req, res) => {
 
         if (url === '/api/properties') {
             return listPublicProperties();
+        }
+
+        if (url === '/api/ar/generate') {
+            const parsed = payload.__multipart || { fields: payload, files: {} };
+            const style = normalizeArStyle(parsed.fields?.style || payload.style);
+            const file = parsed.files?.image;
+
+            if (!file || !file.buffer || !file.buffer.length) {
+                return { __status: 400, error: "Upload a room image first." };
+            }
+
+            let imageUrl = "";
+            let demoMode = true;
+            let aiError = "";
+            try {
+                imageUrl = await tryOpenAiImageEdit(file, style);
+                demoMode = !imageUrl;
+            } catch (error) {
+                aiError = error.message || "AI staging failed.";
+            }
+
+            if (!imageUrl) imageUrl = AR_DEMO_IMAGES[style];
+
+            return {
+                id: makeArProjectId(),
+                imageUrl,
+                sourceImageUrl: arImageDataUrl(file).slice(0, 400000),
+                style,
+                prompt: arStagingPrompt(style),
+                demoMode,
+                aiError,
+                createdAt: new Date().toISOString()
+            };
+        }
+
+        if (url === '/api/ar/save') {
+            return {
+                ok: true,
+                id: payload.id || makeArProjectId(),
+                imageUrl: payload.imageUrl || "",
+                style: payload.style || "modern luxury",
+                prompt: payload.prompt || "",
+                furnitureModel: payload.furnitureModel || "/models/sofa.glb",
+                storage: "node-memory-mvp",
+                savedAt: new Date().toISOString()
+            };
         }
         
         // ------------- LOCATION FALLBACK SEARCH -------------
@@ -1990,17 +2420,28 @@ Rank and explain best 3 properties.`;
     }
 
     if (req.method === 'POST') {
-        let body = '';
-        const maxBodyBytes = routePath === '/api/agent/listings' ? 35 * 1024 * 1024 : 1024 * 1024;
+        const chunks = [];
+        let bodySize = 0;
+        const isArGenerate = routePath === '/api/ar/generate';
+        const maxBodyBytes = isArGenerate || routePath === '/api/agent/listings' ? 35 * 1024 * 1024 : 1024 * 1024;
         req.on('data', chunk => {
-            body += chunk.toString();
-            if (body.length > maxBodyBytes) {
+            bodySize += chunk.length;
+            if (bodySize > maxBodyBytes) {
                 req.destroy();
+                return;
             }
+            chunks.push(chunk);
         });
         req.on('end', async () => {
             try {
-                const payload = body ? JSON.parse(body) : {};
+                const rawBody = Buffer.concat(chunks);
+                if (routePath === '/api/stripe/webhook') {
+                    const response = await handleStripeWebhook(rawBody, normalizeHeaderValue(req.headers['stripe-signature']));
+                    return sendJson(response.__status || (response.error ? 400 : 200), response);
+                }
+                const payload = isArGenerate
+                    ? { __multipart: parseArMultipart(rawBody, req.headers['content-type']) }
+                    : (rawBody.length ? JSON.parse(rawBody.toString('utf8')) : {});
                 const response = await routeManager(routePath, payload);
                 
                 if (response) {
