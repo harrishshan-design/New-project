@@ -39,12 +39,12 @@ const AGENT_PLAN_TIERS = [
     features: ["Instant lead alerts", "Weekly performance report", "Lead tracking", "Follow-up reminders"]
   },
   {
-    id: "premium",
-    name: "Premium",
-    price: 99,
+    id: "elite",
+    name: "Elite Agent",
+    price: 79,
     tagline: "For agents who want the full automation engine.",
     badge: "Best Value",
-    features: ["Premium listing boost", "Auto marketing captions", "Priority buyer routing", "Advanced reports"]
+    features: ["Premium listing boost", "Auto marketing captions", "Priority buyer routing", "Friday Auction Night slot"]
   }
 ];
 
@@ -368,6 +368,9 @@ const els = {
   billingModal: document.getElementById("billingModal"),
   leadForm: document.getElementById("leadForm"),
   listingForm: document.getElementById("listingForm"),
+  listingQcScore: document.getElementById("listingQcScore"),
+  listingQcChecklist: document.getElementById("listingQcChecklist"),
+  listingSubmitButton: document.getElementById("listingSubmitButton"),
   documentVaultForm: document.getElementById("documentVaultForm"),
   itineraryForm: document.getElementById("itineraryForm"),
   cobrokeForm: document.getElementById("cobrokeForm"),
@@ -399,7 +402,18 @@ const els = {
   listingArLink: document.getElementById("listingArLink"),
   listingExcelInput: document.getElementById("listingExcelInput"),
   listingImportStatus: document.getElementById("listingImportStatus"),
+  listingHubStatus: document.getElementById("listingHubStatus"),
   downloadListingTemplate: document.getElementById("downloadListingTemplate"),
+  downloadListingTemplateHub: document.getElementById("downloadListingTemplateHub"),
+  listingExcelQuickInput: document.getElementById("listingExcelQuickInput"),
+  quickDeviceListingUpload: document.getElementById("quickDeviceListingUpload"),
+  overviewJumpListings: document.getElementById("overviewJumpListings"),
+  overviewDownloadListingTemplate: document.getElementById("overviewDownloadListingTemplate"),
+  overviewListingExcelInput: document.getElementById("overviewListingExcelInput"),
+  overviewDeviceListingUpload: document.getElementById("overviewDeviceListingUpload"),
+  overviewListingStatus: document.getElementById("overviewListingStatus"),
+  stepOneUploadListing: document.getElementById("stepOneUploadListing"),
+  stepOneOpenListings: document.getElementById("stepOneOpenListings"),
   vaultBuyerName: document.getElementById("vaultBuyerName"),
   vaultBuyerPhone: document.getElementById("vaultBuyerPhone"),
   vaultSalary: document.getElementById("vaultSalary"),
@@ -880,7 +894,7 @@ function listingToBuyerProperty(listing) {
   return {
     id: Number(listing.id) || Date.now(),
     agentListingId: listing.id,
-    source: "agent_live_upload",
+    source: "agent_pending_upload",
     title: listing.title,
     area: listing.area,
     location: listing.address || `${listing.area}, Malaysia`,
@@ -901,11 +915,14 @@ function listingToBuyerProperty(listing) {
     yield: Number(listing.yield || 4.3),
     growth: Number(listing.growth || 5.2),
     summary: `${listing.propertyType || "Property"} in ${listing.area}. Agent-uploaded listing with ${gallery.length}/${LISTING_RECOMMENDED_PHOTO_COUNT} photos ready for admin QC.`,
-    vibe: "Fresh agent-uploaded listing",
-    tags: [type, slugify(listing.area), "agent-live"].filter(Boolean),
-    badge: "live-agent",
+    vibe: "Waiting for RealityGenius admin QC",
+    tags: [type, slugify(listing.area), "pending-qc"].filter(Boolean),
+    badge: "pending-agent",
     verifiedType: "agent",
-    verificationSource: "agent",
+    verificationSource: "agent_submitted",
+    adminApproved: false,
+    approvalStatus: "pending_qc",
+    liveStatus: "pending_admin_review",
     confidenceScore: Number(listing.confidenceScore || 88),
     freshnessStatus: "fresh",
     createdAt,
@@ -913,7 +930,7 @@ function listingToBuyerProperty(listing) {
     mapLink: `https://www.google.com/maps/search/${encodeURIComponent(listing.address || listing.area || listing.title)}`,
     modelUrl: listing.modelUrl || listing.arLink || "",
     arLink: listing.arLink || "",
-    agentId: agent.id || "agent-live",
+    agentId: agent.id || "agent-pending",
     agentName: agent.name || "RealityGenius Agent",
     agencyName: agent.agencyName || "RealityGenius Agent Network"
   };
@@ -1240,6 +1257,11 @@ function goToSection(section) {
   if (workArea) workArea.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+function openListingDeviceUpload() {
+  openModal("listingModal");
+  setTimeout(() => els.listingDevicePhotos?.click(), 120);
+}
+
 function renderWorkspace() {
   renderGlobalPlatformAlert();
   renderLiveAgentProfile();
@@ -1254,7 +1276,7 @@ function renderWorkspace() {
   renderLeakProofDealBoard();
   renderClientList();
   renderCommissionTable();
-  renderListingGrid();
+  renderCleanListingGrid();
   renderNotifications();
   renderDocumentVault();
   renderItineraryBuilder();
@@ -1562,14 +1584,14 @@ function renderListingGrid() {
       <article class="listing-empty-state">
         <i class="fa-solid fa-cloud-arrow-up"></i>
         <strong>No listings yet</strong>
-        <p>Submit a listing with at least ${LISTING_MIN_PHOTO_COUNT} photos. It goes to admin QC first, then appears in buyer search after approval.</p>
+        <p>Start above with the Excel template, upload an Excel/CSV file, or add a listing from your computer with at least ${LISTING_MIN_PHOTO_COUNT} photos. Every listing goes to admin QC before buyer visibility.</p>
         <button class="primary-button" id="emptyPostLiveListing" type="button">
           <i class="fa-solid fa-plus"></i>
-          Submit First Listing
+          Add from device / computer
         </button>
       </article>
     `;
-    document.getElementById("emptyPostLiveListing")?.addEventListener("click", () => openModal("listingModal"));
+    document.getElementById("emptyPostLiveListing")?.addEventListener("click", openListingDeviceUpload);
     return;
   }
 
@@ -1651,7 +1673,101 @@ function renderNotifications() {
         <p>${item.message}</p>
         <time>${new Date(item.createdAt).toLocaleString("en-MY", { dateStyle: "medium", timeStyle: "short" })}</time>
       </article>
-    `).join("") || `<div class="empty-state">No real agent notifications yet.</div>`;
+  `).join("") || `<div class="empty-state">No real agent notifications yet.</div>`;
+}
+
+function listingStatusView(listing) {
+  if (listing.status === "Live" && isAdminApprovedListing(listing)) {
+    return { label: "Live", className: "live", note: "Visible to buyers", icon: "fa-circle-check" };
+  }
+  if (listing.status === "Pending QC") {
+    return { label: "Pending QC", className: "pending", note: "Admin review before buyer visibility", icon: "fa-user-shield" };
+  }
+  if (listing.status === "Reserved") {
+    return { label: "Reserved", className: "reserved", note: "Paused from active buyer push", icon: "fa-bookmark" };
+  }
+  if (listing.status === "Rejected") {
+    return { label: "Needs Fix", className: "rejected", note: "Update details and resubmit", icon: "fa-circle-exclamation" };
+  }
+  return { label: "Draft", className: "draft", note: "Private until submitted", icon: "fa-pen" };
+}
+
+function renderCleanListingGrid() {
+  if (!state.listings.length) {
+    els.listingGrid.innerHTML = `
+      <article class="listing-empty-state">
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+        <strong>No listings yet</strong>
+        <p>Start above with the Excel template, upload an Excel/CSV file, or add a listing from your computer with at least ${LISTING_MIN_PHOTO_COUNT} photos. Every listing goes to admin QC before buyer visibility.</p>
+        <button class="primary-button" id="emptyPostLiveListing" type="button">
+          <i class="fa-solid fa-plus"></i>
+          Add from device / computer
+        </button>
+      </article>
+    `;
+    document.getElementById("emptyPostLiveListing")?.addEventListener("click", openListingDeviceUpload);
+    return;
+  }
+
+  els.listingGrid.innerHTML = state.listings.map(getEnhancedListing).map((listing) => {
+    const media = getGalleryStats(listing);
+    const analytics = listingAnalyticsFor(listing);
+    const status = listingStatusView(listing);
+    const statusAction = listing.status === "Live"
+      ? "Mark Reserved"
+      : listing.status === "Reserved"
+      ? "Move to Draft"
+      : listing.status === "Pending QC"
+      ? "Withdraw to Draft"
+      : listing.status === "Rejected"
+      ? "Move to Draft"
+      : "Submit to Admin";
+
+    return `
+      <article class="listing-card listing-card-clean">
+        <div class="listing-media">
+          <img src="${escapeAttr(listing.image)}" alt="${escapeAttr(listing.title)}" loading="lazy">
+          <span class="listing-status-pill ${status.className}">
+            <i class="fa-solid ${status.icon}"></i>
+            ${status.label}
+          </span>
+          <span class="listing-photo-count">${media.verified}/${media.total} photos</span>
+        </div>
+        <div class="listing-head listing-head-clean">
+          <div>
+            <div class="listing-title">${escapeHtml(listing.title)}</div>
+            <div class="subtext">${escapeHtml(listing.area)} · ${escapeHtml(listing.propertyType || "Property")}</div>
+          </div>
+          <div class="listing-price">${money(listing.price)}</div>
+        </div>
+        <p class="listing-clean-address">${escapeHtml(listing.address || `${listing.area}, Malaysia`)}</p>
+        <div class="listing-clean-note ${status.className}">
+          <i class="fa-solid ${status.icon}"></i>
+          <span>${status.note}</span>
+        </div>
+        <div class="listing-clean-stats">
+          <span><strong>${Number(analytics.views || 0)}</strong> views</span>
+          <span><strong>${Number(analytics.contacts || 0)}</strong> contacts</span>
+          <span><strong>${Number(analytics.bookings || 0)}</strong> bookings</span>
+          <span><strong>${media.verified >= LISTING_MIN_PHOTO_COUNT ? "Ready" : `${LISTING_MIN_PHOTO_COUNT - media.verified} missing`}</strong> photos</span>
+        </div>
+        <div class="listing-clean-actions">
+          <button class="ghost-button" data-action="toggle-listing-status" data-id="${listing.id}" type="button">
+            <i class="fa-solid fa-repeat"></i>
+            ${statusAction}
+          </button>
+          ${listing.imageDriveLink ? `<button class="ghost-button" data-action="open-listing-image" data-id="${listing.id}" type="button">
+            <i class="fa-brands fa-google-drive"></i>
+            Image
+          </button>` : ""}
+          ${listing.arLink ? `<button class="ghost-button" data-action="open-listing-ar" data-id="${listing.id}" type="button">
+            <i class="fa-solid fa-cube"></i>
+            AR
+          </button>` : ""}
+        </div>
+      </article>
+    `;
+  }).join("");
 }
 
 function pushNotifications(title, message) {
@@ -1724,6 +1840,11 @@ function agentApiUrl(path) {
   return `${base}${normalizedPath}`;
 }
 
+function stripeCheckoutApiUrl() {
+  if (window.location.protocol === "file:") return "http://localhost:3000/api/stripe/create-checkout-session";
+  return `${window.location.origin}/api/stripe/create-checkout-session`;
+}
+
 function renderAgentBilling() {
   const plan = activePlanTier();
   const activeAt = state.subscription?.startedAt
@@ -1748,7 +1869,7 @@ function renderAgentBilling() {
   els.agentTierGrid.innerHTML = AGENT_PLAN_TIERS.map((tier) => {
     const isActive = tier.id === plan.id && ["live_active", "active"].includes(state.subscription?.status);
     return `
-      <article class="billing-tier-card ${tier.id === "premium" ? "recommended" : ""} ${isActive ? "active" : ""}">
+      <article class="billing-tier-card ${tier.id === "elite" ? "recommended" : ""} ${isActive ? "active" : ""}">
         <div class="billing-tier-head">
           <span>${escapeHtml(tier.badge)}</span>
           ${isActive ? `<strong><i class="fa-solid fa-circle-check"></i> Active</strong>` : ""}
@@ -1763,7 +1884,7 @@ function renderAgentBilling() {
           ${tier.features.map((feature) => `<li><i class="fa-solid fa-check"></i>${escapeHtml(feature)}</li>`).join("")}
         </ul>
         <button class="${isActive ? "ghost-button" : "primary-button"} full-width" data-action="select-agent-plan" data-plan-id="${escapeAttr(tier.id)}" type="button">
-          ${isActive ? "Current Plan" : tier.id === "premium" ? "Upgrade to Premium Agent" : `Choose ${escapeHtml(tier.name)}`}
+          ${isActive ? "Current Plan" : tier.id === "elite" ? "Upgrade to Elite Agent" : `Choose ${escapeHtml(tier.name)}`}
         </button>
       </article>
     `;
@@ -1793,7 +1914,7 @@ async function activateAgentPlan(planId) {
   showToast(`Opening ${plan.name} checkout`);
 
   try {
-    const response = await fetch(agentApiUrl("/api/stripe/create-checkout-session"), {
+    const response = await fetch(stripeCheckoutApiUrl(), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -2351,6 +2472,91 @@ function updateListingDevicePhotoStatus(message, tone = "neutral") {
   els.listingDevicePhotoStatus.textContent = message;
 }
 
+function countListingFormPhotos() {
+  const bulkLinks = splitPhotoLinks(els.listingBulkPhotoLinks?.value || "");
+  const extraLinks = splitPhotoLinks(els.listingExtraPhotoLinks?.value || "");
+  const slotLinks = [
+    els.listingImageLink?.value,
+    els.listingTopViewLink?.value,
+    els.listingRoom1Link?.value,
+    els.listingBathroomLink?.value,
+    els.listingKitchenLink?.value
+  ].filter((value) => String(value || "").trim());
+  return Math.min(
+    LISTING_RECOMMENDED_PHOTO_COUNT,
+    listingDevicePhotos.length || [...slotLinks, ...extraLinks, ...bulkLinks].length
+  );
+}
+
+function updateListingSubmitCopy() {
+  if (!els.listingSubmitButton || !els.listingStatus) return;
+  const status = els.listingStatus.value;
+  const label = status === "Draft" ? "Save Draft" : status === "Reserved" ? "Save Reserved Listing" : "Submit for QC";
+  const icon = status === "Draft" ? "fa-floppy-disk" : status === "Reserved" ? "fa-bookmark" : "fa-shield-circle-check";
+  els.listingSubmitButton.innerHTML = `<i class="fa-solid ${icon}"></i>${label}`;
+}
+
+function updateListingQcChecklist() {
+  if (!els.listingQcChecklist) return;
+
+  const price = parseMoneyValue(els.listingPrice?.value);
+  const photoCount = countListingFormPhotos();
+  const items = [
+    {
+      label: "Title",
+      ready: Boolean(els.listingTitle?.value.trim())
+    },
+    {
+      label: "Area",
+      ready: Boolean(els.listingArea?.value.trim())
+    },
+    {
+      label: "Price",
+      ready: Number.isFinite(price) && price > 0
+    },
+    {
+      label: `${photoCount}/${LISTING_MIN_PHOTO_COUNT} photos`,
+      ready: photoCount >= LISTING_MIN_PHOTO_COUNT
+    }
+  ];
+  const readyCount = items.filter((item) => item.ready).length;
+
+  els.listingQcChecklist.innerHTML = items.map((item) => `
+    <div class="listing-qc-item ${item.ready ? "ready" : ""}">
+      <i class="fa-solid ${item.ready ? "fa-circle-check" : "fa-circle-exclamation"}"></i>
+      <span>${escapeHtml(item.label)}</span>
+    </div>
+  `).join("");
+
+  if (els.listingQcScore) {
+    els.listingQcScore.textContent = readyCount === items.length
+      ? "Ready for admin QC"
+      : `${readyCount}/${items.length} ready for QC`;
+  }
+  updateListingSubmitCopy();
+}
+
+function normalizeListingPriceInput() {
+  if (!els.listingPrice) return;
+  const price = parseMoneyValue(els.listingPrice.value);
+  if (Number.isFinite(price) && price > 0) {
+    els.listingPrice.value = `RM ${Math.round(price).toLocaleString("en-MY")}`;
+  }
+  updateListingQcChecklist();
+}
+
+function applyListingSmartDefaults() {
+  const area = els.listingArea?.value.trim();
+  const type = els.listingPropertyType?.value.trim();
+  if (area && type && els.listingTitle && !els.listingTitle.value.trim()) {
+    els.listingTitle.value = `${area} ${type}`;
+  }
+  if (area && els.listingAddress && !els.listingAddress.value.trim()) {
+    els.listingAddress.value = `${area}, Malaysia`;
+  }
+  updateListingQcChecklist();
+}
+
 function renderListingDevicePhotoPreview() {
   if (!els.listingDevicePhotoPreview) return;
 
@@ -2473,10 +2679,12 @@ async function handleListingDevicePhotos(event) {
   try {
     listingDevicePhotos = await Promise.all(selected.map((file, index) => compressListingDevicePhoto(file, index)));
     renderListingDevicePhotoPreview();
+    updateListingQcChecklist();
     showToast(`${selected.length} photo${selected.length === 1 ? "" : "s"} ready${imageFiles.length > LISTING_DEVICE_PHOTO_LIMIT ? ". First 10 used" : ""}`);
   } catch (error) {
     listingDevicePhotos = [];
     renderListingDevicePhotoPreview();
+    updateListingQcChecklist();
     showToast(error.message || "Unable to prepare photos");
   }
 }
@@ -2501,7 +2709,7 @@ async function addListing(event) {
   const result = buildListingFromData({
     title: els.listingTitle.value.trim(),
     area: els.listingArea.value.trim(),
-    price: Number(els.listingPrice.value),
+    price: parseMoneyValue(els.listingPrice.value),
     status: els.listingStatus.value,
     property_type: els.listingPropertyType.value.trim(),
     address: els.listingAddress.value.trim(),
@@ -2551,10 +2759,11 @@ async function addListing(event) {
   els.listingForm.reset();
   if (els.listingBulkPhotoLinks) els.listingBulkPhotoLinks.value = "";
   resetListingDevicePhotos();
+  updateListingQcChecklist();
   closeModal("listingModal");
   persistAll();
   renderWorkspace();
-  showToast(reviewCount ? "Saved live to backend. Sent to admin QC" : "Listing saved");
+  showToast(reviewCount ? "Saved to backend. Waiting for admin QC" : "Listing saved");
 }
 
 function autofillListingPhotoLinks() {
@@ -2577,13 +2786,16 @@ function autofillListingPhotoLinks() {
   if (els.listingExtraPhotoLinks) {
     els.listingExtraPhotoLinks.value = links.slice(5, 10).join("\n");
   }
+  updateListingQcChecklist();
   showToast(`${Math.min(links.length, LISTING_RECOMMENDED_PHOTO_COUNT)} photo links auto-filled`);
 }
 
 function setImportStatus(message, tone = "neutral") {
-  if (!els.listingImportStatus) return;
-  els.listingImportStatus.className = `excel-import-status ${tone}`;
-  els.listingImportStatus.innerHTML = message;
+  [els.listingImportStatus, els.listingHubStatus, els.overviewListingStatus].forEach((target) => {
+    if (!target) return;
+    target.className = `excel-import-status ${tone}`;
+    target.innerHTML = message;
+  });
 }
 
 function getWorkbookRows(file) {
@@ -4137,7 +4349,7 @@ function collectContentPayload() {
     originalDescription: els.contentHighlights.value.trim(),
     highlights: els.contentHighlights.value.trim(),
     targetAudience: els.contentTargetAudience.value,
-    contentType: "Listing Enhancer",
+    contentType: state.contentCreator.contentType || "Listing Enhancer",
     imageAnalysis: listingEnhancerPhotos.map(({ previewUrl, ...photo }) => photo),
     saveMode: "draft"
   };
@@ -4778,6 +4990,9 @@ function closeDrawer(id) {
 function openModal(id) {
   document.getElementById(id).classList.add("is-open");
   document.getElementById(id).setAttribute("aria-hidden", "false");
+  if (id === "listingModal") {
+    updateListingQcChecklist();
+  }
 }
 
 function closeModal(id) {
@@ -4820,8 +5035,45 @@ function bindEvents() {
   els.quickLeadButton.addEventListener("click", () => openModal("leadModal"));
   els.openListingComposer.addEventListener("click", () => openModal("listingModal"));
   els.downloadListingTemplate.addEventListener("click", downloadListingTemplate);
+  els.downloadListingTemplateHub?.addEventListener("click", downloadListingTemplate);
+  els.overviewJumpListings?.addEventListener("click", () => goToSection("listings"));
+  els.overviewDownloadListingTemplate?.addEventListener("click", downloadListingTemplate);
+  els.overviewListingExcelInput?.addEventListener("change", importListingsFromExcel);
+  els.overviewDeviceListingUpload?.addEventListener("click", openListingDeviceUpload);
+  els.stepOneUploadListing?.addEventListener("click", openListingDeviceUpload);
+  els.stepOneOpenListings?.addEventListener("click", () => goToSection("listings"));
   els.autoFillListingPhotos?.addEventListener("click", autofillListingPhotoLinks);
   els.listingDevicePhotos?.addEventListener("change", handleListingDevicePhotos);
+  els.listingExcelQuickInput?.addEventListener("change", importListingsFromExcel);
+  els.quickDeviceListingUpload?.addEventListener("click", openListingDeviceUpload);
+  [
+    els.listingTitle,
+    els.listingArea,
+    els.listingPrice,
+    els.listingAddress,
+    els.listingPropertyType,
+    els.listingImageLink,
+    els.listingTopViewLink,
+    els.listingRoom1Link,
+    els.listingBathroomLink,
+    els.listingKitchenLink,
+    els.listingExtraPhotoLinks,
+    els.listingBulkPhotoLinks,
+    els.listingArLink
+  ].forEach((input) => input?.addEventListener("input", updateListingQcChecklist));
+  [els.listingArea, els.listingPropertyType].forEach((input) => {
+    input?.addEventListener("blur", applyListingSmartDefaults);
+  });
+  els.listingPrice?.addEventListener("blur", normalizeListingPriceInput);
+  els.listingStatus?.addEventListener("change", updateListingSubmitCopy);
+  document.querySelectorAll("[data-listing-type]").forEach((button) => {
+    button.addEventListener("click", () => {
+      document.querySelectorAll("[data-listing-type]").forEach((item) => item.classList.remove("active"));
+      button.classList.add("active");
+      if (els.listingPropertyType) els.listingPropertyType.value = button.dataset.listingType || "";
+      applyListingSmartDefaults();
+    });
+  });
   els.listingEnhancerPhotos?.addEventListener("change", handleListingEnhancerPhotos);
 
   els.leadForm.addEventListener("submit", addLead);
@@ -4873,6 +5125,8 @@ function bindEvents() {
     if (action === "agent-close") handleNegotiationAction(id, "close");
     if (action === "jump-section") goToSection(actionTarget.dataset.section);
     if (action === "play-recap") showToast(actionTarget.dataset.message || "Call recap ready");
+    if (action === "open-lead-modal") openModal("leadModal");
+    if (action === "load-top-listing-content") loadContentFromTopListing();
     if (action === "open-document-vault") {
       renderDocumentVault();
       openModal("documentVaultModal");
@@ -4914,14 +5168,18 @@ function bindEvents() {
     if (action === "agent-open-vault-for-deal") openVaultForDeal(rawId);
     if (action === "agent-sign-offer") signDealOffer(rawId);
     if (action === "agent-release-escrow") releaseEscrow(rawId);
+    if (action === "select-agent-plan") activateAgentPlan(actionTarget.dataset.planId);
   });
 
   document.addEventListener("keydown", (event) => {
-    const actionTarget = event.target.closest?.("[data-action='open-document-vault'], [data-action='open-itinerary-builder'], [data-action='open-cobroke-matchmaker'], [data-action='open-cheat-sheet'], [data-action='open-referral-autopilot'], [data-action='jump-section']");
+    const actionTarget = event.target.closest?.("[data-action='open-lead-modal'], [data-action='open-document-vault'], [data-action='open-itinerary-builder'], [data-action='open-cobroke-matchmaker'], [data-action='open-cheat-sheet'], [data-action='open-referral-autopilot'], [data-action='jump-section']");
     if (!actionTarget || !["Enter", " "].includes(event.key)) return;
     event.preventDefault();
     if (actionTarget.dataset.action === "jump-section") {
       goToSection(actionTarget.dataset.section);
+    }
+    if (actionTarget.dataset.action === "open-lead-modal") {
+      openModal("leadModal");
     }
     if (actionTarget.dataset.action === "open-document-vault") {
       renderDocumentVault();
@@ -4956,11 +5214,11 @@ function bindEvents() {
     }
 
     if (event.key === STORAGE_KEYS.listingAnalytics) {
-      renderListingGrid();
+      renderCleanListingGrid();
     }
 
     if (event.key === STORAGE_KEYS.listingCollabs) {
-      renderListingGrid();
+      renderCleanListingGrid();
     }
   });
 
@@ -4974,7 +5232,9 @@ function bindEvents() {
 
 function applyBillingReturn() {
   const params = new URLSearchParams(window.location.search);
-  const billing = params.get("billing");
+  let billing = params.get("billing");
+  if (!billing && params.get("success") === "true") billing = "success";
+  if (!billing && params.get("cancelled") === "true") billing = "cancelled";
   if (!billing) return;
 
   const plan = AGENT_PLAN_TIERS.find((tier) => tier.id === params.get("plan")) || AGENT_PLAN_TIERS.find((tier) => tier.id === state.subscription?.planId) || AGENT_PLAN_TIERS[2];
@@ -5005,6 +5265,8 @@ function applyBillingReturn() {
   }
 
   params.delete("billing");
+  params.delete("success");
+  params.delete("cancelled");
   params.delete("plan");
   params.delete("session_id");
   const cleanUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}${window.location.hash || ""}`;
