@@ -36,6 +36,9 @@ const SESSION_INTEREST_MAX = 19;
 
 const BASE_PROPERTIES = window.RealtyGeniusPropertyListings || [];
 const FORCE_BACKEND_BUYER_FEED = ["realitygenius.company", "www.realitygenius.company"].includes(window.location.hostname);
+const AGENT_LISTING_LAUNCH_CUTOFF = "2026-06-18T08:25:00.000Z";
+const BUYER_FEED_VERSION_KEY = "rg_buyer_feed_version";
+const BUYER_FEED_VERSION = "agent-live-only-2026-06-18";
 let backendListingFeedReady = FORCE_BACKEND_BUYER_FEED;
 
 function readJsonStore(key, fallback) {
@@ -46,6 +49,20 @@ function readJsonStore(key, fallback) {
     return fallback;
   }
 }
+
+function resetLegacyBuyerListingCache() {
+  if (!FORCE_BACKEND_BUYER_FEED) return;
+  try {
+    if (localStorage.getItem(BUYER_FEED_VERSION_KEY) === BUYER_FEED_VERSION) return;
+    localStorage.removeItem(STORAGE_KEYS.buyerLiveListings);
+    localStorage.removeItem(STORAGE_KEYS.backendBuyerListings);
+    localStorage.setItem(BUYER_FEED_VERSION_KEY, BUYER_FEED_VERSION);
+  } catch {
+    // Cache reset should never block the buyer page.
+  }
+}
+
+resetLegacyBuyerListingCache();
 
 function readSessionInterestStore() {
   try {
@@ -260,10 +277,18 @@ function isAdminApprovedLiveListing(item) {
   );
 }
 
+function isPostLaunchAgentListing(item) {
+  if (!FORCE_BACKEND_BUYER_FEED) return true;
+  const timestamp = item?.adminApprovedAt || item?.approvedAt || item?.liveAt || item?.createdAt || item?.updatedAt || "";
+  const listingTime = new Date(timestamp).getTime();
+  const cutoffTime = new Date(AGENT_LISTING_LAUNCH_CUTOFF).getTime();
+  return Number.isFinite(listingTime) && listingTime >= cutoffTime;
+}
+
 function mergeLiveProperties(baseProperties = BASE_PROPERTIES) {
   const liveSourceKey = backendListingFeedReady ? STORAGE_KEYS.backendBuyerListings : STORAGE_KEYS.buyerLiveListings;
   const liveListings = readJsonStore(liveSourceKey, [])
-    .filter((item) => item && item.title && Number(item.price || 0) > 0 && isAdminApprovedLiveListing(item))
+    .filter((item) => item && item.title && Number(item.price || 0) > 0 && isAdminApprovedLiveListing(item) && isPostLaunchAgentListing(item))
     .map((item) => ({
       ...item,
       source: item.source || "admin_approved_agent_listing",
@@ -278,8 +303,8 @@ function mergeLiveProperties(baseProperties = BASE_PROPERTIES) {
       liveStatus: "approved_live",
       summary: item.summary || "Fresh live listing approved by RealityGenius admin QC."
     }));
-  if (backendListingFeedReady) return liveListings;
   const liveIds = new Set(liveListings.map((item) => String(item.id)));
+  if (backendListingFeedReady) return liveListings;
   return [
     ...liveListings,
     ...baseProperties.filter((item) => !liveIds.has(String(item.id)))
@@ -335,6 +360,17 @@ const els = {
   sortSelect: document.getElementById("sortSelect"),
   saveSearchButton: document.getElementById("saveSearchButton"),
   searchAlertStrip: document.getElementById("searchAlertStrip"),
+  aiMatchForm: document.getElementById("aiMatchForm"),
+  aiMatchPrompt: document.getElementById("aiMatchPrompt"),
+  aiMatchOutput: document.getElementById("aiMatchOutput"),
+  buyerMiniMap: document.getElementById("buyerMiniMap"),
+  nearbySignalGrid: document.getElementById("nearbySignalGrid"),
+  mortgageForm: document.getElementById("mortgageForm"),
+  mortgagePrice: document.getElementById("mortgagePrice"),
+  mortgageDownPayment: document.getElementById("mortgageDownPayment"),
+  mortgageRate: document.getElementById("mortgageRate"),
+  mortgageYears: document.getElementById("mortgageYears"),
+  mortgageResult: document.getElementById("mortgageResult"),
   gridFeedButton: document.getElementById("gridFeedButton"),
   videoFeedButton: document.getElementById("videoFeedButton"),
   propertyGrid: document.getElementById("propertyGrid"),
@@ -381,6 +417,7 @@ const els = {
   modalRoi: document.getElementById("modalRoi"),
   modalSaveAction: document.getElementById("modalSaveAction"),
   modalContactAction: document.getElementById("modalContactAction"),
+  immersiveLaunchButton: document.getElementById("immersiveLaunchButton"),
   toggleArButton: document.getElementById("toggleArButton"),
   resetArButton: document.getElementById("resetArButton"),
   arViewer: document.getElementById("arViewer"),
@@ -973,6 +1010,8 @@ function renderPropertyCardMarkup(property, index) {
         <span class="score-pill score-pill--match">AI ${property.aiScore}% Match</span>
         <span class="interest-pill" title="Session-based buyer interest estimate, not a live viewer count"><i class="fa-solid fa-users-viewfinder"></i> ${interestCount} interest estimate</span>
         <span class="photo-count-pill"><i class="fa-solid fa-images"></i> ${verified}/${total}</span>
+        ${(property.panoramas || []).length ? `<span class="rg-360-badge"><i class="fa-solid fa-panorama"></i> 360° Tour</span>` : ""}
+        ${["elite", "dedicated"].includes(property.agentTier) ? `<span class="rg-frontline-badge"><i class="fa-solid fa-medal"></i> ${property.agentTierLabel || "Dedicated Agent"}</span>` : ""}
       </div>
       <div class="card-body">
         <div class="price-row">
@@ -1481,6 +1520,137 @@ function recommendationList() {
     .slice(0, 3);
 }
 
+function parseBuyerPrompt(prompt = "") {
+  const text = String(prompt || "").toLowerCase();
+  const budgetMatch = text.match(/(?:rm|myr)?\s*([\d,.]+)\s*(k|m|mil|million)?/i);
+  let budget = 0;
+  if (budgetMatch) {
+    budget = Number(String(budgetMatch[1]).replace(/,/g, ""));
+    const unit = String(budgetMatch[2] || "").toLowerCase();
+    if (unit === "k") budget *= 1000;
+    if (["m", "mil", "million"].includes(unit)) budget *= 1000000;
+  }
+  const bedroomMatch = text.match(/(\d+)\s*(?:bed|bedroom|room|br)/i);
+  const area = feedProperties
+    .map((property) => property.area)
+    .find((candidate) => text.includes(candidate.toLowerCase())) || "";
+  const intent = /(rent|yield|investment|investor)/.test(text)
+    ? "investment"
+    : /(family|school|landed|house|kids)/.test(text)
+      ? "family"
+      : /(luxury|premium|high end)/.test(text)
+        ? "luxury"
+        : "";
+  return {
+    raw: prompt,
+    budget,
+    bedrooms: bedroomMatch ? Number(bedroomMatch[1]) : 0,
+    area,
+    intent,
+    wantsSchools: /school|kids|family/.test(text),
+    wantsTransport: /mrt|lrt|transport|train|station/.test(text),
+    wantsMall: /mall|shopping|retail/.test(text),
+    wantsHospital: /hospital|medical|clinic/.test(text)
+  };
+}
+
+function scorePromptMatch(property, profile) {
+  let score = getMasterFeedScore(property);
+  if (profile.budget) {
+    const distance = Math.abs(property.price - profile.budget) / Math.max(profile.budget, 1);
+    score += Math.max(0, 42 - distance * 70);
+    if (property.price <= profile.budget) score += 12;
+  }
+  if (profile.bedrooms && Number(property.bedrooms || property.beds || 0) >= profile.bedrooms) score += 24;
+  if (profile.area && property.area === profile.area) score += 42;
+  if (profile.area && (AREA_NEARBY_MAP[profile.area] || []).includes(property.area)) score += 24;
+  if (profile.intent && property.intent === profile.intent) score += 26;
+  if (profile.wantsSchools && property.intent === "family") score += 12;
+  if (profile.wantsTransport && /mrt|lrt|transit|commuter|connected/i.test(`${property.summary} ${property.vibe}`)) score += 12;
+  score += getDecision(property).roi;
+  return score;
+}
+
+function getLifestyleSignals(area = "") {
+  const profiles = {
+    "Shah Alam": ["Schools: family townships nearby", "Hospitals: KPJ / public medical access", "Malls: Setia City / AEON pockets", "Transport: DASH / Federal routes"],
+    "Mont Kiara": ["Schools: international school cluster", "Hospitals: nearby medical centres", "Malls: 163 Retail Park / Publika", "Transport: car-first premium pocket"],
+    "Bangsar": ["Schools: mature neighbourhood options", "Hospitals: Pantai / KL medical access", "Malls: Bangsar Village", "Transport: LRT and city access"],
+    "KLCC": ["Schools: city private options", "Hospitals: Prince Court / KL medical access", "Malls: Suria KLCC / Pavilion", "Transport: LRT / MRT city core"],
+    "Bukit Jalil": ["Schools: family and university belt", "Hospitals: IMU / nearby medical access", "Malls: Pavilion Bukit Jalil", "Transport: LRT and highway access"],
+    "Petaling Jaya": ["Schools: mature PJ options", "Hospitals: University Malaya / private care", "Malls: 1 Utama / Atria pockets", "Transport: LRT / MRT pockets"]
+  };
+  return profiles[area] || ["Schools: check nearby options", "Hospitals: compare medical access", "Malls: review lifestyle anchors", "Transport: confirm commute route"];
+}
+
+function renderLifestyleSignals(area = "") {
+  if (!els.nearbySignalGrid || !els.buyerMiniMap) return;
+  const label = area || "Malaysia";
+  els.buyerMiniMap.innerHTML = `
+    <div>
+      <span>Interactive map preview</span>
+      <strong>${escapeHtml(label)}</strong>
+      <a href="${getGoogleMapsSearchUrl(label)}" target="_blank" rel="noopener noreferrer">Open Google Maps</a>
+    </div>
+  `;
+  els.nearbySignalGrid.innerHTML = getLifestyleSignals(area).map((signal) => `
+    <span><i class="fa-solid fa-location-dot"></i>${escapeHtml(signal)}</span>
+  `).join("");
+}
+
+function runAiPropertyMatch(prompt) {
+  if (!els.aiMatchOutput) return;
+  const profile = parseBuyerPrompt(prompt);
+  const matches = feedProperties
+    .map((property) => ({ property, score: scorePromptMatch(property, profile) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+  const bestArea = profile.area || matches[0]?.property.area || "";
+  renderLifestyleSignals(bestArea);
+  if (profile.budget && els.mortgagePrice) {
+    els.mortgagePrice.value = Math.round(profile.budget);
+    renderMortgageEstimate();
+  }
+  els.aiMatchOutput.innerHTML = `
+    <div class="ai-match-summary">
+      <strong>${profile.budget ? `Budget ${money(profile.budget)}` : "Budget flexible"}</strong>
+      <span>${profile.bedrooms ? `${profile.bedrooms}+ bedrooms` : "Bedroom count flexible"} ${bestArea ? `· ${escapeHtml(bestArea)}` : ""}</span>
+    </div>
+    ${matches.map(({ property }, index) => `
+      <article class="ai-match-result">
+        <div>
+          <span>Match ${index + 1} · AI ${Math.round(scorePromptMatch(property, profile))}</span>
+          <strong>${escapeHtml(property.title)}</strong>
+          <p>${escapeHtml(getNearbySuggestionReason(property, prompt, profile.area))}</p>
+        </div>
+        <div>
+          <b>${money(property.price)}</b>
+          <button class="ghost-button" data-action="open-details" data-id="${property.id}" type="button">View</button>
+        </div>
+      </article>
+    `).join("")}
+  `;
+}
+
+function renderMortgageEstimate() {
+  if (!els.mortgageResult) return;
+  const price = Number(els.mortgagePrice?.value || 0);
+  const downPct = Number(els.mortgageDownPayment?.value || 10);
+  const annualRate = Number(els.mortgageRate?.value || 4.2);
+  const years = Number(els.mortgageYears?.value || 35);
+  const loan = Math.max(price * (1 - downPct / 100), 0);
+  const months = Math.max(years * 12, 1);
+  const monthlyRate = annualRate / 100 / 12;
+  const payment = monthlyRate
+    ? loan * monthlyRate * Math.pow(1 + monthlyRate, months) / (Math.pow(1 + monthlyRate, months) - 1)
+    : loan / months;
+  els.mortgageResult.innerHTML = `
+    <span>Estimated monthly instalment</span>
+    <strong>${money(Math.round(payment || 0))}</strong>
+    <p>Loan amount ${money(Math.round(loan))}. Estimate only; final approval depends on bank, DSR, documents, and legal checks.</p>
+  `;
+}
+
 function getLocationInsight(query) {
   const normalized = query.toLowerCase();
   const matchedRule = LOCATION_INTENT_RULES.find((rule) => rule.terms.some((term) => normalized.includes(term)));
@@ -1715,6 +1885,8 @@ function renderDashboard() {
   renderSaved();
   renderFavoritesDrawer();
   renderNotifications();
+  renderLifestyleSignals(filteredProperties()[0]?.area || "");
+  renderMortgageEstimate();
   setupInfiniteFeed();
 }
 
@@ -1754,6 +1926,7 @@ function renderSearchAlerts() {
 }
 
 function saveCurrentSearchAlert() {
+  if (!requireBuyerSessionForExplore()) return;
   const query = state.search.trim();
   if (!query && state.filter === "all") {
     showToast("Search an area or choose a filter first");
@@ -2063,7 +2236,17 @@ function renderProperties() {
     if (query) requestBackendLocationFallback(query);
     els.propertyGrid.innerHTML = query
       ? renderLocationFallback(query)
-      : `<div class="empty-state">No properties match your filter right now. Try a broader area or switch your filter.</div>`;
+      : `<div class="empty-state empty-state--launch">
+          <strong>Fresh agent listings are opening soon.</strong>
+          <p>RealityGenius now only shows new agent listings after admin QC approval. Agents can upload from the agent side, and approved homes will appear here automatically.</p>
+          <div class="empty-state-actions">
+            <button class="primary-button" type="button" data-action="save-search-alert">
+              <i class="fa-solid fa-bell"></i>
+              Alert me when listings go live
+            </button>
+            <a class="ghost-button" href="./agent.html">Agent: Add Listing</a>
+          </div>
+        </div>`;
     els.videoFeed.innerHTML = "";
     els.propertyGrid.hidden = false;
     els.videoFeed.hidden = true;
@@ -2174,6 +2357,7 @@ function renderNotifications() {
 }
 
 function toggleFavorite(id) {
+  if (!requireBuyerSessionForExplore()) return;
   const exists = state.favorites.includes(id);
   const property = properties.find((item) => item.id === id);
   state.favorites = exists ? state.favorites.filter((item) => item !== id) : [...state.favorites, id];
@@ -2238,6 +2422,8 @@ function openPropertyModal(id) {
 
   els.bookingStatus.textContent = "";
   els.bookingForm.reset();
+  els.bookingName.value = state.buyerProfile.name || "";
+  els.bookingPhone.value = state.buyerProfile.phone || "";
   els.bookingDate.min = new Date().toISOString().split("T")[0];
   els.noteInput.value = "";
   hydrateNegotiationProfile();
@@ -2246,9 +2432,11 @@ function openPropertyModal(id) {
   renderCommunityNotes(property);
   renderDealRoom(property);
   configureAr(property);
+  configureImmersiveLaunch(property);
 
   els.propertyModal.classList.add("is-open");
   els.propertyModal.setAttribute("aria-hidden", "false");
+  setTimeout(() => els.modalSaveAction?.focus({ preventScroll: true }), 80);
   renderDashboard();
 }
 
@@ -2743,12 +2931,38 @@ function submitNegotiationLegacy(action) {
   showToast(action === "counter" ? "Counter offer sent" : action === "accept" ? "Offer accepted" : "Negotiation paused");
 }
 
+function blurIfFocusInside(container) {
+  const active = document.activeElement;
+  if (active instanceof HTMLElement && container?.contains(active)) {
+    active.blur();
+  }
+}
+
 function closeModal() {
+  blurIfFocusInside(els.propertyModal);
   els.propertyModal.classList.remove("is-open");
   els.propertyModal.setAttribute("aria-hidden", "true");
   state.activePropertyId = null;
   resetArPrompt();
   configureAr(null, true);
+}
+
+function configureImmersiveLaunch(property) {
+  const button = els.immersiveLaunchButton;
+  if (!button) return;
+  const available = Boolean(window.RGImmersiveView?.isAvailable(property));
+  button.classList.toggle("is-available", available);
+  const panoCount = Array.isArray(property?.panoramas) ? property.panoramas.length : 0;
+  button.innerHTML = panoCount
+    ? `<i class="fa-solid fa-vr-cardboard"></i> Open Immersive View · ${panoCount}x 360°`
+    : `<i class="fa-solid fa-vr-cardboard"></i> Open Immersive View`;
+}
+
+function openImmersiveView() {
+  const property = properties.find((item) => item.id === state.activePropertyId);
+  if (!property || !window.RGImmersiveView) return;
+  trackListingAnalytics(property, "view", { source: "immersive_view", active: true });
+  window.RGImmersiveView.open(property, { apiUrl: userApiUrl("/ar/generate") });
 }
 
 function configureAr(property, reset = false) {
@@ -2767,6 +2981,7 @@ function configureAr(property, reset = false) {
 
 function submitBooking(event) {
   event.preventDefault();
+  if (!requireBuyerSessionForExplore()) return;
   if (!state.activePropertyId) return;
 
   const property = properties.find((item) => item.id === state.activePropertyId);
@@ -2922,6 +3137,7 @@ function openDrawer(id) {
 
 function closeDrawer(id) {
   const drawer = document.getElementById(id);
+  blurIfFocusInside(drawer);
   drawer.classList.remove("is-open");
   drawer.setAttribute("aria-hidden", "true");
 }
@@ -2940,6 +3156,14 @@ function bindEvents() {
   });
 
   els.saveSearchButton?.addEventListener("click", saveCurrentSearchAlert);
+  els.aiMatchForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const prompt = els.aiMatchPrompt?.value.trim() || "";
+    runAiPropertyMatch(prompt || "I need a family home under RM800k near schools");
+  });
+  [els.mortgagePrice, els.mortgageDownPayment, els.mortgageRate, els.mortgageYears].forEach((input) => {
+    input?.addEventListener("input", renderMortgageEstimate);
+  });
 
   els.gridFeedButton.addEventListener("click", () => setFeedMode("grid"));
   els.videoFeedButton.addEventListener("click", () => {
@@ -2959,12 +3183,29 @@ function bindEvents() {
 
   document.addEventListener("click", (event) => {
     const target = event.target instanceof Element ? event.target : null;
+    const quickSearchTarget = target?.closest("[data-quick-search]");
+    if (quickSearchTarget) {
+      event.preventDefault();
+      const query = String(quickSearchTarget.dataset.quickSearch || "").trim();
+      state.search = query;
+      if (els.searchInput) els.searchInput.value = query;
+      document.querySelectorAll(".market-intent-tab").forEach((tab) => tab.classList.toggle("active", tab === quickSearchTarget));
+      resetFeedWindow();
+      renderDashboard();
+      if (quickSearchTarget.getAttribute("href") === "#explore") {
+        document.getElementById("explore")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      return;
+    }
     const actionTarget = target?.closest("[data-action]");
     if (actionTarget) {
       const id = Number(actionTarget.dataset.id);
       const action = actionTarget.dataset.action;
       if (action === "toggle-save") toggleFavorite(id);
-      if (action === "open-details") {
+    if (action === "save-search-alert") saveCurrentSearchAlert();
+    if (action === "open-favorites-drawer") openDrawer("favoritesDrawer");
+    if (action === "open-alerts-drawer") openDrawer("notificationsDrawer");
+    if (action === "open-details") {
         if (requireBuyerSessionForExplore()) openPropertyModal(id);
       }
       if (action === "select-gallery-image") selectModalGalleryImage(Number(actionTarget.dataset.index));
@@ -2980,6 +3221,10 @@ function bindEvents() {
     const interactiveTarget = target?.closest("a, button, input, select, textarea, label");
     const contactTarget = target?.closest(".quick-contact-card");
     if (contactTarget) {
+      if (!requireBuyerSessionForExplore()) {
+        event.preventDefault();
+        return;
+      }
       const contactCard = contactTarget.closest("[data-click-card]");
       const property = properties.find((item) => String(item.id) === String(contactCard?.dataset.id));
       if (property) trackListingAnalytics(property, "contact", { source: "buyer_feed_whatsapp", active: true });
@@ -2998,6 +3243,12 @@ function bindEvents() {
   });
 
   document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      document.querySelectorAll(".drawer.is-open").forEach((drawer) => closeDrawer(drawer.id));
+      if (els.propertyModal.classList.contains("is-open")) closeModal();
+      return;
+    }
+
     if (!["Enter", " "].includes(event.key)) return;
     const target = event.target instanceof Element ? event.target : null;
     const cardTarget = target?.closest("[data-click-card]");
@@ -3018,6 +3269,8 @@ function bindEvents() {
   els.modalSaveAction.addEventListener("click", () => {
     if (state.activePropertyId != null) toggleFavorite(state.activePropertyId);
   });
+
+  els.immersiveLaunchButton?.addEventListener("click", openImmersiveView);
 
   els.modalContactAction.addEventListener("click", () => {
     if (state.activePropertyId == null) return;

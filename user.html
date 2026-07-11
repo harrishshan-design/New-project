@@ -12,14 +12,16 @@
   <meta property="og:image" content="https://realitygenius.company/brand/realitygenius-og.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="https://realitygenius.company/brand/realitygenius-og.png">
-  <title>RealityGenius | Buyer Dashboard</title>
+  <meta name="description" content="Search verified Malaysian property for sale, rent, new projects, auction homes, and AI-matched listings with RealityGenius.">
+  <title>RealityGenius | Malaysia Property Search</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Display&family=Rethink+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="./user.css">
   <script src="./rg-config.js"></script>
   <link rel="stylesheet" href="./ar-viewer.css">
+  <link rel="stylesheet" href="./immersive-view.css">
   <link rel="stylesheet" href="./negotiation-ui.css">
   <script src="./rg-error-logger.js" data-rg-surface="user"></script>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
@@ -33,6 +35,7 @@
     gtag('config', 'G-100QC1J9RT');
   </script></head>
 <body>
+  <a class="skip-link" href="#mainContent">Skip to property search</a>
   <div class="ambient ambient-one"></div>
   <div class="ambient ambient-two"></div>
 
@@ -45,6 +48,14 @@
           <h1>RealityGenius</h1>
         </div>
       </div>
+
+      <nav class="desktop-nav" aria-label="Buyer dashboard navigation">
+        <a href="#recommendations">For You</a>
+        <a href="#explore">Listings</a>
+        <a href="#auction-night">Auction Night</a>
+        <a href="#savedHomes">Saved</a>
+        <a href="#buyerJourney">How It Works</a>
+      </nav>
 
       <div class="top-actions">
         <button class="toolbar-button" id="favoritesButton" type="button">
@@ -65,21 +76,27 @@
       </div>
     </header>
 
-    <main class="dashboard">
+    <main class="dashboard" id="mainContent">
       <section class="hero-panel">
         <div class="hero-copy">
-          <div class="hero-pill">Buyer Mode</div>
-          <h2>Scroll into the market with a sharper shortlist, cleaner decisions, and one-tap contact.</h2>
+          <div class="hero-pill">Verified Malaysian property search with AI matching</div>
+          <h2>Search homes like a marketplace. Decide with AI.</h2>
           <p>
-            The feed learns from what you open, save, and revisit. Every click sharpens your recommendations,
-            so the dashboard feels less like browsing and more like momentum.
+            Browse sale, rent, auction, and new project listings fast. RealityGenius adds verified agents,
+            admin-QC listings, AI match reasons, and direct viewing requests so buyers can move with confidence.
           </p>
 
           <div class="hero-search">
+            <div class="market-intent-tabs" aria-label="Property search intent">
+              <a class="market-intent-tab active" href="#explore" data-quick-search="">For Sale</a>
+              <a class="market-intent-tab" href="#explore" data-quick-search="rent">For Rent</a>
+              <a class="market-intent-tab" href="#explore" data-quick-search="new project">New Projects</a>
+              <a class="market-intent-tab" href="#auction-night">Auction</a>
+            </div>
             <div class="search-row">
               <div class="input-shell input-shell-grow">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input id="searchInput" type="text" placeholder="Search area, tower, landmark">
+                <input id="searchInput" type="text" placeholder="Search KLCC, Shah Alam, condo, terrace, under RM500k">
               </div>
               <div class="input-shell select-shell">
                 <i class="fa-solid fa-arrow-down-wide-short"></i>
@@ -101,9 +118,43 @@
               <button class="filter-chip active" data-filter="all" type="button">All Picks</button>
               <button class="filter-chip" data-filter="condo" type="button">City Condo</button>
               <button class="filter-chip" data-filter="family" type="button">Family</button>
+              <button class="filter-chip" data-filter="investment" type="button">Investment</button>
               <button class="filter-chip" data-filter="luxury" type="button">Luxury</button>
             </div>
+            <div class="marketplace-shortcuts" aria-label="Popular property searches">
+              <a href="#explore" data-quick-search="below RM500k">Below RM500k</a>
+              <a href="#explore" data-quick-search="RM500k 750k">RM500k-750k</a>
+              <a href="#explore" data-quick-search="terrace house">Terrace Houses</a>
+              <a href="#explore" data-quick-search="condo apartment">Condos / Apartments</a>
+              <a href="#explore" data-quick-search="Shah Alam">Shah Alam</a>
+              <a href="#explore" data-quick-search="Mont Kiara">Mont Kiara</a>
+              <a href="#explore" data-quick-search="KLCC">KLCC</a>
+              <a href="#explore" data-quick-search="near MRT">Near MRT</a>
+            </div>
             <div class="search-alert-strip" id="searchAlertStrip"></div>
+          </div>
+
+          <div class="market-action-grid" aria-label="Fast property actions">
+            <a href="#explore" data-quick-search="verified listing">
+              <i class="fa-solid fa-shield-check"></i>
+              <strong>Verified Listings</strong>
+              <span>QC checked before buyer trust</span>
+            </a>
+            <a href="#aiBuyerTools">
+              <i class="fa-solid fa-robot"></i>
+              <strong>Ask AI</strong>
+              <span>Tell us budget, rooms, lifestyle</span>
+            </a>
+            <a href="#auction-night">
+              <i class="fa-solid fa-gavel"></i>
+              <strong>Friday Auction</strong>
+              <span>2 selected homes every week</span>
+            </a>
+            <a href="#explore" data-quick-search="near me">
+              <i class="fa-solid fa-location-crosshairs"></i>
+              <strong>Near Me</strong>
+              <span>Start with nearby areas</span>
+            </a>
           </div>
 
           <div class="hero-kpis">
@@ -123,9 +174,43 @@
               <p>Requests you have already moved on</p>
             </article>
           </div>
+
+          <div class="buyer-proof-strip" aria-label="RealityGenius live trust proof">
+            <span><i class="fa-solid fa-circle-check"></i> New listings after admin QC</span>
+            <span><i class="fa-solid fa-user-check"></i> Verified agent badges</span>
+            <span><i class="fa-solid fa-calendar-check"></i> Book viewings directly</span>
+            <span><i class="fa-solid fa-shield-halved"></i> Privacy-first buyer flow</span>
+          </div>
+
+          <div class="phase-one-path" aria-label="RealityGenius buyer focus">
+            <article>
+              <strong>1. Find</strong>
+              <span>Search by area, budget, lifestyle, or AI match.</span>
+            </article>
+            <article>
+              <strong>2. Contact</strong>
+              <span>Message a verified agent from the listing.</span>
+            </article>
+            <article>
+              <strong>3. Book</strong>
+              <span>Send a viewing request in one clear step.</span>
+            </article>
+            <article>
+              <strong>4. Decide</strong>
+              <span>Use AI reasons, mortgage check, and saved homes.</span>
+            </article>
+          </div>
         </div>
 
         <aside class="hero-side">
+          <article class="hero-photo-card" aria-label="RealityGenius featured property preview">
+            <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1400&q=82" alt="Modern residential interior preview">
+            <div class="hero-photo-overlay">
+              <span>Verified Listing Preview</span>
+              <strong>Large photos, match score, agent trust, viewing request</strong>
+            </div>
+          </article>
+
           <article class="brain-card">
             <div class="section-topline">
               <span class="eyebrow soft">Smart Recommendations</span>
@@ -179,6 +264,189 @@
             <div class="badge-list" id="badgeList"></div>
           </article>
         </aside>
+      </section>
+
+      <section class="buyer-wow-section" id="aiBuyerTools">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">AI Buyer Tools</div>
+            <h3>Tell RealityGenius what you need.</h3>
+            <p class="section-subcopy">Try: I have RM500k and need a 3-bedroom house in Shah Alam.</p>
+          </div>
+        </div>
+        <div class="buyer-wow-grid">
+          <article class="ai-chat-card">
+            <div class="ai-chat-head">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              <div>
+                <strong>AI Property Match</strong>
+                <span>Budget, rooms, area, and lifestyle intent</span>
+              </div>
+            </div>
+            <form class="ai-chat-form" id="aiMatchForm">
+              <textarea id="aiMatchPrompt" rows="4" placeholder="I have RM500k and need a 3-bedroom house in Shah Alam near schools."></textarea>
+              <button class="primary-button" type="submit">Find Matches</button>
+            </form>
+            <div class="ai-match-output" id="aiMatchOutput"></div>
+          </article>
+
+          <article class="lifestyle-map-card">
+            <div class="ai-chat-head">
+              <i class="fa-solid fa-map-location-dot"></i>
+              <div>
+                <strong>Map + Nearby Signals</strong>
+                <span>Schools, hospitals, malls, transport</span>
+              </div>
+            </div>
+            <div class="mini-map" id="buyerMiniMap"></div>
+            <div class="nearby-signal-grid" id="nearbySignalGrid"></div>
+          </article>
+
+          <article class="mortgage-card">
+            <div class="ai-chat-head">
+              <i class="fa-solid fa-calculator"></i>
+              <div>
+                <strong>Mortgage Quick Check</strong>
+                <span>Simple estimate before contacting agent</span>
+              </div>
+            </div>
+            <form class="mortgage-form" id="mortgageForm">
+              <label>
+                <span>Property price</span>
+                <input id="mortgagePrice" type="number" min="0" step="10000" value="500000">
+              </label>
+              <label>
+                <span>Down payment %</span>
+                <input id="mortgageDownPayment" type="number" min="0" max="90" step="1" value="10">
+              </label>
+              <label>
+                <span>Interest %</span>
+                <input id="mortgageRate" type="number" min="0" step="0.1" value="4.2">
+              </label>
+              <label>
+                <span>Years</span>
+                <input id="mortgageYears" type="number" min="1" max="40" step="1" value="35">
+              </label>
+            </form>
+            <div class="mortgage-result" id="mortgageResult"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="template-marquee" aria-label="RealityGenius platform highlights">
+        <div class="marquee-track">
+          <span>AI Match Score</span>
+          <span>QC-Approved Listings</span>
+          <span>WhatsApp Viewing Flow</span>
+          <span>AR Preview</span>
+          <span>Deal Room</span>
+          <span>Saved Shortlists</span>
+          <span>AI Match Score</span>
+          <span>QC-Approved Listings</span>
+          <span>WhatsApp Viewing Flow</span>
+          <span>AR Preview</span>
+          <span>Deal Room</span>
+          <span>Saved Shortlists</span>
+        </div>
+      </section>
+
+      <section class="template-services" id="buyerJourney">
+        <div class="section-head template-section-head">
+          <div>
+            <div class="eyebrow">Buyer Journey</div>
+            <h3>Three steps from scroll to serious decision</h3>
+          </div>
+          <p class="section-subcopy">Inspired by Langard's numbered service cards, adapted for Malaysian property buyers.</p>
+        </div>
+
+        <div class="service-card-grid">
+          <article class="service-card">
+            <span class="service-number">01</span>
+            <div class="service-image service-image-one" aria-hidden="true"></div>
+            <h4>Curated Discovery</h4>
+            <p>Search by area, tower, budget, lifestyle, or yield. The feed learns from every save and revisit.</p>
+          </article>
+
+          <article class="service-card">
+            <span class="service-number">02</span>
+            <div class="service-image service-image-two" aria-hidden="true"></div>
+            <h4>Viewing Momentum</h4>
+            <p>Turn a shortlist into action with one-tap WhatsApp contact, alerts, booking requests, and AR where available.</p>
+          </article>
+
+          <article class="service-card">
+            <span class="service-number">03</span>
+            <div class="service-image service-image-three" aria-hidden="true"></div>
+            <h4>Decision Support</h4>
+            <p>Use AI reasons, offer guidance, escrow status, and document workflow before the deal gets messy.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="trust-band" aria-label="RealityGenius trust statistics">
+        <article>
+          <strong>QC</strong>
+          <span>new agent listings go live after approval</span>
+        </article>
+        <article>
+          <strong>32%</strong>
+          <span>lead-to-chat conversion signal</span>
+        </article>
+        <article>
+          <strong>24/7</strong>
+          <span>buyer memory and saved alerts</span>
+        </article>
+        <article>
+          <strong>1 tap</strong>
+          <span>from shortlist to viewing request</span>
+        </article>
+      </section>
+
+      <section class="auction-night-section" id="auction-night">
+        <div class="auction-night-copy">
+          <div class="eyebrow">Friday Auction Night</div>
+          <h3>Two selected homes. One live bidding window.</h3>
+          <p>
+            Every Friday, RealityGenius features 2 selected homes for live buyer bidding.
+            Join the auction, place your best offer, and compete in real time.
+          </p>
+          <p class="auction-safe-note">
+            Winning a bid means the buyer has submitted the highest offer. Final purchase is subject to owner approval,
+            booking fee, loan eligibility, agreement terms, and legal documentation.
+          </p>
+        </div>
+
+        <div class="auction-schedule-card" aria-label="Friday auction schedule">
+          <span>Friday Schedule</span>
+          <ul>
+            <li><strong>8:30 PM</strong><span>Auction opens</span></li>
+            <li><strong>9:00 PM</strong><span>House 1 live bidding</span></li>
+            <li><strong>9:30 PM</strong><span>House 2 live bidding</span></li>
+            <li><strong>10:00 PM</strong><span>Auction closes</span></li>
+          </ul>
+        </div>
+
+        <div class="auction-house-grid">
+          <article class="auction-house-card">
+            <div class="auction-house-media auction-house-one" aria-hidden="true"></div>
+            <div>
+              <span class="auction-status">Opens Friday</span>
+              <h4>House 1</h4>
+              <p>Live bidding starts at 9:00 PM</p>
+            </div>
+            <a class="auction-button" href="#explore">View Auction</a>
+          </article>
+
+          <article class="auction-house-card">
+            <div class="auction-house-media auction-house-two" aria-hidden="true"></div>
+            <div>
+              <span class="auction-status">Second Session</span>
+              <h4>House 2</h4>
+              <p>Live bidding starts at 9:30 PM</p>
+            </div>
+            <a class="auction-button" href="#explore">View Auction</a>
+          </article>
+        </div>
       </section>
 
       <section class="recommendation-section" id="recommendations">
@@ -236,6 +504,19 @@
         <div class="saved-grid" id="savedGrid"></div>
       </section>
     </main>
+
+    <footer class="site-footer">
+      <div>
+        <div class="eyebrow soft">Ready when you are</div>
+        <h2>Build a property shortlist that actually remembers you.</h2>
+      </div>
+      <a class="footer-cta" href="#explore">Explore Listings</a>
+      <nav class="footer-links" aria-label="Legal links">
+        <a href="./privacy.html">Privacy</a>
+        <a href="./terms.html">Terms</a>
+        <a href="./login.html">Login</a>
+      </nav>
+    </footer>
   </div>
 
   <nav class="mobile-quick-nav" aria-label="Buyer quick navigation">
@@ -250,6 +531,10 @@
     <a href="#explore">
       <i class="fa-solid fa-magnifying-glass"></i>
       <span>Explore</span>
+    </a>
+    <a href="#auction-night">
+      <i class="fa-solid fa-gavel"></i>
+      <span>Auction</span>
     </a>
     <a href="#savedHomes">
       <i class="fa-solid fa-heart"></i>
@@ -296,6 +581,10 @@
       <div class="modal-grid">
         <section class="modal-visual">
           <img id="modalImage" class="modal-image" alt="Property preview">
+          <button class="rg-immersive-launch" id="immersiveLaunchButton" type="button">
+            <i class="fa-solid fa-vr-cardboard"></i>
+            Open Immersive View
+          </button>
           <div class="modal-gallery" id="modalGallery" aria-label="Property photo gallery"></div>
           <div class="modal-stats" id="modalStats"></div>
         </section>
@@ -547,16 +836,37 @@
     </div>
   </div>
 
+  <nav class="quick-action-dock" aria-label="Quick buyer actions">
+    <a href="#explore">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <span>Search</span>
+    </a>
+    <button type="button" data-action="open-favorites-drawer">
+      <i class="fa-solid fa-heart"></i>
+      <span>Saved</span>
+    </button>
+    <button type="button" data-action="open-alerts-drawer">
+      <i class="fa-solid fa-bell"></i>
+      <span>Alerts</span>
+    </button>
+    <a href="./login.html?role=user&next=/user.html">
+      <i class="fa-solid fa-user"></i>
+      <span>Login</span>
+    </a>
+  </nav>
+
   <div class="toast" id="toast"></div>
 
   <script src="./negotiation-store.js"></script>
   <script src="./negotiation-assistant.js"></script>
   <script src="./ar-viewer.js"></script>
+  <script src="./immersive-view.js"></script>
   <script src="./property-data.js"></script>
   <script src="./rg-push-notifications.js" data-push-role="user"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-loader.js"></script>
   <script src="./auth.js"></script>
-  <script src="./auth-gate.js" data-required-role="user" data-login-path="/login.html"></script>
+  <script src="./rg-smooth-scroll.js"></script>
   <script src="./user.js"></script>
   <script src="./rg-trust-loop.js" data-trust-role="user"></script>
   <script src="./rg-behavior-loop.js" data-behavior-role="user"></script>

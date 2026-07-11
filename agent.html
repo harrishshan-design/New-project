@@ -3,16 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RealtyGenius | Agent Workspace</title>
+  <meta name="description" content="RealityGenius AgentOS helps Malaysian property agents upload listings, create AI marketing content, manage leads, and prepare homes for admin QC.">
+  <title>RealityGenius | Agent Workspace</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="./agent.css">
   <link rel="stylesheet" href="./negotiation-ui.css">
   <script src="./rg-config.js"></script>
 </head>
 <body>
+  <a class="skip-link" href="#agentMain">Skip to agent workspace</a>
   <div class="ambient ambient-one"></div>
   <div class="ambient ambient-two"></div>
 
@@ -32,7 +34,7 @@
           <span>Overview</span>
         </button>
         <button class="nav-item" data-section="leads" type="button">
-          <i class="fa-solid fa-bullseye-arrow"></i>
+          <i class="fa-solid fa-bullseye"></i>
           <span>Lead Desk</span>
         </button>
         <button class="nav-item" data-section="clients" type="button">
@@ -54,14 +56,30 @@
         <h3>Close the warm pipeline before opening new tabs.</h3>
         <p>Fast follow-up, precise lead routing, and clean listing control keep revenue moving.</p>
       </div>
+
+      <div class="live-agent-card">
+        <div class="live-agent-avatar">RG</div>
+        <div class="live-agent-meta">
+          <strong id="liveAgentName">RealityGenius Agent</strong>
+          <span><i class="fa-solid fa-building-user"></i><span id="liveAgentAgency">RealityGenius Realty</span></span>
+          <span><i class="fa-solid fa-id-badge"></i><span id="liveAgentRen">REN pending</span></span>
+          <span><i class="fa-solid fa-ranking-star"></i><span id="liveAgentRank">Rising Agent</span></span>
+        </div>
+      </div>
     </aside>
 
-    <main class="main">
+    <main class="main" id="agentMain">
       <header class="topbar">
         <div>
           <div class="eyebrow">Agent Workspace</div>
-          <h2>Conversion cockpit</h2>
+          <h2>AgentOS command layer</h2>
         </div>
+        <nav class="agentos-top-nav" data-panel="overview" aria-label="Agent workspace sections">
+          <a href="#agentServices">Services</a>
+          <a href="#agentProcess">Process</a>
+          <a href="#agentPricing">Pricing</a>
+          <a href="#leadPipeline">Use cases</a>
+        </nav>
         <div class="top-actions">
           <button class="top-action" id="notificationButton" type="button">
             <i class="fa-solid fa-bell"></i>
@@ -75,11 +93,25 @@
         </div>
       </header>
 
-      <section class="hero">
+      <section class="hero" data-panel="overview">
         <div class="hero-copy">
-          <div class="hero-pill">Built for revenue</div>
-          <h3>Qualify buyers, run smarter viewings, and keep every client for life.</h3>
-          <p>RealtyGenius turns loan paperwork, weekend tour chaos, co-broking matches, viewing prep, and referral follow-up into calm AI workflows agents can trust.</p>
+          <div class="hero-pill">Hero Feature</div>
+          <h3>AI Listing Creator for Malaysian property agents.</h3>
+          <p>Upload property photos or paste the details. RealityGenius creates the title, professional description, SEO keywords, social captions, TikTok script, Facebook copy, and WhatsApp message in one workflow.</p>
+          <div class="agentos-hero-actions">
+            <a class="primary-button" href="#listingCreator">
+              <span>Open Listing Creator</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </a>
+            <button class="ghost-button" id="agentosQuickLeadButton" type="button" data-action="open-lead-modal">
+              <span>Add new lead</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </button>
+            <a class="ghost-button ar-builder-link" href="./ar-builder.html">
+              <span>AI AR Builder</span>
+              <i class="fa-solid fa-couch"></i>
+            </a>
+          </div>
         </div>
 
         <div class="hero-metrics">
@@ -106,12 +138,484 @@
         </div>
       </section>
 
+      <section class="agent-step-one" data-panel="overview">
+        <div class="step-one-copy">
+          <span class="step-kicker">Step 1</span>
+          <h3>Create your agent profile, then submit your first listing.</h3>
+          <p>RealityGenius collects your name, email, phone, and optional REN ID. Admin cleans and approves your profile, then your listing can go live after QC.</p>
+        </div>
+        <div class="step-one-flow">
+          <span><i class="fa-solid fa-user-check"></i> Profile collected</span>
+          <span><i class="fa-solid fa-file-pen"></i> Listing uploaded</span>
+          <span><i class="fa-solid fa-shield-halved"></i> Admin QC</span>
+          <span><i class="fa-solid fa-tower-broadcast"></i> Live to buyers</span>
+        </div>
+        <div class="step-one-actions">
+          <button class="primary-button" id="stepOneUploadListing" type="button">
+            Upload first listing
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+          <button class="ghost-button" id="stepOneOpenListings" type="button">
+            Open Listings
+          </button>
+        </div>
+      </section>
+
+      <section class="agent-profile-editor panel" data-panel="overview" id="agentProfileEditor">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">Agent Profile</div>
+            <h3>Edit your public agent profile</h3>
+            <p class="subtext">Your name, photo, agency, REN ID, and rank are used on listings and admin review cards.</p>
+          </div>
+          <span class="chip chip-hot" id="agentRankChip">Rising Agent</span>
+        </div>
+        <div class="agent-profile-layout">
+          <div class="agent-profile-preview">
+            <div class="profile-photo-preview" id="agentProfilePhotoPreview">RG</div>
+            <strong id="agentProfilePreviewName">RealityGenius Agent</strong>
+            <span id="agentProfilePreviewAgency">RealityGenius Realty</span>
+            <small id="agentProfilePreviewRen">REN-PENDING</small>
+            <div class="rank-meter">
+              <div id="agentRankMeter"></div>
+            </div>
+            <p id="agentRankReason">Upload listings and follow up leads to improve your rank.</p>
+          </div>
+          <form class="agent-profile-form" id="agentProfileForm">
+            <label class="input-shell">
+              <i class="fa-solid fa-user"></i>
+              <input id="agentProfileNameInput" type="text" placeholder="Agent display name">
+            </label>
+            <label class="input-shell">
+              <i class="fa-solid fa-building-user"></i>
+              <input id="agentProfileAgencyInput" type="text" placeholder="Agency / team name">
+            </label>
+            <label class="input-shell">
+              <i class="fa-solid fa-id-badge"></i>
+              <input id="agentProfileRenInput" type="text" placeholder="REN ID, optional">
+            </label>
+            <label class="input-shell">
+              <i class="fa-solid fa-image"></i>
+              <input id="agentProfilePhotoInput" type="file" accept="image/*">
+            </label>
+            <button class="primary-button" type="submit">
+              Save Profile
+              <i class="fa-solid fa-check"></i>
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <section class="agentos-media-card" data-panel="overview" aria-label="RealityGenius agent automation preview">
+        <div class="agentos-video-frame">
+          <div class="agentos-orbit">
+            <span class="agentos-node node-one">Lead</span>
+            <span class="agentos-node node-two">DSR</span>
+            <span class="agentos-node node-three">Route</span>
+            <span class="agentos-node node-four">Deal</span>
+            <span class="agentos-play"><i class="fa-solid fa-play"></i></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="billing-strip" id="agentBillingStrip" data-panel="overview"></section>
+
+      <section class="agentos-logo-strip" data-panel="overview" aria-label="RealityGenius trusted workflows">
+        <span>MVP focus</span>
+        <strong>Listing Creator</strong>
+        <strong>Smart Dashboard</strong>
+        <strong>Social Media Generator</strong>
+        <strong>Telegram / WhatsApp Import</strong>
+        <strong>Marketplace</strong>
+        <strong>Friday Auction Night</strong>
+      </section>
+
+      <section class="agentos-section" id="agentServices" data-panel="overview">
+        <div class="agentos-section-head">
+          <div>
+            <div class="eyebrow">Phase 1 Product</div>
+            <h3>Six features agents can understand immediately</h3>
+          </div>
+          <button class="primary-button" type="button" data-action="jump-section" data-section="listings">
+            <span>Manage listings</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+        <div class="agentos-service-grid">
+          <article>
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <h4>AI Listing Creator</h4>
+            <p>Generate titles, descriptions, SEO keywords, captions, TikTok scripts, Facebook copy, and WhatsApp messages.</p>
+          </article>
+          <article>
+            <i class="fa-solid fa-table-columns"></i>
+            <h4>Smart Property Dashboard</h4>
+            <p>Add listings, upload photos, track Pending QC, Approved, Live, Draft, and edit anytime.</p>
+          </article>
+          <article>
+            <i class="fa-brands fa-telegram"></i>
+            <h4>Telegram / WhatsApp Import</h4>
+            <p>Send listing details to the bot, let AI extract the draft, then review and submit.</p>
+          </article>
+          <article>
+            <i class="fa-solid fa-gavel"></i>
+            <h4>Friday Auction Night</h4>
+            <p>Two featured properties every Friday create urgency, buyer excitement, and paid agent slots.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="agentos-reality-section" data-panel="overview">
+        <div class="agentos-problem-card">
+          <div class="eyebrow">Why AI Agents</div>
+          <h3>The reality for most agent teams</h3>
+          <ul>
+            <li>Manual follow-up slows every deal down</li>
+            <li>Leads go cold after a few hours</li>
+            <li>Buyer documents arrive scattered everywhere</li>
+            <li>Weekend viewing routes become chaos</li>
+            <li>Scaling means hiring more admin support</li>
+          </ul>
+        </div>
+        <div class="agentos-outcome-card">
+          <div class="eyebrow">The Outcome</div>
+          <h3>Your agent system works while you sleep</h3>
+          <div class="agentos-outcome-grid">
+            <span>Workflows run automatically, 24/7</span>
+            <span>Leads are qualified and routed instantly</span>
+            <span>Buyers get immediate responses</span>
+            <span>Internal deal rooms answer on demand</span>
+            <span>You scale revenue without scaling admin</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="agentos-process-section" id="agentProcess" data-panel="overview">
+        <div class="agentos-section-head">
+          <div>
+            <div class="eyebrow">Process</div>
+            <h3>Launch automation in four focused steps</h3>
+          </div>
+        </div>
+        <div class="agentos-process-list">
+          <article>
+            <span>01</span>
+            <div>
+              <small>Step 01</small>
+              <h4>Discovery and Workflow Mapping</h4>
+              <p>Map your lead sources, listing flow, buyer documents, co-broke paths, and daily bottlenecks.</p>
+            </div>
+          </article>
+          <article>
+            <span>02</span>
+            <div>
+              <small>Step 02</small>
+              <h4>Agent Design and Architecture</h4>
+              <p>Define scoring rules, automations, integrations, and human handoff points.</p>
+            </div>
+          </article>
+          <article>
+            <span>03</span>
+            <div>
+              <small>Step 03</small>
+              <h4>Development and Integration</h4>
+              <p>Connect the workflows to listings, WhatsApp, client records, documents, and deal tracking.</p>
+            </div>
+          </article>
+          <article>
+            <span>04</span>
+            <div>
+              <small>Step 04</small>
+              <h4>Launch, Monitor, Optimize</h4>
+              <p>Track outcomes, reduce manual work, and improve the agent system as your pipeline grows.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="agentos-pricing-section" id="agentPricing" data-panel="overview">
+        <div class="agentos-section-head">
+          <div>
+            <div class="eyebrow">Agent Plans</div>
+            <h3>From free tools to the full closing machine</h3>
+          </div>
+        </div>
+        <div class="agentos-pricing-grid">
+          <article>
+            <span>FREE</span>
+            <p>For agents testing RealityGenius before upgrading.</p>
+            <strong>RM0 <small>/ mo</small></strong>
+            <ul class="plan-feature-list">
+              <li>Basic AgentOS overview</li>
+              <li>Property listing control preview</li>
+              <li>Lead inbox demo workflow</li>
+              <li>Basic AI cheat sheet</li>
+              <li>No Auction Night slots</li>
+            </ul>
+            <button class="ghost-button" type="button" data-action="open-cheat-sheet">Get started</button>
+          </article>
+          <article>
+            <span>STARTER RG</span>
+            <p>For solo agents who want content and faster listing preparation.</p>
+            <strong>RM29 <small>/ mo</small></strong>
+            <ul class="plan-feature-list">
+              <li>Everything in Free</li>
+              <li>AI Content Creator for captions and WhatsApp follow-ups</li>
+              <li>AI AR Builder demo staging and sofa AR preview</li>
+              <li>Smart listing checklist</li>
+              <li>Basic buyer follow-up scripts</li>
+            </ul>
+            <button class="ghost-button" type="button" data-action="select-agent-plan" data-plan-id="starter">Upgrade to Starter</button>
+          </article>
+          <article class="featured">
+            <span>ELITE AGENT</span>
+            <p>For active agents running serious buyer pipelines and premium listings.</p>
+            <strong>RM79 <small>/ mo</small></strong>
+            <ul class="plan-feature-list">
+              <li>Everything in Starter RG</li>
+              <li>AI Document Vault and DSR calculator</li>
+              <li>Smart viewing itinerary builder</li>
+              <li>Co-broke matchmaker</li>
+              <li>1 Friday Auction Night submission/month</li>
+              <li>AI AR Builder saved projects</li>
+            </ul>
+            <button class="primary-button" type="button" data-action="select-agent-plan" data-plan-id="elite">Upgrade to Elite</button>
+          </article>
+          <article>
+            <span>BEST CLOSERS</span>
+            <p>Maximum RealityGenius stack for closers, team leaders, and agencies.</p>
+            <strong>Custom</strong>
+            <ul class="plan-feature-list">
+              <li>Everything in Elite Agent</li>
+              <li>4 Friday Auction Night submissions/month</li>
+              <li>Referral autopilot and lifecycle automation</li>
+              <li>Leak-proof deal control</li>
+              <li>Priority AI content and AR staging workflow</li>
+              <li>Team/agency setup and custom automation</li>
+            </ul>
+            <button class="ghost-button" type="button" data-action="open-cobroke-matchmaker">Get in touch</button>
+          </article>
+        </div>
+        <div class="agentos-auction-benefit">
+          <div>
+            <span>Premium Feature</span>
+            <h4>Friday Auction Night slots for agents</h4>
+            <p>Selected listings get weekly urgency, buyer excitement, more views, stronger offer collection, and ready-made TikTok or Instagram content.</p>
+          </div>
+          <strong>Extra auction slot: RM49/listing</strong>
+        </div>
+      </section>
+
       <section class="panel-grid">
+        <section class="panel panel-wide agent-routine-panel" data-panel="overview">
+          <div class="panel-head">
+            <div>
+              <div class="eyebrow">Daily Routine</div>
+              <h3>Show up daily. Stay on the buyer frontline.</h3>
+              <p class="subtext">Points from daily check-ins and uploads push your listings above other agents in the buyer feed.</p>
+            </div>
+            <div class="routine-tier" id="routineTierBadge">
+              <i class="fa-solid fa-medal"></i>
+              <span id="routineTierLabel">Rising Agent</span>
+            </div>
+          </div>
+
+          <div class="routine-grid">
+            <div class="routine-score">
+              <div class="routine-streak">
+                <i class="fa-solid fa-fire"></i>
+                <div>
+                  <strong id="routineStreakDays">0</strong>
+                  <span>day streak</span>
+                </div>
+              </div>
+              <div class="routine-points">
+                <strong id="routinePointsTotal">0</strong>
+                <span>agent points</span>
+              </div>
+              <div class="routine-progress">
+                <div class="routine-progress-track"><div class="routine-progress-fill" id="routineTierProgress"></div></div>
+                <span id="routineTierNext">Earn points to reach Dedicated Agent</span>
+              </div>
+            </div>
+
+            <div class="routine-checklist" id="routineChecklist">
+              <button class="routine-check" id="routineCheckLogin" type="button" disabled>
+                <i class="fa-regular fa-circle"></i>
+                <span>Daily check-in</span>
+                <small>+10 pts</small>
+              </button>
+              <button class="routine-check" id="routineCheckListing" type="button">
+                <i class="fa-regular fa-circle"></i>
+                <span>Upload 1 listing today</span>
+                <small>+50 pts</small>
+              </button>
+              <button class="routine-check" id="routineCheckLeads" type="button">
+                <i class="fa-regular fa-circle"></i>
+                <span>Review your leads</span>
+                <small>Stay sharp</small>
+              </button>
+            </div>
+
+            <div class="routine-quick-actions">
+              <button class="routine-quick-primary" id="routineQuickList" type="button">
+                <i class="fa-solid fa-bolt"></i>
+                <span>Quick List</span>
+                <small>Photos first, 60 seconds</small>
+              </button>
+              <button class="routine-quick-secondary" id="routineRepeatListing" type="button">
+                <i class="fa-solid fa-clone"></i>
+                <span>Repeat last listing</span>
+                <small>Prefill everything</small>
+              </button>
+            </div>
+          </div>
+        </section>
+
         <section class="panel panel-wide" data-panel="overview">
           <div class="panel-head">
             <div>
-              <div class="eyebrow">RealtyGenius AI Solutions</div>
-              <h3>Daily agent nightmares, solved before they slow a deal</h3>
+              <div class="eyebrow">Live Listing Upload</div>
+              <h3>Post your property from Excel or computer</h3>
+              <p class="subtext">Start here if the Listings tab looks empty. Download the template, upload Excel, or add photos from your device. Listings go to admin QC before buyers see them.</p>
+            </div>
+            <div class="panel-actions">
+              <button class="top-action compact" id="overviewJumpListings" type="button">
+                <i class="fa-solid fa-table-cells-large"></i>
+                <span>Open Listings</span>
+              </button>
+            </div>
+          </div>
+          <div class="listing-import-hub">
+            <article>
+              <i class="fa-solid fa-file-excel"></i>
+              <div>
+                <strong>Excel upload</strong>
+                <p>Use the RealityGenius template for bulk upload. Supports .xlsx, .xls, and .csv.</p>
+              </div>
+              <button class="ghost-button" id="overviewDownloadListingTemplate" type="button">Download template</button>
+              <label class="primary-button listing-upload-button">
+                Upload from computer
+                <input id="overviewListingExcelInput" type="file" accept=".xlsx,.xls,.csv">
+              </label>
+            </article>
+            <article>
+              <i class="fa-solid fa-images"></i>
+              <div>
+                <strong>Device photo upload</strong>
+                <p>Add one listing manually and attach property photos straight from your computer.</p>
+              </div>
+              <button class="primary-button" id="overviewDeviceListingUpload" type="button">Add listing with photos</button>
+            </article>
+          </div>
+          <div class="excel-import-status" id="overviewListingStatus">Excel upload and device upload are ready here.</div>
+        </section>
+
+        <section class="panel panel-wide content-creator-priority" id="listingCreator" data-panel="overview">
+          <div class="panel-head">
+            <div>
+              <div class="eyebrow">Your Hero Feature</div>
+              <h3>AI Listing Creator</h3>
+              <p class="subtext">Turn photos and property facts into marketplace copy, SEO keywords, social captions, TikTok script, Facebook ad copy, and WhatsApp marketing message.</p>
+            </div>
+            <div class="chip-row">
+              <button class="chip chip-hot" type="button" data-action="load-top-listing-content">Load top listing</button>
+              <span class="chip">One click copy</span>
+            </div>
+          </div>
+
+          <div class="content-creator-shell">
+            <form class="content-creator-form" id="contentCreatorForm">
+              <div class="content-type-selector full-width" aria-label="Choose content output type">
+                <button class="active" type="button" data-content-type="Listing Enhancer">Listing</button>
+                <button type="button" data-content-type="Instagram Caption">Instagram</button>
+                <button type="button" data-content-type="TikTok Script">TikTok</button>
+                <button type="button" data-content-type="WhatsApp Follow-up Message">WhatsApp</button>
+              </div>
+              <div class="input-shell">
+                <i class="fa-solid fa-heading"></i>
+                <input id="contentPropertyTitle" type="text" placeholder="Property title" required>
+              </div>
+              <div class="input-shell">
+                <i class="fa-solid fa-location-dot"></i>
+                <input id="contentLocation" type="text" placeholder="Location" required>
+              </div>
+              <div class="input-shell">
+                <i class="fa-solid fa-building"></i>
+                <input id="contentPropertyType" type="text" placeholder="Property type" value="Condo">
+              </div>
+              <div class="input-shell">
+                <i class="fa-solid fa-money-bill-wave"></i>
+                <input id="contentPrice" type="number" min="0" step="5000" placeholder="Price (RM)" required>
+              </div>
+              <div class="input-shell">
+                <i class="fa-solid fa-bed"></i>
+                <input id="contentBedrooms" type="number" min="0" placeholder="Bedrooms" value="3">
+              </div>
+              <div class="input-shell">
+                <i class="fa-solid fa-bath"></i>
+                <input id="contentBathrooms" type="number" min="0" placeholder="Bathrooms" value="2">
+              </div>
+              <div class="input-shell">
+                <i class="fa-solid fa-users"></i>
+                <select id="contentTargetAudience">
+                  <option value="Family buyer">Family buyer</option>
+                  <option value="Investor">Investor</option>
+                  <option value="First home buyer">First home buyer</option>
+                  <option value="Luxury buyer">Luxury buyer</option>
+                </select>
+              </div>
+              <label class="enhancer-photo-upload">
+                <i class="fa-solid fa-images"></i>
+                <span>Upload listing photos</span>
+                <small>AI checks image quality, duplicates, and missing room shots.</small>
+                <input id="listingEnhancerPhotos" type="file" accept="image/*" multiple>
+              </label>
+              <div class="input-shell textarea-shell full-width">
+                <i class="fa-solid fa-pen-to-square"></i>
+                <textarea id="contentHighlights" rows="5" placeholder="Paste property details, selling points, facilities, nearby landmarks, and viewing notes." required></textarea>
+              </div>
+              <div class="device-photo-status full-width" id="listingEnhancerPhotoStatus">Upload photos or paste details to start.</div>
+              <div class="enhancer-photo-preview full-width" id="listingEnhancerPhotoPreview"></div>
+              <button class="primary-button full-width" id="generateContentButton" type="submit">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                Generate Listing Content
+              </button>
+            </form>
+
+            <div class="content-results">
+              <div class="content-status" id="contentStatus">Ready</div>
+              <div class="enhancer-score-grid" id="enhancerScoreGrid"></div>
+              <div class="enhancer-keywords" id="enhancerKeywords"></div>
+              <article class="enhancer-comparison">
+                <div>
+                  <span>Original</span>
+                  <p id="enhancerOriginal">Your original listing will appear here.</p>
+                </div>
+                <div>
+                  <span>AI output</span>
+                  <p id="contentOutput">Your optimized listing will appear here.</p>
+                </div>
+              </article>
+              <div class="enhancer-portal-grid" id="enhancerPortalOutputs"></div>
+              <div class="action-row">
+                <button class="ghost-button" id="copyContentButton" type="button">
+                  <i class="fa-solid fa-copy"></i>
+                  Copy output
+                </button>
+                <button class="ghost-button" id="saveEnhancedListingButton" type="button" disabled>Save draft</button>
+                <button class="primary-button" id="submitEnhancedListingButton" type="button" disabled>Submit to QC</button>
+              </div>
+              <div class="content-history" id="contentHistory"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel panel-wide" data-panel="overview">
+          <div class="panel-head">
+            <div>
+              <div class="eyebrow">Convenience Tools</div>
+              <h3>Helpful workflows after the listing is created</h3>
             </div>
             <div class="chip-row">
               <span class="chip chip-hot">Lifesaver workflows</span>
@@ -172,15 +676,15 @@
           </div>
         </section>
 
-        <section class="panel panel-wide" data-panel="overview">
+        <section class="panel panel-wide hidden-section" data-panel="phase2">
           <div class="panel-head">
             <div>
-              <div class="eyebrow">Leak-Proof Deal Control</div>
-              <h3>Escrow, loan vault, and e-sign locks</h3>
+              <div class="eyebrow">Phase 2 Preview</div>
+              <h3>Advanced deal controls can come later</h3>
             </div>
             <div class="chip-row">
-              <span class="chip chip-hot">No commission grab</span>
-              <span class="chip">In-platform paper trail</span>
+              <span class="chip chip-hot">Not the MVP focus</span>
+              <span class="chip">Keep web-first</span>
             </div>
           </div>
           <div class="leakproof-board" id="leakProofDealBoard"></div>
@@ -189,12 +693,12 @@
         <section class="panel panel-wide" data-panel="overview">
           <div class="panel-head">
             <div>
-              <div class="eyebrow">Morning Command Center</div>
-              <h3>What made you money while you slept</h3>
+              <div class="eyebrow">Smart Property Dashboard</div>
+              <h3>Status, leads, and content in one place</h3>
             </div>
             <div class="chip-row">
-              <span class="chip chip-hot">AI first</span>
-              <span class="chip">Morning dopamine</span>
+              <span class="chip chip-hot">Pending QC</span>
+              <span class="chip">Approved / Live</span>
             </div>
           </div>
           <div class="command-hero">
@@ -311,9 +815,40 @@
               </button>
             </div>
           </div>
+          <div class="listing-import-hub">
+            <article>
+              <i class="fa-solid fa-file-excel"></i>
+              <div>
+                <strong>Excel upload</strong>
+                <p>Download the template, fill listing details, then upload .xlsx, .xls, or .csv.</p>
+              </div>
+              <button class="ghost-button" id="downloadListingTemplateHub" type="button">Download template</button>
+              <label class="primary-button listing-upload-button">
+                Upload Excel
+                <input id="listingExcelQuickInput" type="file" accept=".xlsx,.xls,.csv">
+              </label>
+            </article>
+            <article>
+              <i class="fa-solid fa-computer"></i>
+              <div>
+                <strong>Upload from device / computer</strong>
+                <p>Add listing details manually and attach at least 4 property photos from your device.</p>
+              </div>
+              <button class="primary-button" id="quickDeviceListingUpload" type="button">Upload photos</button>
+            </article>
+          </div>
+          <div class="excel-import-status" id="listingHubStatus">Choose Excel import or upload photos from your computer to start.</div>
           <div class="listing-grid" id="listingGrid"></div>
         </section>
       </section>
+      <footer class="workspace-footer">
+        <span>RealityGenius AgentOS launch access is open while listings go through admin QC.</span>
+        <nav aria-label="Agent legal links">
+          <a href="./privacy.html">Privacy</a>
+          <a href="./terms.html">Terms</a>
+          <a href="./index.html">Home</a>
+        </nav>
+      </footer>
     </main>
   </div>
 
@@ -373,17 +908,30 @@
         <button class="close-button" data-close="listingModal" type="button"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <form class="form-grid" id="listingForm">
+        <div class="listing-fast-panel full-width">
+          <div>
+            <span>Fast listing assistant</span>
+            <strong id="listingQcScore">0/4 ready for QC</strong>
+          </div>
+          <div class="listing-type-chips" aria-label="Quick property types">
+            <button type="button" data-listing-type="Condo">Condo</button>
+            <button type="button" data-listing-type="Landed">Landed</button>
+            <button type="button" data-listing-type="Serviced Residence">Serviced</button>
+            <button type="button" data-listing-type="Commercial">Commercial</button>
+          </div>
+        </div>
+        <div class="listing-qc-checklist full-width" id="listingQcChecklist" aria-live="polite"></div>
         <div class="input-shell">
           <i class="fa-solid fa-building"></i>
-          <input id="listingTitle" type="text" placeholder="Listing title" required>
+          <input id="listingTitle" type="text" placeholder="Listing title e.g. KLCC Luxury Condo" required>
         </div>
         <div class="input-shell">
           <i class="fa-solid fa-location-dot"></i>
-          <input id="listingArea" type="text" placeholder="Area" required>
+          <input id="listingArea" type="text" placeholder="Area e.g. KLCC, Mont Kiara" required>
         </div>
         <div class="input-shell">
           <i class="fa-solid fa-money-bill-wave"></i>
-          <input id="listingPrice" type="number" placeholder="Price" required>
+          <input id="listingPrice" type="text" inputmode="numeric" placeholder="Price e.g. RM 850,000" required>
         </div>
         <div class="input-shell">
           <i class="fa-solid fa-map-location-dot"></i>
@@ -391,7 +939,15 @@
         </div>
         <div class="input-shell">
           <i class="fa-solid fa-house-building"></i>
-          <input id="listingPropertyType" type="text" placeholder="Property type e.g. Condo">
+          <input id="listingPropertyType" type="text" placeholder="Property type e.g. Condo" list="listingTypeOptions">
+          <datalist id="listingTypeOptions">
+            <option value="Condo"></option>
+            <option value="Landed"></option>
+            <option value="Serviced Residence"></option>
+            <option value="Commercial"></option>
+            <option value="Shoplot"></option>
+            <option value="Bungalow"></option>
+          </datalist>
         </div>
         <div class="input-shell">
           <i class="fa-solid fa-user-tie"></i>
@@ -441,6 +997,14 @@
         </label>
         <div class="device-photo-status full-width" id="listingDevicePhotoStatus">No device photos selected yet.</div>
         <div class="device-photo-preview full-width" id="listingDevicePhotoPreview"></div>
+        <label class="device-photo-upload full-width">
+          <i class="fa-solid fa-panorama"></i>
+          <span>Upload 360&deg; panoramas (optional, up to 3)</span>
+          <small>Wide equirectangular shots from a 360 camera or phone panorama mode. Powers the buyer Immersive View room tour.</small>
+          <input id="listingPanoPhotos" type="file" accept="image/*" multiple>
+        </label>
+        <div class="device-photo-status full-width" id="listingPanoPhotoStatus">No panoramas selected yet.</div>
+        <div class="device-photo-preview full-width" id="listingPanoPhotoPreview"></div>
         <div class="input-shell">
           <i class="fa-solid fa-cube"></i>
           <input id="listingArLink" type="url" placeholder="AR model link (.glb/.gltf or Google Drive)">
@@ -448,12 +1012,15 @@
         <div class="input-shell select-shell">
           <i class="fa-solid fa-toggle-on"></i>
           <select id="listingStatus" required>
-            <option value="Live">Live</option>
-            <option value="Draft">Draft</option>
-            <option value="Reserved">Reserved</option>
+            <option value="Live">Submit for admin QC</option>
+            <option value="Draft">Save as draft</option>
+            <option value="Reserved">Mark reserved</option>
           </select>
         </div>
-        <button class="primary-button full-width" type="submit">Save Listing</button>
+        <button class="primary-button full-width live-submit-button" id="listingSubmitButton" type="submit">
+          <i class="fa-solid fa-shield-circle-check"></i>
+          Submit for QC
+        </button>
       </form>
 
       <div class="excel-import-box">
@@ -750,14 +1317,48 @@
     </div>
   </div>
 
+  <div class="modal-backdrop" id="billingModal" aria-hidden="true">
+    <div class="modal-card modal-card-wide">
+      <div class="modal-topbar">
+        <div>
+          <div class="eyebrow">Agent Subscription</div>
+          <h3>Choose the tools you want to unlock</h3>
+        </div>
+        <button class="close-button" data-close="billingModal" type="button"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="billing-tier-grid" id="agentTierGrid"></div>
+    </div>
+  </div>
+
+  <nav class="agent-quick-dock" aria-label="Quick agent actions">
+    <button type="button" data-action="open-listing-modal">
+      <i class="fa-solid fa-building-circle-arrow-right"></i>
+      <span>Add Listing</span>
+    </button>
+    <button type="button" data-action="open-lead-modal">
+      <i class="fa-solid fa-user-plus"></i>
+      <span>Lead</span>
+    </button>
+    <a href="#listingCreator">
+      <i class="fa-solid fa-wand-magic-sparkles"></i>
+      <span>AI Creator</span>
+    </a>
+    <button type="button" data-action="jump-section" data-section="listings">
+      <i class="fa-solid fa-list-check"></i>
+      <span>Listings</span>
+    </button>
+  </nav>
+
   <div class="toast" id="toast"></div>
 
   <script src="./negotiation-store.js"></script>
   <script src="./negotiation-assistant.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-loader.js"></script>
   <script src="./auth.js"></script>
   <script src="./auth-gate.js" data-required-role="agent" data-login-path="/login.html"></script>
+  <script src="./rg-smooth-scroll.js"></script>
   <script src="./agent.js"></script>
 </body>
 </html>

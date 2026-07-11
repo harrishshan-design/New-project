@@ -1,0 +1,668 @@
+/* RealityGenius Immersive View - full-screen premium overlay.
+   All rules scoped under .rg-immersive (plus the .rg-360-badge card chip)
+   so nothing here can leak into the existing dashboard styles. */
+
+.rg-immersive {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(49, 95, 56, 0.35), rgba(49, 95, 56, 0) 42%),
+    radial-gradient(circle at 90% 100%, rgba(194, 144, 72, 0.22), rgba(194, 144, 72, 0) 46%),
+    linear-gradient(165deg, #0b120c 0%, #101b12 55%, #0b130d 100%);
+  color: #eef4ea;
+  font-family: "Rethink Sans", "Inter", sans-serif;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.28s ease, visibility 0.28s ease;
+}
+
+.rg-immersive.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.rg-immersive * {
+  box-sizing: border-box;
+}
+
+.rg-immersive-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 1480px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 18px clamp(14px, 3vw, 34px) clamp(14px, 2.6vw, 26px);
+  transform: translateY(14px) scale(0.99);
+  transition: transform 0.32s cubic-bezier(0.22, 0.9, 0.3, 1);
+}
+
+.rg-immersive.is-open .rg-immersive-inner {
+  transform: translateY(0) scale(1);
+}
+
+/* ---------- Header ---------- */
+
+.rg-immersive-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 14px;
+}
+
+.rg-immersive-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #d8c08e;
+}
+
+.rg-immersive-eyebrow i {
+  background: linear-gradient(120deg, #c29048, #e7cf9a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.rg-immersive-head h2 {
+  margin: 6px 0 2px;
+  font-size: clamp(19px, 2.6vw, 28px);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: #f6f9f2;
+}
+
+.rg-immersive-location {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(238, 244, 234, 0.62);
+}
+
+.rg-immersive-close {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 18px;
+  border: 1px solid rgba(238, 244, 234, 0.2);
+  border-radius: 999px;
+  background: rgba(238, 244, 234, 0.06);
+  color: #eef4ea;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.rg-immersive-close:hover {
+  background: rgba(238, 244, 234, 0.14);
+  border-color: rgba(238, 244, 234, 0.4);
+  transform: translateY(-1px);
+}
+
+/* ---------- Tabs ---------- */
+
+.rg-immersive-tabs {
+  display: inline-flex;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid rgba(238, 244, 234, 0.14);
+  border-radius: 999px;
+  background: rgba(9, 14, 10, 0.55);
+  backdrop-filter: blur(16px);
+  width: fit-content;
+  margin-bottom: 16px;
+}
+
+.rg-immersive-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(238, 244, 234, 0.6);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.22s ease, color 0.22s ease;
+  white-space: nowrap;
+}
+
+.rg-immersive-tab:hover {
+  color: #eef4ea;
+}
+
+.rg-immersive-tab.is-active {
+  background: linear-gradient(120deg, #2f5c37, #3d7a47);
+  color: #f6f9f2;
+  box-shadow: 0 10px 30px rgba(24, 48, 28, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.rg-immersive-tab[hidden] {
+  display: none;
+}
+
+/* ---------- Stage ---------- */
+
+.rg-immersive-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  border: 1px solid rgba(238, 244, 234, 0.13);
+  border-radius: 26px;
+  overflow: hidden;
+  background: rgba(6, 10, 7, 0.6);
+  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.55);
+}
+
+.rg-immersive-panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.rg-immersive-panel.is-active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ---------- 360 tour panel ---------- */
+
+.rg-immersive-pano {
+  flex: 1;
+  min-height: 0;
+}
+
+.rg-immersive-pano .pnlm-container {
+  background: #060a07;
+}
+
+.rg-immersive-pano-rooms {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid rgba(238, 244, 234, 0.16);
+  border-radius: 999px;
+  background: rgba(9, 14, 10, 0.68);
+  backdrop-filter: blur(16px);
+  z-index: 5;
+  max-width: calc(100% - 28px);
+  overflow-x: auto;
+}
+
+.rg-immersive-room-chip {
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(238, 244, 234, 0.62);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.rg-immersive-room-chip.is-active {
+  background: rgba(238, 244, 234, 0.16);
+  color: #f6f9f2;
+}
+
+.rg-immersive-pano-hint {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(9, 14, 10, 0.6);
+  border: 1px solid rgba(238, 244, 234, 0.14);
+  color: rgba(238, 244, 234, 0.82);
+  font-size: 12px;
+  font-weight: 700;
+  backdrop-filter: blur(12px);
+  z-index: 5;
+  pointer-events: none;
+  animation: rg-immersive-fade-hint 5s ease forwards;
+}
+
+@keyframes rg-immersive-fade-hint {
+  0%, 70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ---------- AI staging panel ---------- */
+
+.rg-immersive-staging {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+}
+
+.rg-immersive-staging-side {
+  width: min(320px, 34%);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border-right: 1px solid rgba(238, 244, 234, 0.1);
+  background: rgba(9, 14, 10, 0.45);
+  overflow-y: auto;
+}
+
+.rg-immersive-side-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(238, 244, 234, 0.5);
+}
+
+.rg-immersive-photo-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.rg-immersive-photo-pick {
+  position: relative;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(238, 244, 234, 0.05);
+  cursor: pointer;
+  aspect-ratio: 4 / 3;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.rg-immersive-photo-pick img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.rg-immersive-photo-pick:hover {
+  transform: translateY(-1px);
+}
+
+.rg-immersive-photo-pick.is-active {
+  border-color: #c29048;
+  box-shadow: 0 0 0 3px rgba(194, 144, 72, 0.25);
+}
+
+.rg-immersive-style-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rg-immersive-style-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border: 1px solid rgba(238, 244, 234, 0.14);
+  border-radius: 14px;
+  background: rgba(238, 244, 234, 0.04);
+  color: rgba(238, 244, 234, 0.78);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.rg-immersive-style-chip.is-active {
+  border-color: rgba(194, 144, 72, 0.7);
+  background: rgba(194, 144, 72, 0.12);
+  color: #f0e3c6;
+}
+
+.rg-immersive-generate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(120deg, #c29048, #a9772f);
+  color: #14100a;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 16px 44px rgba(194, 144, 72, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.rg-immersive-generate:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 20px 52px rgba(194, 144, 72, 0.42);
+}
+
+.rg-immersive-generate:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.rg-immersive-staging-note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(238, 244, 234, 0.55);
+}
+
+.rg-immersive-staging-note.is-demo {
+  color: #d8c08e;
+}
+
+.rg-immersive-staging-note.is-error {
+  color: #e79a8e;
+}
+
+/* ---------- Before / after compare ---------- */
+
+.rg-immersive-compare-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.rg-immersive-compare {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.rg-immersive-compare img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.rg-immersive-compare .rg-after {
+  clip-path: inset(0 0 0 50%);
+}
+
+.rg-immersive-compare-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(194, 144, 72, 0.2), #c29048 45%, rgba(194, 144, 72, 0.2));
+  z-index: 4;
+  pointer-events: none;
+}
+
+.rg-immersive-compare-handle::after {
+  content: "\2194";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #c29048;
+  color: #14100a;
+  font-size: 17px;
+  font-weight: 900;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+.rg-immersive-compare-tag {
+  position: absolute;
+  top: 14px;
+  padding: 6px 13px;
+  border-radius: 999px;
+  background: rgba(9, 14, 10, 0.66);
+  border: 1px solid rgba(238, 244, 234, 0.16);
+  color: rgba(238, 244, 234, 0.86);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  backdrop-filter: blur(10px);
+  z-index: 4;
+  pointer-events: none;
+}
+
+.rg-immersive-compare-tag.rg-tag-before { left: 14px; }
+.rg-immersive-compare-tag.rg-tag-after { right: 14px; }
+
+.rg-immersive-compare-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  padding: 24px;
+  color: rgba(238, 244, 234, 0.55);
+  font-size: 14px;
+  z-index: 3;
+  background: rgba(6, 10, 7, 0.4);
+}
+
+.rg-immersive-compare-empty i {
+  font-size: 30px;
+  background: linear-gradient(120deg, #c29048, #e7cf9a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.rg-immersive-compare-empty strong {
+  color: rgba(238, 244, 234, 0.85);
+  font-size: 16px;
+}
+
+.rg-immersive-compare-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid rgba(238, 244, 234, 0.1);
+  background: rgba(9, 14, 10, 0.5);
+}
+
+.rg-immersive-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid rgba(238, 244, 234, 0.2);
+  border-radius: 999px;
+  background: rgba(238, 244, 234, 0.06);
+  color: #eef4ea;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.rg-immersive-download:hover {
+  background: rgba(238, 244, 234, 0.14);
+}
+
+.rg-immersive-download[aria-disabled="true"] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* Spinner on the generate button */
+.rg-immersive-spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(20, 16, 10, 0.35);
+  border-top-color: #14100a;
+  border-radius: 50%;
+  animation: rg-immersive-spin 0.7s linear infinite;
+}
+
+@keyframes rg-immersive-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- Launcher + card badge (light dashboard context) ---------- */
+
+.rg-immersive-launch {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 14px 18px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(120deg, #1d4024, #315f38 55%, #2f7869);
+  color: #f6f9f2;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 18px 44px rgba(29, 64, 36, 0.32);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.rg-immersive-launch.is-available {
+  display: inline-flex;
+}
+
+.rg-immersive-launch:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 22px 54px rgba(29, 64, 36, 0.42);
+}
+
+.rg-immersive-launch i {
+  color: #e7cf9a;
+}
+
+.rg-360-badge {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: linear-gradient(120deg, #1d4024, #2f7869);
+  color: #f0e3c6;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 22px rgba(20, 40, 24, 0.4);
+}
+
+.rg-frontline-badge {
+  position: absolute;
+  left: 14px;
+  top: 52px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: linear-gradient(120deg, #b8862f, #c29048);
+  color: #fff8ea;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  box-shadow: 0 8px 22px rgba(160, 116, 40, 0.42);
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 860px) {
+  .rg-immersive-inner {
+    padding: 12px 10px 10px;
+  }
+
+  .rg-immersive-head h2 {
+    font-size: 18px;
+  }
+
+  .rg-immersive-tabs {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .rg-immersive-tab {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 12px;
+  }
+
+  .rg-immersive-stage {
+    border-radius: 18px;
+  }
+
+  .rg-immersive-staging {
+    flex-direction: column;
+  }
+
+  .rg-immersive-staging-side {
+    width: 100%;
+    border-right: 0;
+    border-bottom: 1px solid rgba(238, 244, 234, 0.1);
+    flex-direction: column;
+    max-height: 46%;
+  }
+
+  .rg-immersive-photo-strip {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .rg-immersive-style-chips {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .rg-immersive-style-chip {
+    white-space: nowrap;
+  }
+}

@@ -181,7 +181,9 @@
         box-shadow:0 16px 42px rgba(0,0,0,.2);
         font:900 .86rem Inter,system-ui,sans-serif;
         cursor:pointer;
+        transition:transform .18s ease, box-shadow .18s ease, opacity .18s ease;
       }
+      .rg-feedback-float:hover{transform:translateY(-2px);box-shadow:0 20px 48px rgba(0,0,0,.24)}
       .rg-feedback-float i{color:#f7d37a}
       body.rg-mobile-app .rg-feedback-float{bottom:calc(86px + var(--rg-mobile-safe-bottom,0px))}
       .rg-feedback-space{
@@ -321,7 +323,17 @@
         .rg-feedback-rating button{min-height:44px}
         .rg-feedback-actions{display:grid;grid-template-columns:1fr}
         .rg-feedback-submit,.rg-feedback-stay{width:100%}
-        .rg-feedback-float{right:12px;bottom:calc(82px + var(--rg-mobile-safe-bottom,0px));min-height:42px;padding:0 12px}
+        .rg-feedback-float{
+          right:14px;
+          bottom:calc(112px + var(--rg-mobile-safe-bottom,0px));
+          width:46px;
+          min-height:46px;
+          padding:0;
+          justify-content:center;
+          border-color:rgba(247,211,122,.36);
+        }
+        .rg-feedback-float span{display:none}
+        body.rg-mobile-app .rg-feedback-float{bottom:calc(112px + var(--rg-mobile-safe-bottom,0px))}
         .rg-feedback-space{width:calc(100% - 20px);margin-top:22px;border-radius:18px}
         .rg-feedback-space--bottom{margin-top:8px;margin-bottom:calc(96px + var(--rg-mobile-safe-bottom,0px))}
         .rg-feedback-space-inner{grid-template-columns:1fr;padding:12px;gap:12px}

@@ -1351,6 +1351,56 @@ function storagePublicUrl(storagePath) {
     return `${SUPABASE_PROJECT_URL}/storage/v1/object/public/${encodeURIComponent(SUPABASE_PROPERTY_MEDIA_BUCKET)}/${encodeStoragePath(storagePath)}`;
 }
 
+function getClientIp(req) {
+    const forwarded = normalizeHeaderValue(req.headers['x-forwarded-for']);
+    if (forwarded) return forwarded.split(',')[0].trim();
+    return req.socket?.remoteAddress || 'unknown';
+}
+
+// Best-effort per-instance protection for the paid AI staging endpoint.
+// Move to a Supabase-backed counter before running multiple instances.
+const AR_RATE_LIMIT = { perIpPerHour: 6, globalPerDay: 60 };
+const arRateState = { ipHits: new Map(), dayCount: 0, dayStamp: '' };
+
+function checkArRateLimit(ip) {
+    const now = Date.now();
+    const today = new Date().toISOString().slice(0, 10);
+    if (arRateState.dayStamp !== today) {
+        arRateState.dayStamp = today;
+        arRateState.dayCount = 0;
+        arRateState.ipHits.clear();
+    }
+    if (arRateState.dayCount >= AR_RATE_LIMIT.globalPerDay) {
+        return { ok: false, error: 'AI staging is at capacity for today. Please try again tomorrow.' };
+    }
+    const hits = (arRateState.ipHits.get(ip) || []).filter((t) => now - t < 60 * 60 * 1000);
+    if (hits.length >= AR_RATE_LIMIT.perIpPerHour) {
+        return { ok: false, error: 'Too many staging requests. Please wait a while and try again.' };
+    }
+    hits.push(now);
+    arRateState.ipHits.set(ip, hits);
+    arRateState.dayCount += 1;
+    return { ok: true };
+}
+
+function isOwnStorageImageUrl(value) {
+    const url = String(value || '').trim();
+    if (!SUPABASE_PROJECT_URL) return false;
+    return url.startsWith(`${SUPABASE_PROJECT_URL}/storage/v1/object/public/`);
+}
+
+async function fetchStorageImageAsFile(imageUrl) {
+    const response = await fetch(imageUrl);
+    if (!response.ok) throw new Error(`Could not load the listing photo (${response.status}).`);
+    const mime = String(response.headers.get('content-type') || 'image/jpeg').split(';')[0].trim();
+    if (!/^image\//i.test(mime)) throw new Error('The staging source must be an image.');
+    const buffer = Buffer.from(await response.arrayBuffer());
+    if (!buffer.length) throw new Error('The listing photo is empty.');
+    if (buffer.length > 10 * 1024 * 1024) throw new Error('The listing photo is too large to stage.');
+    const filename = decodeURIComponent(new URL(imageUrl).pathname.split('/').pop() || 'room.jpg');
+    return { buffer, mimeType: mime, filename };
+}
+
 function imageExtensionFromMime(mime = '', fallback = 'jpg') {
     const normalized = String(mime || '').toLowerCase();
     if (normalized.includes('png')) return 'png';
@@ -1498,6 +1548,15 @@ async function pickAgentListingPayload(payload = {}) {
         };
     }
 
+    const panoramas = (await prepareAgentGalleryUrls(
+        payload.pano_urls || payload.panoUrls || payload.panoramas || [],
+        { agentId, title, label: 'pano' }
+    )).slice(0, 3).map((item, index) => ({
+        ...item,
+        label: item.label && !/^(Front View|Photo \d+)$/.test(item.label) ? item.label : `360 Room ${index + 1}`,
+        required: false
+    }));
+
     return {
         id: existingId || undefined,
         agent_id: agentId,
@@ -1509,6 +1568,8 @@ async function pickAgentListingPayload(payload = {}) {
         landlord_name: String(payload.landlord_name || payload.landlordName || '').trim(),
         landlord_phone: cleanPhone(payload.landlord_phone || payload.landlordPhone || ''),
         gallery_urls: gallery,
+        // Omitted when empty so inserts keep working before the pano_urls migration runs.
+        ...(panoramas.length ? { pano_urls: panoramas } : {}),
         ar_link: String(payload.ar_link || payload.arLink || payload.modelUrl || '').trim(),
         status: "pending_qc",
         updated_at: new Date().toISOString()
@@ -1543,6 +1604,7 @@ function agentListingToPublicProperty(item) {
         image,
         gallery,
         galleryCount: gallery.length,
+        panoramas: normalizePublicGalleryUrls(item.pano_urls).slice(0, 3),
         whatsapp: item.landlord_phone || "",
         aiScore: 88,
         confidenceScore: 88,
@@ -2594,6 +2656,7 @@ async function createAgentListing(payload = {}) {
     const row = existingId
         ? await patchSupabaseRow("agent_property_listings", existingId, listing)
         : await insertSupabaseRow("agent_property_listings", listing);
+    if (!existingId) await awardAgentListingPoints(listing.agent_id);
     await createAdminNotification(
         existingId ? "Updated agent listing needs QC" : "Agent listing needs QC",
         `${row?.title || "Agent listing"} was ${existingId ? "updated" : "submitted"} and is waiting for admin approval.`,
@@ -2609,6 +2672,112 @@ async function listAdminAgentListings() {
         "select=*&order=created_at.desc&limit=200"
     );
     return { items: rows || [] };
+}
+
+// ---------------------------------------------------------
+// AGENT ENGAGEMENT: daily check-in streaks, points, tiers.
+// Points decide frontline ordering in the buyer feed.
+// ---------------------------------------------------------
+const AGENT_POINTS = { dailyCheckin: 10, streak3Bonus: 5, streak7Bonus: 15, listingSubmitted: 50 };
+const AGENT_TIERS = [
+    { key: "elite", label: "Elite Frontliner", minPoints: 1000 },
+    { key: "dedicated", label: "Dedicated Agent", minPoints: 400 },
+    { key: "rising", label: "Rising Agent", minPoints: 0 }
+];
+
+function agentTierForPoints(points) {
+    return AGENT_TIERS.find((tier) => points >= tier.minPoints) || AGENT_TIERS[AGENT_TIERS.length - 1];
+}
+
+function engagementSummary(row, extras = {}) {
+    const points = Number(row?.points || 0);
+    const tier = agentTierForPoints(points);
+    const nextTier = [...AGENT_TIERS].reverse().find((candidate) => candidate.minPoints > points) || null;
+    return {
+        agentId: row?.agent_id || "",
+        points,
+        streakDays: Number(row?.streak_days || 0),
+        bestStreak: Number(row?.best_streak || 0),
+        listingsSubmitted: Number(row?.listings_submitted || 0),
+        lastCheckinDate: row?.last_checkin_date || null,
+        tier: tier.key,
+        tierLabel: tier.label,
+        nextTier: nextTier ? { key: nextTier.key, label: nextTier.label, pointsNeeded: nextTier.minPoints - points } : null,
+        ...extras
+    };
+}
+
+async function getAgentEngagementRow(agentId) {
+    const rows = await selectSupabaseRows(
+        "agent_engagement",
+        `select=*&agent_id=${supabaseEq(agentId)}&limit=1`
+    );
+    return Array.isArray(rows) && rows[0] ? rows[0] : null;
+}
+
+async function agentDailyCheckin(payload = {}) {
+    if (!hasSupabaseConfig()) return { __status: 500, error: "Supabase is not configured." };
+    const agentId = String(payload.agentId || payload.agent_id || '').trim();
+    if (!agentId) return { __status: 400, error: "agentId is required." };
+
+    const today = new Date().toISOString().slice(0, 10);
+    const existing = await getAgentEngagementRow(agentId);
+
+    if (existing && existing.last_checkin_date === today) {
+        return { engagement: engagementSummary(existing, { checkedInToday: true, earnedToday: 0 }) };
+    }
+
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const continued = existing && existing.last_checkin_date === yesterday;
+    const streakDays = continued ? Number(existing.streak_days || 0) + 1 : 1;
+    let earned = AGENT_POINTS.dailyCheckin;
+    if (streakDays >= 7) earned += AGENT_POINTS.streak7Bonus;
+    else if (streakDays >= 3) earned += AGENT_POINTS.streak3Bonus;
+
+    const row = await upsertSupabaseRow("agent_engagement", {
+        agent_id: agentId,
+        points: Number(existing?.points || 0) + earned,
+        streak_days: streakDays,
+        best_streak: Math.max(streakDays, Number(existing?.best_streak || 0)),
+        last_checkin_date: today,
+        listings_submitted: Number(existing?.listings_submitted || 0),
+        updated_at: new Date().toISOString()
+    }, "agent_id");
+
+    return { engagement: engagementSummary(row, { checkedInToday: true, earnedToday: earned }) };
+}
+
+async function awardAgentListingPoints(agentId) {
+    if (!agentId) return;
+    try {
+        const existing = await getAgentEngagementRow(agentId);
+        await upsertSupabaseRow("agent_engagement", {
+            agent_id: agentId,
+            points: Number(existing?.points || 0) + AGENT_POINTS.listingSubmitted,
+            streak_days: Number(existing?.streak_days || 0),
+            best_streak: Number(existing?.best_streak || 0),
+            last_checkin_date: existing?.last_checkin_date || null,
+            listings_submitted: Number(existing?.listings_submitted || 0) + 1,
+            updated_at: new Date().toISOString()
+        }, "agent_id");
+    } catch (error) {
+        console.error('[Engagement] Failed to award listing points:', error.message);
+    }
+}
+
+async function agentPointsByAgentId(agentIds = []) {
+    const unique = [...new Set(agentIds.filter(Boolean).map(String))];
+    if (!unique.length) return new Map();
+    try {
+        const rows = await selectSupabaseRows(
+            "agent_engagement",
+            `select=agent_id,points&agent_id=in.(${unique.map((id) => `"${id.replace(/"/g, '')}"`).join(',')})`
+        );
+        return new Map((rows || []).map((row) => [String(row.agent_id), Number(row.points || 0)]));
+    } catch (error) {
+        console.error('[Engagement] Failed to load agent points:', error.message);
+        return new Map();
+    }
 }
 
 async function reviewAgentListing(payload = {}) {
@@ -2644,12 +2813,28 @@ async function listPublicProperties() {
         "agent_property_listings",
         "select=*&status=in.(approved,live)&order=updated_at.desc&limit=100"
     );
+
+    // Frontline ordering: dedicated agents (more engagement points) surface first.
+    const pointsByAgent = await agentPointsByAgentId((agentRows || []).map((row) => row.agent_id));
     const items = [
         ...(importedRows || []).map(importedListingToPublicProperty),
-        ...(agentRows || []).map(agentListingToPublicProperty)
+        ...(agentRows || []).map((row) => {
+            const points = pointsByAgent.get(String(row.agent_id)) || 0;
+            const tier = agentTierForPoints(points);
+            return {
+                ...agentListingToPublicProperty(row),
+                agentPoints: points,
+                agentTier: tier.key,
+                agentTierLabel: tier.label
+            };
+        })
     ]
         .filter((item) => item && item.title && Number(item.price || 0) > 0)
-        .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
+        .sort((a, b) => {
+            const pointsGap = Number(b.agentPoints || 0) - Number(a.agentPoints || 0);
+            if (pointsGap) return pointsGap;
+            return new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0);
+        });
     return { items };
 }
 
@@ -2770,6 +2955,10 @@ const server = http.createServer(async (req, res) => {
             return createAgentListing(payload);
         }
 
+        if (url === '/api/agent/checkin') {
+            return agentDailyCheckin(payload);
+        }
+
         if (url === '/api/admin/listings') {
             const auth = requireAdminAccess(req);
             if (!auth.ok) return { __status: auth.status, error: auth.error };
@@ -2787,9 +2976,36 @@ const server = http.createServer(async (req, res) => {
         }
 
         if (url === '/api/ar/generate') {
+            const rate = checkArRateLimit(payload.__clientIp || 'unknown');
+            if (!rate.ok) return { __status: 429, error: rate.error };
+
             const parsed = payload.__multipart || { fields: payload, files: {} };
             const style = normalizeArStyle(parsed.fields?.style || payload.style);
-            const file = parsed.files?.image;
+            let file = parsed.files?.image;
+
+            // JSON mode for buyers: restage an existing listing photo by URL.
+            // Only our own Supabase Storage URLs are fetched, so this cannot be
+            // used to make the server request arbitrary hosts. Externally hosted
+            // photos (demo/seed listings) get the styled demo image instead.
+            if ((!file || !file.buffer) && payload.imageUrl) {
+                if (!isOwnStorageImageUrl(payload.imageUrl)) {
+                    return {
+                        id: makeArProjectId(),
+                        imageUrl: AR_DEMO_IMAGES[style],
+                        sourceImageUrl: String(payload.imageUrl).slice(0, 2000),
+                        style,
+                        prompt: arStagingPrompt(style),
+                        demoMode: true,
+                        aiError: "Real AI staging is available for agent-uploaded listing photos.",
+                        createdAt: new Date().toISOString()
+                    };
+                }
+                try {
+                    file = await fetchStorageImageAsFile(payload.imageUrl);
+                } catch (error) {
+                    return { __status: 400, error: error.message };
+                }
+            }
 
             if (!file || !file.buffer || !file.buffer.length) {
                 return { __status: 400, error: "Upload a room image first." };
@@ -3060,9 +3276,11 @@ Rank and explain best 3 properties.`;
                     const response = await handleStripeWebhook(rawBody, normalizeHeaderValue(req.headers['stripe-signature']));
                     return sendJson(response.__status || (response.error ? 400 : 200), response);
                 }
-                const payload = isArGenerate
+                const isMultipart = /multipart\/form-data/i.test(normalizeHeaderValue(req.headers['content-type']));
+                const payload = isArGenerate && isMultipart
                     ? { __multipart: parseArMultipart(rawBody, req.headers['content-type']) }
                     : (rawBody.length ? JSON.parse(rawBody.toString('utf8')) : {});
+                if (isArGenerate) payload.__clientIp = getClientIp(req);
                 const response = await routeManager(routePath, payload);
                 
                 if (response) {

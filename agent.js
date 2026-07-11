@@ -21,25 +21,30 @@ const STORAGE_KEYS = {
   globalAlert: "rg_global_platform_alert"
 };
 
+const FREE_LAUNCH_MODE = true;
+
 const AGENT_PLAN_TIERS = [
   {
     id: "starter",
-    name: "Starter",
+    billingPlan: "starter_rg",
+    name: "Starter RG",
     price: 29,
-    tagline: "For solo agents starting with clean lead capture.",
+    tagline: "For solo agents who want content and faster listing preparation.",
     badge: "Entry",
-    features: ["Basic listing profile", "Manual lead inbox", "AI Content Creator", "Standard dashboard"]
+    features: ["Everything in Free", "AI Content Creator", "WhatsApp follow-up captions", "AI AR Builder demo preview", "Smart listing checklist"]
   },
   {
     id: "pro",
-    name: "Pro",
-    price: 59,
-    tagline: "For agents who want faster lead response.",
+    billingPlan: "elite_agent",
+    name: "Elite Agent",
+    price: 79,
+    tagline: "For active agents running serious buyer pipelines and premium listings.",
     badge: "Recommended",
-    features: ["Instant lead alerts", "Weekly performance report", "Lead tracking", "Follow-up reminders"]
+    features: ["Everything in Starter RG", "AI Document Vault", "DSR calculator", "Smart viewing itinerary", "Co-broke matchmaker", "1 Friday Auction Night slot"]
   },
   {
     id: "elite",
+    billingPlan: "elite_agent",
     name: "Elite Agent",
     price: 79,
     tagline: "For agents who want the full automation engine.",
@@ -55,6 +60,56 @@ const FREE_AGENT_PLAN = {
   tagline: "Basic dashboard access",
   badge: "Free",
   features: ["Upload listings", "Basic profile", "Normal dashboard"]
+};
+
+const PLAN_FEATURES = {
+  free: {
+    addListing: true,
+    aiCaption: true,
+    aiNegotiation: true,
+    leadHeat: true,
+    auctionSlot: true,
+    premiumBadge: true
+  },
+  starter: {
+    addListing: true,
+    aiCaption: true,
+    aiNegotiation: false,
+    leadHeat: false,
+    auctionSlot: false,
+    premiumBadge: false
+  },
+  pro: {
+    addListing: true,
+    aiCaption: true,
+    aiNegotiation: true,
+    leadHeat: true,
+    auctionSlot: false,
+    premiumBadge: true
+  },
+  elite: {
+    addListing: true,
+    aiCaption: true,
+    aiNegotiation: true,
+    leadHeat: true,
+    auctionSlot: true,
+    premiumBadge: true
+  }
+};
+
+const FEATURE_UNLOCK_COPY = {
+  aiCaption: { plan: "starter", label: "AI Content Creator", message: "AI Content Creator unlocks with Starter, Pro, or Elite." },
+  aiNegotiation: { plan: "pro", label: "AI Negotiation", message: "AI Negotiation unlocks with Pro or Elite." },
+  leadHeat: { plan: "pro", label: "Lead Heat", message: "Lead scoring and hot lead tools unlock with Pro or Elite." },
+  auctionSlot: { plan: "elite", label: "Friday Auction Night", message: "Auction Night slots unlock with Elite." },
+  premiumBadge: { plan: "pro", label: "Premium Badge", message: "Premium agent badge unlocks with Pro or Elite." }
+};
+
+const BACKEND_PLAN_TO_AGENT_PLAN = {
+  free: "free",
+  starter_rg: "starter",
+  elite_agent: "elite",
+  best_closers: "elite"
 };
 
 const seedSubscription = {
@@ -100,6 +155,9 @@ const LISTING_MIN_PHOTO_COUNT = 4;
 const LISTING_RECOMMENDED_PHOTO_COUNT = 10;
 const LISTING_DEVICE_IMAGE_MAX_SIZE = 1200;
 const LISTING_DEVICE_IMAGE_QUALITY = 0.64;
+const LISTING_PANO_PHOTO_LIMIT = 3;
+const LISTING_PANO_IMAGE_MAX_SIZE = 4096;
+const LISTING_PANO_IMAGE_QUALITY = 0.8;
 const LIVE_LISTING_SAVE_ERROR = "Listing could not be saved live. Backend/Supabase connection failed.";
 
 const LISTING_EXCEL_BASE_COLUMNS = [
@@ -320,6 +378,7 @@ function removeAgentDemoRows() {
 
 let contentHistoryHydrated = false;
 let listingDevicePhotos = [];
+let listingPanoPhotos = [];
 let listingEnhancerPhotos = [];
 
 const els = {
@@ -335,7 +394,20 @@ const els = {
   liveAgentName: document.getElementById("liveAgentName"),
   liveAgentAgency: document.getElementById("liveAgentAgency"),
   liveAgentRen: document.getElementById("liveAgentRen"),
+  liveAgentRank: document.getElementById("liveAgentRank"),
   liveAgentAvatar: document.querySelector(".live-agent-avatar"),
+  agentProfileForm: document.getElementById("agentProfileForm"),
+  agentProfileNameInput: document.getElementById("agentProfileNameInput"),
+  agentProfileAgencyInput: document.getElementById("agentProfileAgencyInput"),
+  agentProfileRenInput: document.getElementById("agentProfileRenInput"),
+  agentProfilePhotoInput: document.getElementById("agentProfilePhotoInput"),
+  agentProfilePhotoPreview: document.getElementById("agentProfilePhotoPreview"),
+  agentProfilePreviewName: document.getElementById("agentProfilePreviewName"),
+  agentProfilePreviewAgency: document.getElementById("agentProfilePreviewAgency"),
+  agentProfilePreviewRen: document.getElementById("agentProfilePreviewRen"),
+  agentRankChip: document.getElementById("agentRankChip"),
+  agentRankMeter: document.getElementById("agentRankMeter"),
+  agentRankReason: document.getElementById("agentRankReason"),
   commandBrief: document.getElementById("commandBrief"),
   commandCards: document.getElementById("commandCards"),
   actionQueue: document.getElementById("actionQueue"),
@@ -399,6 +471,9 @@ const els = {
   listingDevicePhotos: document.getElementById("listingDevicePhotos"),
   listingDevicePhotoPreview: document.getElementById("listingDevicePhotoPreview"),
   listingDevicePhotoStatus: document.getElementById("listingDevicePhotoStatus"),
+  listingPanoPhotos: document.getElementById("listingPanoPhotos"),
+  listingPanoPhotoPreview: document.getElementById("listingPanoPhotoPreview"),
+  listingPanoPhotoStatus: document.getElementById("listingPanoPhotoStatus"),
   listingArLink: document.getElementById("listingArLink"),
   listingExcelInput: document.getElementById("listingExcelInput"),
   listingImportStatus: document.getElementById("listingImportStatus"),
@@ -407,6 +482,17 @@ const els = {
   downloadListingTemplateHub: document.getElementById("downloadListingTemplateHub"),
   listingExcelQuickInput: document.getElementById("listingExcelQuickInput"),
   quickDeviceListingUpload: document.getElementById("quickDeviceListingUpload"),
+  routineTierBadge: document.getElementById("routineTierBadge"),
+  routineTierLabel: document.getElementById("routineTierLabel"),
+  routineStreakDays: document.getElementById("routineStreakDays"),
+  routinePointsTotal: document.getElementById("routinePointsTotal"),
+  routineTierProgress: document.getElementById("routineTierProgress"),
+  routineTierNext: document.getElementById("routineTierNext"),
+  routineCheckLogin: document.getElementById("routineCheckLogin"),
+  routineCheckListing: document.getElementById("routineCheckListing"),
+  routineCheckLeads: document.getElementById("routineCheckLeads"),
+  routineQuickList: document.getElementById("routineQuickList"),
+  routineRepeatListing: document.getElementById("routineRepeatListing"),
   overviewJumpListings: document.getElementById("overviewJumpListings"),
   overviewDownloadListingTemplate: document.getElementById("overviewDownloadListingTemplate"),
   overviewListingExcelInput: document.getElementById("overviewListingExcelInput"),
@@ -1026,6 +1112,8 @@ function serializeAgentListingForBackend(listing) {
     throw new Error(`At least ${LISTING_MIN_PHOTO_COUNT} property photos are required for admin QC.`);
   }
   return {
+    id: listing.backendId || null,
+    listingId: listing.backendId || null,
     agentId: agent.id || listing.agentId || null,
     title: listing.title,
     area: listing.area,
@@ -1036,6 +1124,14 @@ function serializeAgentListingForBackend(listing) {
     landlordPhone: listing.landlordPhone,
     galleryUrls,
     temporaryImageCount: temporaryCount,
+    panoUrls: (listing.panoramas || [])
+      .map((item) => ({
+        label: item.label || "360 Room",
+        url: String(item.url || "").trim(),
+        source: item.source || "Agent 360 upload"
+      }))
+      .filter((item) => item.url && (/^data:image\//i.test(item.url) || /^https?:\/\//i.test(item.url)))
+      .slice(0, LISTING_PANO_PHOTO_LIMIT),
     arLink: listing.arLink || listing.modelUrl || "",
     source: listing.importSource || "manual"
   };
@@ -1069,6 +1165,7 @@ function mergeBackendListingRow(listing, row = {}) {
     galleryCount: gallery.length,
     verifiedPhotoCount: gallery.length,
     image: gallery[0]?.url || listing.image,
+    panoramas: Array.isArray(row.pano_urls) && row.pano_urls.length ? row.pano_urls : listing.panoramas || [],
     arLink: row.ar_link || listing.arLink,
     modelUrl: row.ar_link || listing.modelUrl,
     adminApproved: row.status === "live" || row.status === "approved",
@@ -1255,16 +1352,164 @@ function goToSection(section) {
   syncSectionVisibility();
   const workArea = document.querySelector(".panel-grid") || document.querySelector(".main");
   if (workArea) workArea.scrollTo({ top: 0, behavior: "smooth" });
+  showToast(`${section.charAt(0).toUpperCase()}${section.slice(1)} opened`);
 }
 
 function openListingDeviceUpload() {
+  if (!requirePlan("addListing")) return;
   openModal("listingModal");
   setTimeout(() => els.listingDevicePhotos?.click(), 120);
+}
+
+// ---------------------------------------------------------
+// DAILY ROUTINE: check-in streaks, points, tier, quick actions.
+// Backend is the source of truth; localStorage keeps the card
+// alive when the API is unreachable.
+// ---------------------------------------------------------
+const ENGAGEMENT_STORE_KEY = "rg_agent_engagement";
+const LEADS_REVIEWED_STORE_KEY = "rg_agent_leads_reviewed_date";
+const ENGAGEMENT_TIERS = [
+  { key: "elite", label: "Elite Frontliner", minPoints: 1000 },
+  { key: "dedicated", label: "Dedicated Agent", minPoints: 400 },
+  { key: "rising", label: "Rising Agent", minPoints: 0 }
+];
+
+let agentEngagement = readStore(ENGAGEMENT_STORE_KEY, null);
+
+function engagementTierFor(points) {
+  return ENGAGEMENT_TIERS.find((tier) => points >= tier.minPoints) || ENGAGEMENT_TIERS[ENGAGEMENT_TIERS.length - 1];
+}
+
+function todayStamp() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function localFallbackCheckin() {
+  const previous = agentEngagement || { points: 0, streakDays: 0, bestStreak: 0, lastCheckinDate: null };
+  if (previous.lastCheckinDate === todayStamp()) return { ...previous, checkedInToday: true, earnedToday: 0 };
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const streakDays = previous.lastCheckinDate === yesterday ? Number(previous.streakDays || 0) + 1 : 1;
+  const earned = 10 + (streakDays >= 7 ? 15 : streakDays >= 3 ? 5 : 0);
+  return {
+    ...previous,
+    points: Number(previous.points || 0) + earned,
+    streakDays,
+    bestStreak: Math.max(streakDays, Number(previous.bestStreak || 0)),
+    lastCheckinDate: todayStamp(),
+    checkedInToday: true,
+    earnedToday: earned,
+    offline: true
+  };
+}
+
+async function performDailyCheckin() {
+  const agent = readLiveAgentProfile();
+  const alreadyToday = agentEngagement?.lastCheckinDate === todayStamp() && agentEngagement?.synced;
+  try {
+    const response = await fetch(agentApiUrl("/agent/checkin"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ agentId: agent.id })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload.engagement) throw new Error(payload.error || "Check-in failed");
+    agentEngagement = { ...payload.engagement, synced: true };
+  } catch (error) {
+    if (window.RGLogError) window.RGLogError(error, { feature: "agent_daily_checkin" });
+    agentEngagement = localFallbackCheckin();
+  }
+  writeStore(ENGAGEMENT_STORE_KEY, agentEngagement);
+  renderAgentRoutine();
+  if (!alreadyToday && agentEngagement.earnedToday > 0) {
+    showToast(`+${agentEngagement.earnedToday} points · Day ${agentEngagement.streakDays} streak. Your listings move up the buyer feed.`);
+  }
+}
+
+function listingUploadedToday() {
+  const today = todayStamp();
+  return state.listings.some((listing) => String(listing.createdAt || listing.updatedAt || "").slice(0, 10) === today);
+}
+
+function leadsReviewedToday() {
+  return readStore(LEADS_REVIEWED_STORE_KEY, "") === todayStamp();
+}
+
+function setRoutineCheckState(button, done) {
+  if (!button) return;
+  button.classList.toggle("is-done", done);
+  const icon = button.querySelector("i");
+  if (icon) icon.className = done ? "fa-solid fa-circle-check" : "fa-regular fa-circle";
+}
+
+function renderAgentRoutine() {
+  if (!els.routinePointsTotal) return;
+  const summary = agentEngagement || { points: 0, streakDays: 0 };
+  const points = Number(summary.points || 0);
+  const tier = summary.tier ? { key: summary.tier, label: summary.tierLabel } : engagementTierFor(points);
+
+  els.routinePointsTotal.textContent = points.toLocaleString("en-MY");
+  els.routineStreakDays.textContent = Number(summary.streakDays || 0);
+  els.routineTierLabel.textContent = tier.label || "Rising Agent";
+  els.routineTierBadge.className = `routine-tier tier-${tier.key || "rising"}`;
+
+  const nextTier = [...ENGAGEMENT_TIERS].reverse().find((candidate) => candidate.minPoints > points) || null;
+  if (nextTier) {
+    const currentFloor = engagementTierFor(points).minPoints;
+    const progress = Math.min(100, Math.round(((points - currentFloor) / (nextTier.minPoints - currentFloor)) * 100));
+    els.routineTierProgress.style.width = `${progress}%`;
+    els.routineTierNext.textContent = `${nextTier.minPoints - points} points to ${nextTier.label}`;
+  } else {
+    els.routineTierProgress.style.width = "100%";
+    els.routineTierNext.textContent = "Top tier reached. Your listings lead the buyer feed.";
+  }
+
+  setRoutineCheckState(els.routineCheckLogin, Boolean(summary.checkedInToday || summary.lastCheckinDate === todayStamp()));
+  setRoutineCheckState(els.routineCheckListing, listingUploadedToday());
+  setRoutineCheckState(els.routineCheckLeads, leadsReviewedToday());
+}
+
+function reviewLeadsRoutine() {
+  writeStore(LEADS_REVIEWED_STORE_KEY, todayStamp());
+  state.section = "leads";
+  syncSectionVisibility();
+  renderAgentRoutine();
+  showToast("Leads open. Reply fast to keep buyers warm.");
+}
+
+function duplicateLastListing() {
+  if (!requirePlan("addListing")) return;
+  const last = state.listings[0];
+  if (!last) {
+    showToast("No previous listing yet. Use Quick List to create your first one.");
+    openListingDeviceUpload();
+    return;
+  }
+
+  if (els.listingTitle) els.listingTitle.value = `${last.title || ""}`.replace(/ \(Copy\)$/, "") + " (Copy)";
+  if (els.listingArea) els.listingArea.value = last.area || "";
+  if (els.listingPrice) els.listingPrice.value = last.price ? `RM ${Math.round(last.price).toLocaleString("en-MY")}` : "";
+  if (els.listingAddress) els.listingAddress.value = last.address || "";
+  if (els.listingPropertyType) els.listingPropertyType.value = last.propertyType || "";
+  if (els.listingLandlordName) els.listingLandlordName.value = last.landlordName || "";
+  if (els.listingLandlordPhone) els.listingLandlordPhone.value = last.landlordPhone || "";
+  if (els.listingArLink) els.listingArLink.value = last.arLink || "";
+
+  const gallery = (last.gallery || []).map((slot) => slot.url).filter((url) => /^https?:\/\//i.test(String(url || "")));
+  const linkInputs = [els.listingImageLink, els.listingTopViewLink, els.listingRoom1Link, els.listingBathroomLink, els.listingKitchenLink];
+  linkInputs.forEach((input, index) => {
+    if (input) input.value = gallery[index] || "";
+  });
+  if (els.listingExtraPhotoLinks) els.listingExtraPhotoLinks.value = gallery.slice(linkInputs.length).join("\n");
+
+  updateListingQcChecklist();
+  openModal("listingModal");
+  showToast("Last listing loaded. Adjust the details and submit.");
 }
 
 function renderWorkspace() {
   renderGlobalPlatformAlert();
   renderLiveAgentProfile();
+  renderAgentRoutine();
   renderMetrics();
   renderCommandCenter();
   renderAutomationBoard();
@@ -1306,23 +1551,113 @@ function readLiveAgentProfile() {
     ...(stored || {}),
     name: session?.role === "agent" ? (session.name || stored?.name || fallback.name) : (stored?.name || fallback.name),
     email: session?.role === "agent" ? (session.email || stored?.email || fallback.email) : (stored?.email || fallback.email),
-    agencyName: session?.agencyName || stored?.agencyName || fallback.agencyName
+    agencyName: session?.agencyName || stored?.agencyName || fallback.agencyName,
+    photo: stored?.photo || stored?.photoUrl || "",
+    rank: stored?.rank || ""
   };
 }
 
-function renderLiveAgentProfile() {
-  if (!els.liveAgentName) return;
-  const agent = readLiveAgentProfile();
-  const initials = agent.name
+function agentInitials(name = "") {
+  return String(name || "Agent")
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join("") || "AG";
+}
+
+function agentRankDetails() {
+  const listingScore = Math.min(45, state.listings.length * 9);
+  const leadScore = Math.min(30, state.leads.length * 5);
+  const liveScore = Math.min(15, state.listings.filter((listing) => ["Live", "Approved"].includes(normalizeStatus(listing.status))).length * 5);
+  const commissionScore = commissionTotals().pending > 0 ? 10 : 0;
+  const score = Math.min(100, listingScore + leadScore + liveScore + commissionScore);
+  if (score >= 85) return { label: "Best Closer", score, reason: "Top rank: strong listing activity, lead activity, and deal momentum." };
+  if (score >= 60) return { label: "Elite Agent", score, reason: "Elite rank: consistent listings and active buyer pipeline." };
+  if (score >= 35) return { label: "Pro Agent", score, reason: "Pro rank: good progress. Add live listings and follow up leads to climb." };
+  return { label: "Rising Agent", score: Math.max(score, 12), reason: "Rising rank: upload listings and follow up leads to improve your score." };
+}
+
+function applyAgentPhoto(element, photo, initials) {
+  if (!element) return;
+  if (photo) {
+    element.textContent = "";
+    element.style.backgroundImage = `url("${photo}")`;
+  } else {
+    element.style.backgroundImage = "";
+    element.textContent = initials;
+  }
+}
+
+function renderLiveAgentProfile() {
+  if (!els.liveAgentName) return;
+  const agent = readLiveAgentProfile();
+  const initials = agentInitials(agent.name);
+  const rank = agentRankDetails();
   els.liveAgentName.textContent = agent.name;
   els.liveAgentAgency.textContent = agent.agencyName;
   els.liveAgentRen.textContent = agent.renNumber || "REN-PENDING";
-  els.liveAgentAvatar.textContent = initials;
+  if (els.liveAgentRank) els.liveAgentRank.textContent = rank.label;
+  applyAgentPhoto(els.liveAgentAvatar, agent.photo, initials);
+  if (els.agentProfileNameInput && document.activeElement !== els.agentProfileNameInput) els.agentProfileNameInput.value = agent.name || "";
+  if (els.agentProfileAgencyInput && document.activeElement !== els.agentProfileAgencyInput) els.agentProfileAgencyInput.value = agent.agencyName || "";
+  if (els.agentProfileRenInput && document.activeElement !== els.agentProfileRenInput) els.agentProfileRenInput.value = agent.renNumber || "";
+  applyAgentPhoto(els.agentProfilePhotoPreview, agent.photo, initials);
+  if (els.agentProfilePreviewName) els.agentProfilePreviewName.textContent = agent.name || "RealityGenius Agent";
+  if (els.agentProfilePreviewAgency) els.agentProfilePreviewAgency.textContent = agent.agencyName || "RealityGenius Realty";
+  if (els.agentProfilePreviewRen) els.agentProfilePreviewRen.textContent = agent.renNumber || "REN-PENDING";
+  if (els.agentRankChip) els.agentRankChip.textContent = rank.label;
+  if (els.agentRankMeter) els.agentRankMeter.style.width = `${rank.score}%`;
+  if (els.agentRankReason) els.agentRankReason.textContent = rank.reason;
+}
+
+function saveAgentProfileEdits(event) {
+  event?.preventDefault();
+  const current = readLiveAgentProfile();
+  const next = {
+    ...current,
+    name: els.agentProfileNameInput?.value.trim() || current.name,
+    agencyName: els.agentProfileAgencyInput?.value.trim() || current.agencyName,
+    renNumber: els.agentProfileRenInput?.value.trim() || current.renNumber || "REN-PENDING",
+    updatedAt: new Date().toISOString()
+  };
+  writeStore("rg_live_agent_profile", next);
+  const session = readStore("rg_session", null);
+  if (session?.role === "agent") {
+    writeStore("rg_session", {
+      ...session,
+      name: next.name,
+      agencyName: next.agencyName
+    });
+    window.RealtyGeniusSession = { ...session, name: next.name, agencyName: next.agencyName };
+  }
+  renderLiveAgentProfile();
+  showToast("Agent profile updated");
+}
+
+function handleAgentProfilePhoto(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    showToast("Upload an image file for your profile photo");
+    return;
+  }
+  if (file.size > 2.5 * 1024 * 1024) {
+    showToast("Use a profile photo under 2.5MB");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    const current = readLiveAgentProfile();
+    writeStore("rg_live_agent_profile", {
+      ...current,
+      photo: reader.result,
+      updatedAt: new Date().toISOString()
+    });
+    renderLiveAgentProfile();
+    showToast("Profile photo updated");
+  };
+  reader.readAsDataURL(file);
 }
 
 function renderMetrics() {
@@ -1731,7 +2066,7 @@ function renderCleanListingGrid() {
             <i class="fa-solid ${status.icon}"></i>
             ${status.label}
           </span>
-          <span class="listing-photo-count">${media.verified}/${media.total} photos</span>
+          <span class="listing-photo-count">${media.verified}/${media.total} photos${(listing.panoramas || []).length ? ` · ${listing.panoramas.length}x 360°` : ""}</span>
         </div>
         <div class="listing-head listing-head-clean">
           <div>
@@ -1805,13 +2140,65 @@ function pushUserNotification(title, message) {
 }
 
 function activePlanTier() {
-  if (state.subscription?.planId === "free") return FREE_AGENT_PLAN;
-  return AGENT_PLAN_TIERS.find((plan) => plan.id === state.subscription?.planId) || FREE_AGENT_PLAN;
+  const storedPlan = normalizeAgentPlan(localStorage.getItem("agent_plan") || state.subscription?.planId);
+  if (storedPlan === "free") return FREE_AGENT_PLAN;
+  return AGENT_PLAN_TIERS.find((plan) => plan.id === storedPlan) || FREE_AGENT_PLAN;
+}
+
+function normalizeAgentPlan(plan = "") {
+  const normalized = String(plan || "").trim().toLowerCase();
+  if (BACKEND_PLAN_TO_AGENT_PLAN[normalized]) return BACKEND_PLAN_TO_AGENT_PLAN[normalized];
+  if (normalized === "premium") return "elite";
+  if (["free", "starter", "pro", "elite"].includes(normalized)) return normalized;
+  return "free";
+}
+
+function setAgentPlan(plan, status = state.subscription?.status || "active") {
+  const normalized = normalizeAgentPlan(plan);
+  const tier = normalized === "free" ? FREE_AGENT_PLAN : AGENT_PLAN_TIERS.find((item) => item.id === normalized) || FREE_AGENT_PLAN;
+  localStorage.setItem("agent_plan", normalized);
+  state.subscription = {
+    ...state.subscription,
+    planId: tier.id,
+    planName: tier.name,
+    amount: tier.price,
+    currency: "MYR",
+    status,
+    testMode: false,
+    startedAt: state.subscription?.startedAt || new Date().toISOString()
+  };
+  writeStore(STORAGE_KEYS.agentSubscription, state.subscription);
+}
+
+function canUse(feature) {
+  const activeStatus = ["active", "live_active", "trialing"].includes(String(state.subscription?.status || "").toLowerCase());
+  const plan = activeStatus ? normalizeAgentPlan(localStorage.getItem("agent_plan") || state.subscription?.planId) : "free";
+  return PLAN_FEATURES[plan]?.[feature] === true;
+}
+
+function upgradeTargetForFeature(feature) {
+  const target = FEATURE_UNLOCK_COPY[feature]?.plan || "pro";
+  return AGENT_PLAN_TIERS.find((plan) => plan.id === target) || AGENT_PLAN_TIERS[1];
+}
+
+function requirePlan(feature) {
+  if (canUse(feature)) return true;
+  const copy = FEATURE_UNLOCK_COPY[feature] || {};
+  const target = upgradeTargetForFeature(feature);
+  showToast(copy.message || "This feature is locked. Upgrade your plan to unlock it.");
+  if (window.confirm(`${copy.message || "This feature is locked."}\n\nUpgrade to ${target.name} now?`)) {
+    activateAgentPlan(target.id);
+  } else {
+    document.getElementById("agentPricing")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  return false;
 }
 
 function billingStatusLabel() {
   if (state.subscription?.status === "live_active" || state.subscription?.status === "active") return "Stripe active";
   if (state.subscription?.status === "checkout_processing") return "Opening Stripe";
+  if (state.subscription?.status === "checkout_verifying") return "Verifying payment";
+  if (state.subscription?.status === "past_due") return "Payment past due";
   if (state.subscription?.status === "checkout_cancelled") return "Checkout cancelled";
   return "Free";
 }
@@ -1841,32 +2228,106 @@ function agentApiUrl(path) {
 }
 
 function stripeCheckoutApiUrl() {
-  if (window.location.protocol === "file:") return "http://localhost:3000/api/stripe/create-checkout-session";
-  return `${window.location.origin}/api/stripe/create-checkout-session`;
+  if (window.location.protocol === "file:") return "http://localhost:3000/api/billing/create-checkout-session";
+  return `${window.location.origin}/api/billing/create-checkout-session`;
+}
+
+function agentMeApiUrl() {
+  if (window.location.protocol === "file:") return "http://localhost:3000/api/agent/me";
+  return `${window.location.origin}/api/agent/me`;
+}
+
+async function refreshAgentSubscription({ silent = false } = {}) {
+  const token = await readAgentAuthToken();
+  if (!token) return null;
+
+  try {
+    const response = await fetch(agentMeApiUrl(), {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`
+      }
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload.agent) throw new Error(payload.error || "Unable to refresh subscription");
+
+    const agent = payload.agent;
+    const planId = normalizeAgentPlan(agent.subscription_plan);
+    const active = ["active", "trialing"].includes(String(agent.subscription_status || "").toLowerCase());
+    if (active) {
+      setAgentPlan(planId, "active");
+    } else {
+      localStorage.setItem("agent_plan", "free");
+      state.subscription = {
+        ...seedSubscription,
+        status: agent.subscription_status || "inactive"
+      };
+      writeStore(STORAGE_KEYS.agentSubscription, state.subscription);
+    }
+    state.subscription.permissions = agent.permissions || {};
+    state.subscription.auctionSlotsMonthly = Number(agent.auction_slots_monthly || 0);
+    persistAll();
+    renderWorkspace();
+    return agent;
+  } catch (error) {
+    if (!silent) showToast(error.message || "Subscription refresh failed");
+    return null;
+  }
 }
 
 function renderAgentBilling() {
   const plan = activePlanTier();
+  const featureCards = [
+    { feature: "aiCaption", title: "AI Content Creator", body: "Listing descriptions, SEO keywords, captions, scripts, and WhatsApp copy.", planId: "starter" },
+    { feature: "aiNegotiation", title: "AI Negotiation", body: "Offer analysis, counter-price suggestions, and buyer response guidance.", planId: "pro" },
+    { feature: "leadHeat", title: "Lead Heat", body: "Hot lead scoring, priority pipeline, and faster follow-up workflow.", planId: "pro" },
+    { feature: "auctionSlot", title: "Friday Auction Night", body: "Submit premium listings into weekly live buyer bidding.", planId: "elite" }
+  ];
   const activeAt = state.subscription?.startedAt
     ? new Date(state.subscription.startedAt).toLocaleString("en-MY", { dateStyle: "medium", timeStyle: "short" })
     : "Not started";
 
   if (els.agentBillingStrip) {
+    const launchCopy = FREE_LAUNCH_MODE
+      ? {
+          label: "Launch access",
+          title: "All agent tools are free for now",
+          detail: "AI Content Creator, AR Builder, AI Negotiation, Lead Heat, Auction Night, document tools, and listing workflows are open during launch.",
+          button: "View Tools"
+        }
+      : {
+          label: "Agent subscription",
+          title: `${plan.name} - ${money(plan.price)}/month`,
+          detail: `${billingStatusLabel()} - ${activeAt} - Premium unlocks lead alerts, captions, reports, and follow-up automation.`,
+          button: "Manage Plan"
+        };
     els.agentBillingStrip.innerHTML = `
       <div class="billing-strip-copy">
-        <span><i class="fa-solid fa-credit-card"></i> Agent subscription</span>
-        <strong>${escapeHtml(plan.name)} - ${money(plan.price)}/month</strong>
-        <small>${escapeHtml(billingStatusLabel())} - ${escapeHtml(activeAt)} - Premium unlocks lead alerts, captions, reports, and follow-up automation.</small>
+        <span><i class="fa-solid ${FREE_LAUNCH_MODE ? "fa-unlock-keyhole" : "fa-credit-card"}"></i> ${escapeHtml(launchCopy.label)}</span>
+        <strong>${escapeHtml(launchCopy.title)}</strong>
+        <small>${escapeHtml(launchCopy.detail)}</small>
       </div>
       <button class="primary-button" data-action="open-agent-billing" type="button">
         <i class="fa-solid fa-gem"></i>
-        Manage Plan
+        ${escapeHtml(launchCopy.button)}
       </button>
     `;
   }
 
   if (!els.agentTierGrid) return;
-  els.agentTierGrid.innerHTML = AGENT_PLAN_TIERS.map((tier) => {
+  els.agentTierGrid.innerHTML = featureCards.map((card) => {
+    const unlocked = canUse(card.feature);
+    return `
+      <article class="feature-card ${unlocked ? "unlocked" : "locked"}">
+        <span>${unlocked ? "Unlocked" : "Locked"}</span>
+        <h3>${escapeHtml(card.title)}</h3>
+        <p>${escapeHtml(card.body)}</p>
+        <button class="${unlocked ? "ghost-button" : "primary-button"}" data-action="select-agent-plan" data-plan-id="${escapeAttr(card.planId)}" type="button">
+          ${unlocked ? "Available now" : `Upgrade to ${escapeHtml(upgradeTargetForFeature(card.feature).name)}`}
+        </button>
+      </article>
+    `;
+  }).join("") + AGENT_PLAN_TIERS.map((tier) => {
     const isActive = tier.id === plan.id && ["live_active", "active"].includes(state.subscription?.status);
     return `
       <article class="billing-tier-card ${tier.id === "elite" ? "recommended" : ""} ${isActive ? "active" : ""}">
@@ -1896,10 +2357,47 @@ function readAgentSession() {
   return readStore("rg_session", null);
 }
 
+async function readAgentAuthToken() {
+  const storedToken = localStorage.getItem("rg_token") || readAgentSession()?.token || "";
+  if (storedToken) return storedToken;
+
+  try {
+    const session = await window.RealityGeniusAuth?.getSession?.();
+    if (session?.access_token) {
+      localStorage.setItem("rg_token", session.access_token);
+      const current = readAgentSession() || {};
+      window.RealtyGeniusSession = {
+        ...current,
+        token: session.access_token,
+        email: current.email || session.user?.email || "",
+        authUserId: current.authUserId || session.user?.id || ""
+      };
+      localStorage.setItem("rg_session", JSON.stringify(window.RealtyGeniusSession));
+      return session.access_token;
+    }
+  } catch (error) {
+    if (window.RGLogError) window.RGLogError(error, { feature: "agent_auth_token_recovery" });
+  }
+
+  return "";
+}
+
 async function activateAgentPlan(planId) {
   const plan = AGENT_PLAN_TIERS.find((tier) => tier.id === planId);
   if (!plan) return;
-  const session = readAgentSession();
+  if (FREE_LAUNCH_MODE) {
+    setAgentPlan(plan.id, "live_active");
+    showToast(`${plan.name} tools are open for free during launch`);
+    renderWorkspace();
+    return;
+  }
+
+  const token = await readAgentAuthToken();
+  if (!token) {
+    showToast("Login as an approved agent before upgrading");
+    window.location.href = "/login.html?role=agent&next=/agent.html";
+    return;
+  }
   state.subscription = {
     ...state.subscription,
     planId: plan.id,
@@ -1918,12 +2416,10 @@ async function activateAgentPlan(planId) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(session?.token ? { Authorization: `Bearer ${session.token}` } : {})
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify({
-        planId: plan.id,
-        email: session?.email || "",
-        testMode: false
+        plan: plan.billingPlan || plan.id
       })
     });
     const data = await response.json().catch(() => ({}));
@@ -1960,7 +2456,7 @@ async function activateAgentPlan(planId) {
     };
     persistAll();
     renderAgentBilling();
-    showToast("Checkout could not open");
+    showToast(error.message || "Checkout could not open");
     return;
   }
 }
@@ -2256,6 +2752,16 @@ function handleNegotiationAction(threadId, action) {
 }
 
 function renderLeadList() {
+  if (!canUse("leadHeat")) {
+    els.leadList.innerHTML = `
+      <article class="feature-card locked">
+        <h3>Lead Heat is locked</h3>
+        <p>Upgrade to Pro or Elite to unlock hot lead scoring, priority follow-up, and lead temperature workflow.</p>
+        <button class="primary-button" data-action="select-agent-plan" data-plan-id="pro" type="button">Upgrade to Pro</button>
+      </article>
+    `;
+    return;
+  }
   const leads = leadListForFilter();
   els.leadList.innerHTML = leads.map((lead) => `
     <article class="lead-card">
@@ -2287,6 +2793,16 @@ function renderLeadList() {
 }
 
 function renderNegotiationDesk() {
+  if (!canUse("aiNegotiation")) {
+    els.agentNegotiationList.innerHTML = `
+      <article class="feature-card locked">
+        <h3>AI Negotiation is locked</h3>
+        <p>Upgrade to Pro or Elite to unlock buyer offer analysis, AI counter suggestions, and negotiation desk actions.</p>
+        <button class="primary-button" data-action="select-agent-plan" data-plan-id="pro" type="button">Upgrade to Pro</button>
+      </article>
+    `;
+    return;
+  }
   const threads = getNegotiationThreads()
     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
@@ -2412,17 +2928,15 @@ async function toggleListingStatus(id) {
   if (updated?.status === "Live" && isAdminApprovedListing(updated)) {
     publishListingsLive([updated], "status update");
   } else if (updated?.status === "Pending QC") {
-    if (!updated.backendId) {
-      try {
-        updated = await saveAgentListingToBackend(updated);
-        state.listings = state.listings.map((listing) => String(listing.id) === String(id) ? updated : listing);
-      } catch (error) {
-        state.listings = state.listings.map((listing) => String(listing.id) === String(id) ? { ...listing, status: "Draft" } : listing);
-        persistAll();
-        renderWorkspace();
-        showToast(error.message || LIVE_LISTING_SAVE_ERROR);
-        return;
-      }
+    try {
+      updated = await saveAgentListingToBackend(updated);
+      state.listings = state.listings.map((listing) => String(listing.id) === String(id) ? updated : listing);
+    } catch (error) {
+      state.listings = state.listings.map((listing) => String(listing.id) === String(id) ? { ...listing, status: "Draft" } : listing);
+      persistAll();
+      renderWorkspace();
+      showToast(error.message || LIVE_LISTING_SAVE_ERROR);
+      return;
     }
     submitListingsForAdminReview([updated], "status update");
   } else {
@@ -2598,7 +3112,7 @@ function renderListingDevicePhotoPreview() {
   );
 }
 
-function compressListingDevicePhoto(file, index) {
+function compressListingImageFile(file, { maxSize, quality, label }) {
   return new Promise((resolve, reject) => {
     if (!file.type?.startsWith("image/")) {
       reject(new Error(`${file.name} is not an image file`));
@@ -2617,14 +3131,14 @@ function compressListingDevicePhoto(file, index) {
         size: file.size,
         width: 0,
         height: 0,
-        label: LISTING_MEDIA_SLOTS[index]?.label || `Photo ${index + 1}`
+        label
       });
 
       image.onload = () => {
         try {
-          const width = image.naturalWidth || image.width || LISTING_DEVICE_IMAGE_MAX_SIZE;
-          const height = image.naturalHeight || image.height || LISTING_DEVICE_IMAGE_MAX_SIZE;
-          const scale = Math.min(1, LISTING_DEVICE_IMAGE_MAX_SIZE / width, LISTING_DEVICE_IMAGE_MAX_SIZE / height);
+          const width = image.naturalWidth || image.width || maxSize;
+          const height = image.naturalHeight || image.height || maxSize;
+          const scale = Math.min(1, maxSize / width, maxSize / height);
           const outputWidth = Math.max(1, Math.round(width * scale));
           const outputHeight = Math.max(1, Math.round(height * scale));
           const canvas = document.createElement("canvas");
@@ -2638,11 +3152,11 @@ function compressListingDevicePhoto(file, index) {
 
           resolve({
             fileName: file.name,
-            dataUrl: canvas.toDataURL("image/jpeg", LISTING_DEVICE_IMAGE_QUALITY),
+            dataUrl: canvas.toDataURL("image/jpeg", quality),
             size: file.size,
             width: outputWidth,
             height: outputHeight,
-            label: LISTING_MEDIA_SLOTS[index]?.label || `Photo ${index + 1}`
+            label
           });
         } catch {
           resolve({
@@ -2651,7 +3165,7 @@ function compressListingDevicePhoto(file, index) {
             size: file.size,
             width: image.naturalWidth || 0,
             height: image.naturalHeight || 0,
-            label: LISTING_MEDIA_SLOTS[index]?.label || `Photo ${index + 1}`
+            label
           });
         }
       };
@@ -2659,6 +3173,22 @@ function compressListingDevicePhoto(file, index) {
       image.src = originalDataUrl;
     };
     reader.readAsDataURL(file);
+  });
+}
+
+function compressListingDevicePhoto(file, index) {
+  return compressListingImageFile(file, {
+    maxSize: LISTING_DEVICE_IMAGE_MAX_SIZE,
+    quality: LISTING_DEVICE_IMAGE_QUALITY,
+    label: LISTING_MEDIA_SLOTS[index]?.label || `Photo ${index + 1}`
+  });
+}
+
+function compressListingPanoPhoto(file, index) {
+  return compressListingImageFile(file, {
+    maxSize: LISTING_PANO_IMAGE_MAX_SIZE,
+    quality: LISTING_PANO_IMAGE_QUALITY,
+    label: `360 Room ${index + 1}`
   });
 }
 
@@ -2703,8 +3233,73 @@ function resetListingDevicePhotos() {
   renderListingDevicePhotoPreview();
 }
 
+function updateListingPanoPhotoStatus(message, tone = "neutral") {
+  if (!els.listingPanoPhotoStatus) return;
+  els.listingPanoPhotoStatus.className = `device-photo-status ${tone}`;
+  els.listingPanoPhotoStatus.textContent = message;
+}
+
+function renderListingPanoPhotoPreview() {
+  if (!els.listingPanoPhotoPreview) return;
+
+  if (!listingPanoPhotos.length) {
+    els.listingPanoPhotoPreview.innerHTML = "";
+    updateListingPanoPhotoStatus("No panoramas selected yet.");
+    return;
+  }
+
+  els.listingPanoPhotoPreview.innerHTML = listingPanoPhotos.map((photo) => `
+    <article class="device-photo-card">
+      <div class="device-photo-thumb">
+        <img src="${escapeAttr(photo.dataUrl)}" alt="${escapeAttr(photo.label)} preview">
+      </div>
+      <div class="device-photo-copy">
+        <strong>${escapeHtml(photo.label)}</strong>
+        <span>${escapeHtml(photo.fileName)}</span>
+      </div>
+    </article>
+  `).join("");
+
+  updateListingPanoPhotoStatus(
+    `${listingPanoPhotos.length}/${LISTING_PANO_PHOTO_LIMIT} panorama${listingPanoPhotos.length === 1 ? "" : "s"} ready for the buyer Immersive View.`,
+    "ready"
+  );
+}
+
+async function handleListingPanoPhotos(event) {
+  const files = Array.from(event.target.files || []);
+  const imageFiles = files.filter((file) => file.type?.startsWith("image/"));
+
+  if (!imageFiles.length) {
+    listingPanoPhotos = [];
+    renderListingPanoPhotoPreview();
+    showToast("Please choose image files");
+    return;
+  }
+
+  const selected = imageFiles.slice(0, LISTING_PANO_PHOTO_LIMIT);
+  updateListingPanoPhotoStatus(`Preparing ${selected.length} panorama${selected.length === 1 ? "" : "s"}...`, "warning");
+
+  try {
+    listingPanoPhotos = await Promise.all(selected.map((file, index) => compressListingPanoPhoto(file, index)));
+    renderListingPanoPhotoPreview();
+    showToast(`${selected.length} panorama${selected.length === 1 ? "" : "s"} ready${imageFiles.length > LISTING_PANO_PHOTO_LIMIT ? ". First 3 used" : ""}`);
+  } catch (error) {
+    listingPanoPhotos = [];
+    renderListingPanoPhotoPreview();
+    showToast(error.message || "Unable to prepare panoramas");
+  }
+}
+
+function resetListingPanoPhotos() {
+  listingPanoPhotos = [];
+  if (els.listingPanoPhotos) els.listingPanoPhotos.value = "";
+  renderListingPanoPhotoPreview();
+}
+
 async function addListing(event) {
   event.preventDefault();
+  if (!requirePlan("addListing")) return;
   const devicePhotos = getListingDevicePhotoPayload();
   const result = buildListingFromData({
     title: els.listingTitle.value.trim(),
@@ -2736,6 +3331,11 @@ async function addListing(event) {
   }
 
   const listing = result.listing;
+  listing.panoramas = listingPanoPhotos.map((photo) => ({
+    label: photo.label,
+    url: photo.dataUrl,
+    source: "Agent 360 upload"
+  }));
   let savedListing;
   try {
     savedListing = await saveAgentListingToBackend(listing);
@@ -2759,11 +3359,16 @@ async function addListing(event) {
   els.listingForm.reset();
   if (els.listingBulkPhotoLinks) els.listingBulkPhotoLinks.value = "";
   resetListingDevicePhotos();
+  resetListingPanoPhotos();
   updateListingQcChecklist();
   closeModal("listingModal");
   persistAll();
+  if (agentEngagement) {
+    agentEngagement.points = Number(agentEngagement.points || 0) + 50;
+    writeStore(ENGAGEMENT_STORE_KEY, agentEngagement);
+  }
   renderWorkspace();
-  showToast(reviewCount ? "Saved to backend. Waiting for admin QC" : "Listing saved");
+  showToast(reviewCount ? "Saved. +50 points - waiting for admin QC" : "Listing saved. +50 points");
 }
 
 function autofillListingPhotoLinks() {
@@ -4514,6 +5119,11 @@ function generateLocalListingEnhancement(payload) {
 }
 
 async function requestAiContentGeneration(payload) {
+  if (!canUse("aiCaption")) {
+    const error = new Error("Upgrade required");
+    error.code = "upgrade_required";
+    throw error;
+  }
   const token = localStorage.getItem("rg_token");
   if (!token) return null;
 
@@ -4751,6 +5361,10 @@ async function submitEnhancedListingForReview() {
 
 async function generateAgentContent(event) {
   event.preventDefault();
+  if (!requirePlan("aiCaption")) {
+    setContentStatus("Upgrade required", "warning");
+    return;
+  }
 
   const payload = collectContentPayload();
   if (!payload.originalTitle || !payload.location || !payload.originalDescription || !payload.price) {
@@ -4787,15 +5401,19 @@ async function generateAgentContent(event) {
 
 function renderContentCreator() {
   if (!els.contentOutput) return;
+  const locked = !canUse("aiCaption");
 
   els.contentTypeButtons.forEach((button) => {
     button.classList.toggle("active", button.dataset.contentType === state.contentCreator.contentType);
+    button.disabled = locked;
   });
 
   const enhancement = state.contentCreator.lastEnhancement;
-  els.contentStatus.textContent = state.contentCreator.status || "Ready";
-  els.contentStatus.className = `content-status ${state.contentCreator.statusType || ""}`.trim();
-  els.contentOutput.textContent = enhancement?.optimizedDescription || state.contentCreator.output || "Your optimized listing will appear here.";
+  els.contentStatus.textContent = locked ? "Locked - Starter required" : state.contentCreator.status || "Ready";
+  els.contentStatus.className = `content-status ${locked ? "warning" : state.contentCreator.statusType || ""}`.trim();
+  els.contentOutput.textContent = locked
+    ? "Upgrade to Starter, Pro, or Elite to generate listing descriptions, SEO keywords, captions, TikTok scripts, and WhatsApp marketing messages."
+    : enhancement?.optimizedDescription || state.contentCreator.output || "Your optimized listing will appear here.";
   if (els.enhancerOriginal) {
     els.enhancerOriginal.textContent = enhancement?.originalDescription || "Your original listing will appear here.";
   }
@@ -4833,13 +5451,29 @@ function renderContentCreator() {
   }
 
   if (els.saveEnhancedListingButton) {
-    els.saveEnhancedListingButton.disabled = !enhancement;
+    els.saveEnhancedListingButton.disabled = locked || !enhancement;
   }
   if (els.submitEnhancedListingButton) {
-    els.submitEnhancedListingButton.disabled = !enhancement;
+    els.submitEnhancedListingButton.disabled = locked || !enhancement;
+  }
+  if (els.generateContentButton) {
+    els.generateContentButton.disabled = locked;
+    els.generateContentButton.innerHTML = locked
+      ? `<i class="fa-solid fa-lock"></i> Upgrade to Generate`
+      : `<i class="fa-solid fa-wand-magic-sparkles"></i> Generate Listing Content`;
   }
 
   const history = state.contentCreator.history || [];
+  if (locked) {
+    els.contentHistory.innerHTML = `
+      <article class="feature-card locked">
+        <h3>AI Content Creator</h3>
+        <p>Unlock with Starter, Pro, or Elite. Free agents can still upload listings and use the basic dashboard.</p>
+        <button class="primary-button" data-action="select-agent-plan" data-plan-id="starter" type="button">Upgrade to Starter</button>
+      </article>
+    `;
+    return;
+  }
   if (!history.length) {
     els.contentHistory.innerHTML = `
       <div class="excel-import-status">
@@ -4988,11 +5622,25 @@ function closeDrawer(id) {
 }
 
 function openModal(id) {
-  document.getElementById(id).classList.add("is-open");
-  document.getElementById(id).setAttribute("aria-hidden", "false");
+  const modalFeatureMap = {
+    documentVaultModal: "leadHeat",
+    itineraryModal: "leadHeat",
+    cobrokeModal: "leadHeat",
+    cheatSheetModal: "aiNegotiation",
+    referralModal: "leadHeat"
+  };
+  const feature = modalFeatureMap[id];
+  if (feature && !requirePlan(feature)) return;
+  const modal = document.getElementById(id);
+  modal.classList.add("is-open");
+  modal.setAttribute("aria-hidden", "false");
   if (id === "listingModal") {
     updateListingQcChecklist();
   }
+  setTimeout(() => {
+    const firstField = modal.querySelector("input:not([type='hidden']):not([disabled]), select:not([disabled]), textarea:not([disabled])");
+    firstField?.focus({ preventScroll: true });
+  }, 80);
 }
 
 function closeModal(id) {
@@ -5033,6 +5681,8 @@ function bindEvents() {
     else showToast("Push notifications are unavailable here");
   });
   els.quickLeadButton.addEventListener("click", () => openModal("leadModal"));
+  els.agentProfileForm?.addEventListener("submit", saveAgentProfileEdits);
+  els.agentProfilePhotoInput?.addEventListener("change", handleAgentProfilePhoto);
   els.openListingComposer.addEventListener("click", () => openModal("listingModal"));
   els.downloadListingTemplate.addEventListener("click", downloadListingTemplate);
   els.downloadListingTemplateHub?.addEventListener("click", downloadListingTemplate);
@@ -5044,8 +5694,15 @@ function bindEvents() {
   els.stepOneOpenListings?.addEventListener("click", () => goToSection("listings"));
   els.autoFillListingPhotos?.addEventListener("click", autofillListingPhotoLinks);
   els.listingDevicePhotos?.addEventListener("change", handleListingDevicePhotos);
+  els.listingPanoPhotos?.addEventListener("change", handleListingPanoPhotos);
   els.listingExcelQuickInput?.addEventListener("change", importListingsFromExcel);
   els.quickDeviceListingUpload?.addEventListener("click", openListingDeviceUpload);
+  els.routineQuickList?.addEventListener("click", openListingDeviceUpload);
+  els.routineRepeatListing?.addEventListener("click", duplicateLastListing);
+  els.routineCheckListing?.addEventListener("click", () => {
+    if (!listingUploadedToday()) openListingDeviceUpload();
+  });
+  els.routineCheckLeads?.addEventListener("click", reviewLeadsRoutine);
   [
     els.listingTitle,
     els.listingArea,
@@ -5126,6 +5783,8 @@ function bindEvents() {
     if (action === "jump-section") goToSection(actionTarget.dataset.section);
     if (action === "play-recap") showToast(actionTarget.dataset.message || "Call recap ready");
     if (action === "open-lead-modal") openModal("leadModal");
+    if (action === "open-listing-modal") openModal("listingModal");
+    if (action === "open-agent-billing") openModal("billingModal");
     if (action === "load-top-listing-content") loadContentFromTopListing();
     if (action === "open-document-vault") {
       renderDocumentVault();
@@ -5222,7 +5881,7 @@ function bindEvents() {
     }
   });
 
-  [els.leadModal, els.listingModal, els.documentVaultModal, els.itineraryModal, els.cobrokeModal, els.cheatSheetModal, els.referralModal].forEach((modal) => {
+  [els.leadModal, els.listingModal, els.documentVaultModal, els.itineraryModal, els.cobrokeModal, els.cheatSheetModal, els.referralModal, els.billingModal].forEach((modal) => {
     if (!modal) return;
     modal.addEventListener("click", (event) => {
       if (event.target === modal) closeModal(modal.id);
@@ -5232,38 +5891,40 @@ function bindEvents() {
 
 function applyBillingReturn() {
   const params = new URLSearchParams(window.location.search);
-  let billing = params.get("billing");
+  let billing = params.get("payment") || params.get("billing");
   if (!billing && params.get("success") === "true") billing = "success";
   if (!billing && params.get("cancelled") === "true") billing = "cancelled";
   if (!billing) return;
 
-  const plan = AGENT_PLAN_TIERS.find((tier) => tier.id === params.get("plan")) || AGENT_PLAN_TIERS.find((tier) => tier.id === state.subscription?.planId) || AGENT_PLAN_TIERS[2];
-
   if (billing === "success") {
     state.subscription = {
-      planId: plan.id,
-      planName: plan.name,
-      amount: plan.price,
-      currency: "MYR",
-      status: "live_active",
-      testMode: false,
-      startedAt: new Date().toISOString(),
+      ...state.subscription,
+      status: "checkout_verifying",
       checkoutId: params.get("session_id") || state.subscription?.checkoutId || ""
     };
     persistAll();
-    pushNotifications("Premium agent activated", `${plan.name} is active. Stripe confirmed your checkout and automation features are unlocked.`);
-    showToast(`${plan.name} active`);
+    showToast("Payment successful. Verifying subscription...");
+    refreshAgentSubscription({ silent: true }).then((agent) => {
+      if (agent?.features_unlocked) {
+        pushNotifications("Premium agent activated", `${activePlanTier().name} is active. Stripe confirmed your checkout and automation features are unlocked.`);
+        showToast(`${activePlanTier().name} active`);
+      } else {
+        showToast("Payment received. Waiting for Stripe confirmation.");
+      }
+    });
   }
 
   if (billing === "cancelled") {
     state.subscription = {
-      ...state.subscription,
+      ...seedSubscription,
       status: "checkout_cancelled"
     };
+    localStorage.setItem("agent_plan", "free");
     persistAll();
-    showToast("Stripe checkout cancelled");
+    showToast("Payment cancelled");
   }
 
+  params.delete("payment");
   params.delete("billing");
   params.delete("success");
   params.delete("cancelled");
@@ -5279,3 +5940,5 @@ bindEvents();
 renderListingDevicePhotoPreview();
 renderListingEnhancerPhotoPreview();
 renderWorkspace();
+refreshAgentSubscription({ silent: true });
+performDailyCheckin();
