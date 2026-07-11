@@ -8,7 +8,9 @@ const Stripe = require('stripe');
 const PORT = process.env.PORT || 3000;
 const DB_FILE = path.join(__dirname, 'kvai_database.json');
 const LISTINGS_FILE = path.join(__dirname, 'backend', 'data', 'listings.json');
-const HAS_OPENAI = !!process.env.OPENAI_API_KEY;
+const aiProvider = require('./ai-provider');
+const HAS_OPENAI = aiProvider.HAS_OPENAI;
+const HAS_ANTHROPIC = aiProvider.HAS_ANTHROPIC;
 const GOOGLE_MAPS_API_KEY = readEnv('GOOGLE_MAPS_API_KEY', 'GOOGLE_API_KEY');
 const FRONTEND_URL = normalizeOrigin(readEnv('FRONTEND_URL'));
 const SUPABASE_REST_URL = normalizeSupabaseRestUrl(readEnv('SUPABASE_URL'));
@@ -26,7 +28,6 @@ const STRIPE_PRO_PRICE_ID = readEnv('STRIPE_PRO_PRICE_ID');
 const STRIPE_ELITE_PRICE_ID = readEnv('STRIPE_ELITE_PRICE_ID');
 const STRIPE_EXTRA_AUCTION_PRICE_ID = readEnv('STRIPE_EXTRA_AUCTION_PRICE_ID');
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2026-02-25.clover' }) : null;
-const { OpenAI } = require('openai');
 const {
     DEMO_IMAGES: AR_DEMO_IMAGES,
     imageDataUrl: arImageDataUrl,
@@ -36,10 +37,6 @@ const {
     stagingPrompt: arStagingPrompt,
     tryOpenAiImageEdit
 } = require('./api/ar/_utils');
-let openai;
-if (HAS_OPENAI) {
-    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-}
 
 function readEnv(...names) {
     for (const name of names) {
@@ -96,10 +93,15 @@ function writeDatabase(db) {
     fs.writeFileSync(DB_FILE, JSON.stringify(ensureDatabaseShape(db), null, 2), 'utf8');
 }
 
-if (!fs.existsSync(DB_FILE)) {
-    writeDatabase({});
-} else {
-    writeDatabase(readDatabase());
+// Local JSON store is a dev-only fallback for when Supabase isn't configured
+// (production writes leads/location searches straight to Supabase - see
+// logLocationDemand() and the /api/leads handler below).
+if (!hasSupabaseConfig()) {
+    if (!fs.existsSync(DB_FILE)) {
+        writeDatabase({});
+    } else {
+        writeDatabase(readDatabase());
+    }
 }
 
 const AREA_NEARBY_MAP = {
@@ -363,9 +365,8 @@ async function fetchGoogleLocationMetadata(query) {
     }
 }
 
-function logLocationDemand(payload, google, suggestions) {
+async function logLocationDemand(payload, google, suggestions) {
     const query = normalizeQuery(payload.query);
-    const db = readDatabase();
     const entry = {
         id: Date.now(),
         queryHash: getQueryHash(query),
@@ -378,6 +379,25 @@ function logLocationDemand(payload, google, suggestions) {
         source: payload.source || "user_search_empty_state",
         createdAt: new Date().toISOString()
     };
+
+    if (hasSupabaseConfig()) {
+        try {
+            await insertSupabaseRow('location_searches', {
+                query_hash: entry.queryHash,
+                redacted_query: entry.redactedQuery,
+                query_type: entry.queryType,
+                filter: entry.filter,
+                google_status: entry.googleStatus,
+                suggestion_count: entry.suggestionCount,
+                source: entry.source
+            });
+        } catch (error) {
+            console.error('[Supabase] Failed to log location demand:', error.message);
+        }
+        return entry;
+    }
+
+    const db = readDatabase();
     db.locationSearches = [entry, ...db.locationSearches].slice(0, 1000);
     writeDatabase(db);
     return entry;
@@ -1134,7 +1154,7 @@ function normalizeAiExtraction(raw, text, meta) {
 }
 
 async function extractListingWithAI(text, meta = {}) {
-    if (!HAS_OPENAI || !openai) return normalizeAiExtraction(null, text, meta);
+    if (!aiProvider.HAS_AI) return normalizeAiExtraction(null, text, meta);
 
     const system = [
         "You extract Malaysian property listings from Telegram messages for RealityGenius.",
@@ -1156,16 +1176,8 @@ async function extractListingWithAI(text, meta = {}) {
     });
 
     try {
-        const response = await openai.chat.completions.create({
-            model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-            response_format: { type: "json_object" },
-            temperature: 0.1,
-            messages: [
-                { role: "system", content: system },
-                { role: "user", content: user }
-            ]
-        });
-        return normalizeAiExtraction(safeJsonParse(response.choices?.[0]?.message?.content || "{}"), text, meta);
+        const content = await aiProvider.generateJsonContent({ system, user });
+        return normalizeAiExtraction(safeJsonParse(content || "{}"), text, meta);
     } catch (error) {
         console.error("[TELEGRAM AI] Extraction failed, using fallback:", error.message);
         return normalizeAiExtraction(null, text, meta);
@@ -2706,7 +2718,8 @@ const server = http.createServer(async (req, res) => {
                     storage: hasStorageConfig(),
                     mediaBucket: SUPABASE_PROPERTY_MEDIA_BUCKET,
                     authRoleLookup: true,
-                    openai: Boolean(HAS_OPENAI && openai),
+                    openai: HAS_OPENAI,
+                    anthropic: HAS_ANTHROPIC,
                     telegramBot: Boolean(TELEGRAM_BOT_TOKEN),
                     telegramWebhookSecret: Boolean(TELEGRAM_WEBHOOK_SECRET),
                     guidedTelegramListingFlow: true,
@@ -2838,7 +2851,7 @@ const server = http.createServer(async (req, res) => {
                     stored: false,
                     dryRun: true
                 }
-                : logLocationDemand(payload, google, suggestions);
+                : await logLocationDemand(payload, google, suggestions);
             const maps = getMapsUrls(query);
 
             return {
@@ -2871,13 +2884,13 @@ const server = http.createServer(async (req, res) => {
         if (url === '/api/agents/rank') {
             console.log("\n🤖 [AGENT: RANKER] Generating real property recommendations...");
             try {
-                if(!HAS_OPENAI) {
+                if(!aiProvider.HAS_AI) {
                     console.log("No API Key found, returning fallback reasoning.");
                     return { error: "No API Key", fallback: true };
                 }
 
-                const sysPrompt = "You are KVAI, a hyper-intelligent real estate advisor. You will receive a JSON string of properties, and a user profile string. Rank the Top 3 best properties from the array that match the profile. Output ONLY a valid JSON array of 3 objects containing { id: number, explanation: string }, where explanation is a 2-sentence highly personalized reason why it fits.";
-                
+                const sysPrompt = "You are KVAI, a hyper-intelligent real estate advisor. You will receive a JSON string of properties, and a user profile string. Rank the Top 3 best properties from the array that match the profile. Output ONLY a valid JSON array of 3 objects containing { id: number, explanation: string }, where explanation is a 2-sentence highly personalized reason why it fits." + " Wrap the array in an object: { \"ranked\": [...] }";
+
                 const userPrompt = `
 User profile:
 - Budget: ${payload.budget}
@@ -2889,20 +2902,10 @@ ${JSON.stringify(payload.properties.map(p => ({id: p.id, title: p.title, price: 
 
 Rank and explain best 3 properties.`;
 
-                const response = await openai.chat.completions.create({
-                    model: "gpt-3.5-turbo",
-                    response_format: { type: "json_object" },
-                    messages: [
-                        { role: "system", content: sysPrompt + " Wrap the array in an object: { \"ranked\": [...] }" },
-                        { role: "user", content: userPrompt }
-                    ],
-                    temperature: 0.3
-                });
-
-                const content = JSON.parse(response.choices[0].message.content);
-                return content.ranked;
+                const content = await aiProvider.generateJsonContent({ system: sysPrompt, user: userPrompt });
+                return JSON.parse(content).ranked;
             } catch(e) {
-                console.error("OpenAI Error:", e);
+                console.error("AI ranking error:", e);
                 return { error: "Generative AI failed. Ensure your API Key is valid and you have quota." };
             }
         }
@@ -2996,10 +2999,27 @@ Rank and explain best 3 properties.`;
 
         // Standard Lead Routing (Twilio Hookup)
         if (url === '/api/leads') {
-            const db = readDatabase();
             const newLead = { id: Date.now(), ...payload, timestamp: new Date().toISOString() };
-            db.leads.push(newLead);
-            writeDatabase(db);
+
+            if (hasSupabaseConfig()) {
+                try {
+                    await insertSupabaseRow('leads', {
+                        property_id: payload.propertyId != null ? String(payload.propertyId) : null,
+                        buyer_name: payload.buyerName || null,
+                        buyer_phone: payload.buyerPhone || null,
+                        source: payload.source || null,
+                        inquiry_type: payload.inquiryType || null,
+                        payload: newLead
+                    });
+                } catch (error) {
+                    console.error('[Supabase] Failed to store lead:', error.message);
+                }
+            } else {
+                const db = readDatabase();
+                db.leads.push(newLead);
+                writeDatabase(db);
+            }
+
             console.log('🔴 TWILIO DISPATCH INITIATED. To Assigned Agent WhatsApp.');
             return { success: true, lead: newLead };
         }
@@ -3085,5 +3105,5 @@ server.listen(PORT, () => {
     console.log('--> Semantic Search Agent: READY');
     console.log('--> Negotiator Agent: READY');
     console.log('--> Concierge Agent: READY');
-    if(!HAS_OPENAI) console.log('[WARN] OPENAI_API_KEY not found in env. Agents running via fallback rule logic for testing.');
+    if(!HAS_OPENAI && !HAS_ANTHROPIC) console.log('[WARN] No AI provider configured (OPENAI_API_KEY / ANTHROPIC_API_KEY). Agents running via fallback rule logic for testing.');
 });
