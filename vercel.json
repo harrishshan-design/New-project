@@ -1,5 +1,9 @@
 {
-  "buildCommand": "node vercel-static-build.js",
+  "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "installCommand": "npm install"
+  "installCommand": "npm install",
+  "rewrites": [
+    { "source": "/property/:id", "destination": "/api/property?id=:id" },
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" }
+  ]
 }

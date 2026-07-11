@@ -3219,7 +3219,7 @@ Rank and explain best 3 properties.`;
 
             if (hasSupabaseConfig()) {
                 try {
-                    await insertSupabaseRow('leads', {
+                    await insertSupabaseRow('website_leads', {
                         property_id: payload.propertyId != null ? String(payload.propertyId) : null,
                         buyer_name: payload.buyerName || null,
                         buyer_phone: payload.buyerPhone || null,

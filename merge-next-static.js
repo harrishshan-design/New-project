@@ -2,7 +2,9 @@ const fs = require("fs");
 const path = require("path");
 
 const root = process.cwd();
-const outDir = path.join(root, "dist");
+const outDir = path.join(root, "out");
+const distDir = path.join(root, "dist");
+
 const rootExtensions = new Set([
   ".html",
   ".css",
@@ -20,23 +22,22 @@ const rootExtensions = new Set([
   ".glb",
   ".usdz"
 ]);
+
 const rootDirs = new Set(["backend", "css", "dashboard", "js", "models"]);
 const skipDirs = new Set([
   ".git",
   ".vercel",
   ".idea",
   ".vscode",
+  ".next",
+  "app",
   "dist",
   "node_modules",
+  "out",
   "real-estate-ai",
   "realtygenius-saas",
   "scratch"
 ]);
-
-function resetOutput() {
-  fs.rmSync(outDir, { recursive: true, force: true });
-  fs.mkdirSync(outDir, { recursive: true });
-}
 
 function copyFile(source, target) {
   fs.mkdirSync(path.dirname(target), { recursive: true });
@@ -44,6 +45,7 @@ function copyFile(source, target) {
 }
 
 function copyDirectory(sourceDir, targetDir) {
+  if (!fs.existsSync(sourceDir)) return;
   for (const entry of fs.readdirSync(sourceDir, { withFileTypes: true })) {
     if (skipDirs.has(entry.name)) continue;
     const source = path.join(sourceDir, entry.name);
@@ -76,21 +78,27 @@ function writeRuntimeConfig() {
     AGENT_PRODUCT_KEYS: publicConfigValue("REALTYGENIUS_AGENT_PRODUCT_KEYS", "NEXT_PUBLIC_AGENT_PRODUCT_KEYS") || "RG-AGENT-FULL-2026"
   };
   const body = `window.REALTYGENIUS_CONFIG = Object.assign(window.REALTYGENIUS_CONFIG || {}, ${JSON.stringify(config, null, 2)});\n`;
-  fs.writeFileSync(path.join(outDir, "rg-config.js"), body, "utf8");
+  fs.writeFileSync(path.join(distDir, "rg-config.js"), body, "utf8");
 }
 
-resetOutput();
+if (!fs.existsSync(outDir)) {
+  throw new Error("Next export output directory not found: out");
+}
+
+fs.rmSync(distDir, { recursive: true, force: true });
+copyDirectory(outDir, distDir);
 
 for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
   if (skipDirs.has(entry.name)) continue;
   const source = path.join(root, entry.name);
-  const target = path.join(outDir, entry.name);
+  const target = path.join(distDir, entry.name);
 
   if (entry.isDirectory()) {
     if (rootDirs.has(entry.name)) copyDirectory(source, target);
     continue;
   }
 
+  if (entry.name === "index.html") continue;
   if (rootExtensions.has(path.extname(entry.name).toLowerCase())) {
     copyFile(source, target);
   }
@@ -98,4 +106,4 @@ for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
 
 writeRuntimeConfig();
 
-console.log("Static RealityGenius build written to dist/");
+console.log("Next homepage and static RealityGenius pages written to dist/");

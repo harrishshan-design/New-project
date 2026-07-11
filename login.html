@@ -1,14 +1,428 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RealityGenius | Login</title>
-  <meta http-equiv="refresh" content="0; url=/">
-  <script>
-    const next = `${window.location.search || ""}${window.location.hash || ""}`;
-    window.location.replace(`/${next}`);
-  </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Log in or sign up for RealityGenius buyer and agent access.">
+<title>RealityGenius | Login</title>
+<meta name="robots" content="noindex">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-100QC1J9RT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-100QC1J9RT');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+:root{
+--ink:#f8f5ec;
+--muted:rgba(248,245,236,.68);
+--line:rgba(248,245,236,.18);
+--gold:#f6d27a;
+--teal:#0f766e;
+}
+*{box-sizing:border-box}
+html{min-height:100%;background:#070707}
+body{
+margin:0;
+min-height:100vh;
+font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+color:var(--ink);
+background:
+linear-gradient(90deg,rgba(0,0,0,.82),rgba(0,0,0,.38),rgba(0,0,0,.86)),
+url("https://images.unsplash.com/photo-1600607688969-a5bfcd646154?auto=format&fit=crop&w=2200&q=88") center/cover fixed;
+display:grid;
+place-items:center;
+padding:24px;
+}
+button,input{font:inherit}
+a{color:inherit}
+.skip-link{
+position:fixed;
+left:16px;
+top:16px;
+z-index:20;
+padding:10px 14px;
+background:#f6d27a;
+color:#0b0b0b;
+border-radius:999px;
+font-weight:900;
+transform:translateY(-150%);
+transition:transform .2s ease;
+}
+.skip-link:focus{transform:translateY(0)}
+.login-shell{
+width:min(1160px,100%);
+min-height:min(720px,calc(100vh - 48px));
+display:grid;
+grid-template-columns:minmax(0,1fr) minmax(340px,440px);
+gap:28px;
+align-items:stretch;
+}
+.login-story,
+.auth-panel{
+border:1px solid var(--line);
+background:rgba(7,7,7,.48);
+box-shadow:0 38px 100px rgba(0,0,0,.42);
+backdrop-filter:blur(18px);
+}
+.login-story{
+padding:34px;
+display:flex;
+flex-direction:column;
+justify-content:space-between;
+gap:30px;
+}
+.topline{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:18px;
+}
+.brand{
+border:0;
+background:transparent;
+color:#fff;
+font-size:1rem;
+font-weight:900;
+letter-spacing:.08em;
+text-transform:uppercase;
+cursor:pointer;
+}
+.brand sup{font-size:.48rem}
+.home-link{
+min-height:42px;
+display:inline-flex;
+align-items:center;
+justify-content:center;
+padding:0 16px;
+border:1px solid var(--line);
+border-radius:999px;
+font-size:.74rem;
+font-weight:900;
+letter-spacing:.18em;
+text-decoration:none;
+text-transform:uppercase;
+}
+.login-copy{max-width:720px}
+.eyebrow{
+margin:0 0 18px;
+color:var(--gold);
+font-size:.78rem;
+font-weight:900;
+letter-spacing:.28em;
+text-transform:uppercase;
+}
+.login-copy h1{
+margin:0;
+font-size:clamp(3.4rem,7vw,7.4rem);
+line-height:.86;
+letter-spacing:-.08em;
+text-transform:uppercase;
+}
+.auth-shortcut{
+display:inline-flex;
+align-items:center;
+justify-content:center;
+gap:10px;
+min-height:54px;
+padding:0 18px;
+background:#f8f5ec;
+color:#111;
+font-weight:900;
+text-decoration:none;
+width:max-content;
+}
+.login-copy p{
+max-width:560px;
+margin:22px 0 0;
+color:var(--muted);
+font-weight:800;
+line-height:1.65;
+}
+.role-row{
+display:grid;
+grid-template-columns:repeat(2,minmax(0,1fr));
+gap:12px;
+}
+.role-card{
+min-height:72px;
+border:1px solid var(--line);
+background:rgba(255,255,255,.06);
+color:#fff;
+display:flex;
+align-items:center;
+justify-content:center;
+gap:10px;
+font-weight:900;
+cursor:pointer;
+transition:background .18s ease,color .18s ease,border-color .18s ease;
+}
+.role-card.active,
+.role-card:hover{
+background:#f8f5ec;
+border-color:#f8f5ec;
+color:#111;
+}
+.auth-panel{
+padding:26px;
+display:grid;
+align-content:center;
+}
+.auth-card{display:grid;gap:18px}
+.auth-head h2{
+margin:0;
+font-size:clamp(2.4rem,4vw,3.7rem);
+line-height:.9;
+letter-spacing:-.07em;
+}
+.auth-head sup{font-size:.75rem}
+.auth-head p{
+margin:10px 0 0;
+color:var(--muted);
+font-size:.78rem;
+font-weight:900;
+letter-spacing:.2em;
+text-transform:uppercase;
+}
+.trust-row{
+display:flex;
+gap:8px;
+flex-wrap:wrap;
+}
+.trust-chip{
+min-height:36px;
+display:inline-flex;
+align-items:center;
+gap:8px;
+padding:0 12px;
+border:1px solid var(--line);
+border-radius:999px;
+background:rgba(255,255,255,.06);
+color:var(--muted);
+font-size:.76rem;
+font-weight:900;
+}
+.auth-mode-toggle{
+display:grid;
+grid-template-columns:repeat(2,minmax(0,1fr));
+gap:8px;
+padding:6px;
+border:1px solid var(--line);
+background:rgba(255,255,255,.05);
+}
+.auth-mode-toggle button{
+min-height:42px;
+border:0;
+background:transparent;
+color:var(--muted);
+font-size:.78rem;
+font-weight:900;
+letter-spacing:.14em;
+text-transform:uppercase;
+cursor:pointer;
+}
+.auth-mode-toggle button.active{
+background:#f8f5ec;
+color:#111;
+}
+.auth-form{display:grid;gap:14px}
+.field{display:grid;gap:8px}
+.field span{
+color:rgba(248,245,236,.76);
+font-size:.92rem;
+font-weight:900;
+}
+.input-shell{
+min-height:58px;
+display:flex;
+align-items:center;
+gap:12px;
+padding:0 16px;
+border:1px solid var(--line);
+background:rgba(255,255,255,.07);
+}
+.input-shell i{color:rgba(248,245,236,.58)}
+input{
+width:100%;
+border:0;
+outline:0;
+background:transparent;
+color:#fff;
+font-weight:900;
+}
+input::placeholder{color:rgba(248,245,236,.4)}
+.primary-button{
+min-height:60px;
+border:0;
+background:#f8f5ec;
+color:#111;
+font-weight:900;
+cursor:pointer;
+}
+.ghost-link{
+min-height:42px;
+border:1px solid rgba(255,255,255,.14);
+background:rgba(255,255,255,.05);
+color:rgba(248,245,236,.78);
+font-weight:900;
+cursor:pointer;
+}
+.ghost-link:hover{
+background:rgba(255,255,255,.1);
+color:#fff;
+}
+.login-meta{
+display:grid;
+grid-template-columns:repeat(2,minmax(0,1fr));
+gap:8px;
+}
+.login-meta span{
+padding:10px;
+background:rgba(255,255,255,.07);
+color:var(--muted);
+font-size:.82rem;
+font-weight:900;
+text-align:center;
+}
+.role-note{
+display:flex;
+gap:10px;
+padding:12px;
+background:rgba(15,118,110,.18);
+color:rgba(248,245,236,.78);
+font-size:.84rem;
+font-weight:800;
+line-height:1.45;
+}
+.status{
+min-height:22px;
+color:#fda4af;
+font-weight:900;
+line-height:1.4;
+}
+.status.ok{color:#7dd3c7}
+.security-text{
+margin:0;
+color:rgba(248,245,236,.52);
+font-size:.82rem;
+font-weight:800;
+line-height:1.45;
+}
+.hidden{display:none!important}
+@media (max-width:860px){
+body{padding:12px}
+.login-shell{grid-template-columns:1fr;min-height:auto}
+.login-story{min-height:360px;padding:22px}
+.auth-panel{padding:20px}
+.login-copy h1{font-size:3rem}
+.role-row{grid-template-columns:1fr}
+}
+</style>
 </head>
-<body></body>
+<body>
+<a class="skip-link" href="#loginForm">Skip to login form</a>
+<main class="login-shell">
+<section class="login-story" aria-label="RealityGenius login intro">
+<div class="topline">
+<button class="brand" id="masterTrigger" type="button" aria-label="RealityGenius internal access unlock">RealityGenius<sup>TM</sup></button>
+<a class="home-link" href="./index.html">Homepage</a>
+</div>
+<div class="login-copy">
+<p class="eyebrow">Login</p>
+<h1>Welcome back.</h1>
+<p>Choose Buyer or Agent, enter basic details, then continue. No email code is needed for public signup.</p>
+<a class="auth-shortcut" href="#loginForm"><i class="fa-solid fa-arrow-down"></i> Go to login</a>
+</div>
+<div class="role-row" aria-label="Choose login role">
+<button class="role-card active" id="optionUser" data-role="user" type="button"><i class="fa-solid fa-user"></i> Buyer</button>
+<button class="role-card" id="optionAgent" data-role="agent" type="button"><i class="fa-solid fa-user-tie"></i> Agent</button>
+<button class="role-card privileged-role" id="optionAdmin" data-role="admin" type="button" hidden><i class="fa-solid fa-shield-halved"></i> Admin</button>
+<button class="role-card privileged-role" id="optionMaster" data-role="master" type="button" hidden><i class="fa-solid fa-crown"></i> Master</button>
+</div>
+</section>
+
+<section class="auth-panel" aria-label="RealityGenius account login">
+<div class="auth-card">
+<div class="auth-head">
+<h2>RealityGenius<sup>TM</sup></h2>
+<p>Login</p>
+</div>
+<div class="trust-row" aria-label="Login trust signals">
+<span class="trust-chip"><i class="fa-solid fa-circle-check"></i> Quick signup</span>
+<span class="trust-chip"><i class="fa-solid fa-lock"></i> Simple login</span>
+<span class="trust-chip"><i class="fa-solid fa-envelope-circle-check"></i> No email code</span>
+</div>
+<div class="auth-mode-toggle" aria-label="Choose account action">
+<button class="active" id="loginModeButton" type="button" data-auth-mode="login">Login</button>
+<button id="signupModeButton" type="button" data-auth-mode="signup">Sign up</button>
+</div>
+<form class="auth-form" id="loginForm" method="post">
+<label class="field hidden" id="signupNameField">
+<span>Full name</span>
+<div class="input-shell">
+<i class="fa-solid fa-user"></i>
+<input id="signupName" type="text" autocomplete="name" placeholder="Your full name">
+</div>
+</label>
+<label class="field hidden" id="signupPhoneField">
+<span>Phone / WhatsApp</span>
+<div class="input-shell">
+<i class="fa-solid fa-phone"></i>
+<input id="signupPhone" type="tel" autocomplete="tel" inputmode="tel" placeholder="018 967 6625">
+</div>
+</label>
+<label class="field hidden" id="agentProductKeyField">
+<span>Agent product key</span>
+<div class="input-shell">
+<i class="fa-solid fa-ticket"></i>
+<input id="agentProductKey" type="text" autocomplete="off" placeholder="Optional launch access key">
+</div>
+</label>
+<label class="field" id="loginEmailField">
+<span id="loginIdLabel">Email</span>
+<div class="input-shell">
+<i class="fa-solid fa-envelope"></i>
+<input id="loginId" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" required>
+</div>
+</label>
+<label class="field" id="loginPasswordField">
+<span>Password</span>
+<div class="input-shell">
+<i class="fa-solid fa-key"></i>
+<input id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter password" required>
+</div>
+</label>
+<label class="field hidden" id="resetPasswordField">
+<span>New password</span>
+<div class="input-shell">
+<i class="fa-solid fa-key"></i>
+<input id="resetPassword" type="password" autocomplete="new-password" placeholder="Create new password">
+</div>
+</label>
+<button class="primary-button" id="loginButton" type="submit">
+<i class="fa-solid fa-arrow-right-to-bracket"></i>
+Next
+</button>
+<button class="ghost-link" id="forgotPasswordButton" type="button">Forgot password?</button>
+<div class="login-meta" id="loginMeta">
+<span>Buyer</span>
+<span>Agent</span>
+</div>
+<div class="role-note" id="roleNote">
+<i class="fa-solid fa-shield-heart"></i>
+<span>Use one real email and password. RealityGenius detects your role automatically.</span>
+</div>
+<div class="status" id="sharedStatus" role="status"></div>
+</form>
+<p class="security-text">We will open the right dashboard automatically.</p>
+</div>
+</section>
+</main>
+<script src="./rg-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./supabase-loader.js"></script>
+<script src="./auth.js"></script>
+<script src="./login.js"></script>
+<script src="./rg-smooth-scroll.js"></script>
+</body>
 </html>

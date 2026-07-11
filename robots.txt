@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /master.html
+Disallow: /login.html
+
+Sitemap: https://realitygenius.company/sitemap.xml

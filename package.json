@@ -4,7 +4,7 @@
   "description": "Node.js backend for KVAI Platform",
   "main": "server.js",
   "scripts": {
-    "build": "node vercel-static-build.js",
+    "build": "next build && node merge-next-static.js",
     "start": "node server.js",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed"
