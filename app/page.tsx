@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import {
   ArrowRight,
   BadgeCheck,
@@ -26,6 +27,11 @@ import {
   Zap
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+
+const HeroSkyline = dynamic(() => import("./HeroSkyline"), {
+  ssr: false,
+  loading: () => <div className="h-full w-full animate-pulse rounded-[1.9rem] bg-white/[0.04]" />
+});
 
 const navItems = ["Platform", "Products", "Pricing", "About", "Contact"];
 
@@ -210,55 +216,50 @@ export default function Home() {
             initial={{ opacity: 0, scale: 0.96, y: 28 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.12 }}
-            className="hero-visual relative min-h-[560px] rounded-[2.2rem] border border-white/15 bg-white/[0.06] p-4 text-white shadow-2xl shadow-slate-950/40 backdrop-blur-2xl"
+            className="hero-visual relative min-h-[420px] overflow-hidden rounded-[2.2rem] border border-white/15 bg-white/[0.04] text-white shadow-2xl shadow-slate-950/40 sm:min-h-[560px]"
           >
-            <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-cyan-400/30 blur-3xl" />
-            <div className="absolute -bottom-10 left-8 h-32 w-64 rounded-full bg-emerald-400/18 blur-3xl" />
+            <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-cyan-400/25 blur-3xl" />
+            <div className="absolute -bottom-10 left-8 h-32 w-64 rounded-full bg-emerald-400/15 blur-3xl" />
+
+            <div className="absolute inset-0">
+              <HeroSkyline />
+            </div>
+
+            <div className="pointer-events-none absolute left-5 top-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-slate-950/60 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-amber-100 backdrop-blur-xl">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+              Live property skyline
+            </div>
+
             <motion.div
-              animate={{ y: [0, -10, 0], rotateX: [0, 2, 0], rotateY: [-3, 3, -3] }}
-              transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute left-6 right-6 top-7 overflow-hidden rounded-[1.9rem] border border-white/12 bg-[linear-gradient(145deg,#182235,#06080d)] p-5 shadow-2xl"
-            >
-              <div className="hero-property h-64 rounded-[1.4rem] border border-white/10" />
-              <div className="mt-4 flex items-end justify-between gap-4">
-                <div>
-                  <p className="flex items-center gap-2 text-sm font-bold text-slate-300"><MapPin className="h-4 w-4 text-emerald-300" /> Mont Kiara, Kuala Lumpur</p>
-                  <h3 className="mt-2 text-2xl font-black">AI-matched luxury residence</h3>
-                </div>
-                <span className="rounded-full bg-emerald-400 px-3 py-2 text-xs font-black text-emerald-950">94% Match</span>
-              </div>
-            </motion.div>
-            <motion.div
-              animate={{ y: [0, 12, 0] }}
+              animate={{ y: [0, -8, 0] }}
               transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute -left-2 top-72 w-[72%] rounded-[1.6rem] border border-white/12 bg-white/12 p-4 shadow-2xl backdrop-blur-2xl sm:left-2"
+              className="pointer-events-none absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4 rounded-[1.6rem] border border-white/12 bg-slate-950/64 p-5 backdrop-blur-2xl sm:left-6 sm:right-auto sm:w-[380px]"
             >
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-200">AgentOS</p>
-                <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-emerald-200">Live</span>
+              <div>
+                <p className="flex items-center gap-2 text-sm font-bold text-slate-300">
+                  <MapPin className="h-4 w-4 text-emerald-300" /> Mont Kiara, Kuala Lumpur
+                </p>
+                <h3 className="mt-2 text-xl font-black sm:text-2xl">AI-matched luxury residence</h3>
+                <p className="mt-2 flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-amber-200">
+                  <Layers3 className="h-4 w-4" /> 360&deg; Immersive View ready
+                </p>
               </div>
-              <div className="mt-4 grid gap-3">
-                {["Telegram import received", "Admin QC ready", "Buyer lead matched"].map((item, index) => (
-                  <div key={item} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.07] p-3">
-                    <span className="grid h-8 w-8 place-items-center rounded-xl bg-white text-xs font-black text-slate-950">0{index + 1}</span>
-                    <span className="text-sm font-bold text-slate-100">{item}</span>
-                  </div>
-                ))}
-              </div>
+              <span className="rounded-full bg-emerald-400 px-3 py-2 text-xs font-black text-emerald-950">94% Match</span>
             </motion.div>
+
             <motion.div
-              animate={{ x: [0, 8, 0], y: [0, -8, 0] }}
-              transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute bottom-8 right-4 w-56 rounded-[1.5rem] border border-white/14 bg-slate-950/78 p-4 shadow-2xl backdrop-blur-2xl"
+              animate={{ y: [0, 10, 0] }}
+              transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+              className="pointer-events-none absolute right-5 top-16 hidden w-52 rounded-[1.4rem] border border-white/14 bg-slate-950/70 p-4 backdrop-blur-2xl md:block"
             >
               <div className="flex items-center gap-3">
-                <span className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-400 text-emerald-950"><MousePointer2 className="h-5 w-5" /></span>
+                <span className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-400 text-emerald-950"><MousePointer2 className="h-5 w-5" /></span>
                 <div>
-                  <p className="text-xs font-black uppercase text-slate-400">Next best action</p>
-                  <p className="mt-1 font-black">Book viewing</p>
+                  <p className="text-[10px] font-black uppercase text-slate-400">AgentOS live</p>
+                  <p className="mt-0.5 text-sm font-black">Lead matched</p>
                 </div>
               </div>
-              <div className="mt-4 h-2 rounded-full bg-white/10"><div className="h-2 w-[78%] rounded-full bg-emerald-400" /></div>
+              <div className="mt-3 h-1.5 rounded-full bg-white/10"><div className="h-1.5 w-[78%] rounded-full bg-emerald-400" /></div>
             </motion.div>
           </motion.div>
         </div>
