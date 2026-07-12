@@ -2,20 +2,15 @@
 
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   BadgeCheck,
-  Bot,
-  Building2,
-  CheckCircle2,
   ChevronDown,
-  CreditCard,
-  Database,
   Gavel,
   Layers3,
   LockKeyhole,
   MapPin,
-  MessageCircle,
   MousePointer2,
   Search,
   Send,
@@ -33,14 +28,14 @@ const HeroSkyline = dynamic(() => import("./HeroSkyline"), {
   loading: () => <div className="h-full w-full animate-pulse rounded-[1.9rem] bg-white/[0.04]" />
 });
 
-const navItems = ["Platform", "Products", "Pricing", "About", "Contact"];
+const StreetRide = dynamic(() => import("./StreetRide"), {
+  ssr: false,
+  loading: () => <div className="h-screen" />
+});
 
-const metrics = [
-  ["Early agents", "120+"],
-  ["Live-ready listings", "2,800+"],
-  ["AI imports processed", "9,400+"],
-  ["Locations covered", "36"]
-];
+const navItems = ["Platform", "Products", "About", "Contact"];
+
+const popularAreas = ["KLCC", "Mont Kiara", "Shah Alam", "Petaling Jaya", "Penang", "Johor Bahru"];
 
 const problems = [
   {
@@ -72,40 +67,10 @@ const products: IconCard[] = [
   { title: "AI Caption Generator", body: "Generate property titles, descriptions, SEO keywords, social captions, and WhatsApp messages.", icon: WandSparkles }
 ];
 
-const integrations: IconCard[] = [
-  { title: "Supabase", body: "Auth, profiles, storage, listing data", icon: Database },
-  { title: "Telegram", body: "AI listing intake and agent onboarding", icon: Send },
-  { title: "WhatsApp", body: "Buyer-agent follow-up and viewing flow", icon: MessageCircle },
-  { title: "Stripe", body: "Agent subscriptions and plan upgrades", icon: CreditCard },
-  { title: "AI", body: "Extraction, captions, scoring, recommendations", icon: Bot }
-];
-
 const workflow: IconCard[] = [
   { title: "Upload Listing", body: "Agent uploads manually, from Excel, or through Telegram.", icon: UploadCloud },
   { title: "AI Structures Data", body: "AI extracts price, area, rooms, photos, captions, and missing fields.", icon: Layers3 },
   { title: "Buyer Discovers Smarter", body: "Approved listings appear with AI matching, alerts, and contact workflows.", icon: BadgeCheck }
-];
-
-const pricing = [
-  {
-    name: "Starter",
-    price: "RM29",
-    body: "For solo agents preparing listings faster.",
-    features: ["AI Content Creator", "Listing checklist", "WhatsApp captions", "AR demo preview"]
-  },
-  {
-    name: "Pro",
-    price: "RM79",
-    body: "For active agents managing buyer pipelines.",
-    featured: true,
-    features: ["Lead heat scoring", "AI negotiation assist", "Document vault", "Viewing itinerary"]
-  },
-  {
-    name: "Elite Agent",
-    price: "RM149",
-    body: "For premium agents and teams ready to scale.",
-    features: ["Auction Night slots", "Premium badge", "Priority AI workflows", "Team setup support"]
-  }
 ];
 
 const faqs = [
@@ -119,6 +84,97 @@ const fadeUp = {
   hidden: { opacity: 0, y: 28 },
   show: { opacity: 1, y: 0 }
 };
+
+type PublicProperty = {
+  id: number | string;
+  title: string;
+  area?: string;
+  location?: string;
+  price?: number;
+  image?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  panoramas?: unknown[];
+};
+
+function formatPrice(value?: number) {
+  const amount = Number(value || 0);
+  return amount ? `RM ${Math.round(amount).toLocaleString("en-MY")}` : "Price on request";
+}
+
+function FeaturedListings() {
+  const [listings, setListings] = useState<PublicProperty[]>([]);
+
+  useEffect(() => {
+    const base =
+      (typeof window !== "undefined" && (window as { REALTYGENIUS_CONFIG?: { API_BASE?: string } }).REALTYGENIUS_CONFIG?.API_BASE) ||
+      "https://hh-empire.onrender.com/api";
+    fetch(`${base}/properties`, { headers: { Accept: "application/json" } })
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+      .then((payload) => {
+        const items: PublicProperty[] = Array.isArray(payload) ? payload : payload.items || [];
+        setListings(items.filter((item) => item?.title && Number(item.price || 0) > 0).slice(0, 6));
+      })
+      .catch(() => setListings([]));
+  }, []);
+
+  if (!listings.length) return null;
+
+  return (
+    <section className="px-4 pb-6 pt-2">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.28em] text-emerald-700">Live on RealityGenius</p>
+            <h2 className="mt-3 text-3xl font-black tracking-[-0.04em] text-slate-950 md:text-5xl">Fresh homes across Malaysia</h2>
+          </div>
+          <a href="/user.html" className="inline-flex min-h-12 items-center gap-2 rounded-full bg-slate-950 px-6 text-sm font-black text-white shadow-xl shadow-slate-950/15">
+            Browse all listings
+            <ArrowRight className="h-4 w-4" />
+          </a>
+        </div>
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {listings.map((listing, index) => (
+            <motion.a
+              key={listing.id}
+              href={`/property/${listing.id}`}
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.06 }}
+              className="group overflow-hidden rounded-[1.8rem] border border-slate-200 bg-white shadow-xl shadow-slate-950/[0.05] transition hover:-translate-y-1 hover:shadow-2xl"
+            >
+              <div className="relative h-52 overflow-hidden bg-slate-100">
+                {listing.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={listing.image} alt={listing.title} loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+                ) : null}
+                <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1.5 text-xs font-black text-emerald-900 backdrop-blur">
+                  {listing.area || "Malaysia"}
+                </span>
+                {(listing.panoramas || []).length ? (
+                  <span className="absolute bottom-4 left-4 rounded-full bg-emerald-700/90 px-3 py-1.5 text-xs font-black text-emerald-50 backdrop-blur">360&deg; Tour</span>
+                ) : null}
+              </div>
+              <div className="p-5">
+                <strong className="text-xl font-black tracking-[-0.03em] text-emerald-800">{formatPrice(listing.price)}</strong>
+                <h3 className="mt-2 line-clamp-1 text-lg font-black text-slate-900">{listing.title}</h3>
+                <p className="mt-1 flex items-center gap-2 text-sm font-bold text-slate-500">
+                  <MapPin className="h-4 w-4 text-emerald-600" />
+                  <span className="line-clamp-1">{listing.location || listing.area || "Malaysia"}</span>
+                </p>
+                <p className="mt-3 text-sm font-bold text-slate-600">
+                  {Number(listing.bedrooms || 0)} bed · {Number(listing.bathrooms || 0)} bath
+                </p>
+              </div>
+            </motion.a>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function SectionIntro({
   eyebrow,
@@ -185,10 +241,10 @@ export default function Home() {
               Malaysia&apos;s next AI property ecosystem
             </div>
             <h1 className="mt-6 max-w-5xl text-[2.68rem] font-black leading-[1.02] tracking-[-0.035em] text-white sm:text-6xl md:mt-7 md:text-7xl md:leading-[0.95] md:tracking-[-0.065em] lg:text-8xl">
-              Malaysia&apos;s AI Property Operating Platform
+              Find your next home in Malaysia
             </h1>
             <p className="mt-7 max-w-3xl text-lg leading-9 text-slate-300 md:text-xl">
-              RealityGenius brings AI property search, agent workspace, Telegram listing import, admin approval, and smarter buyer-agent matching into one trusted platform for Malaysia.
+              Verified sale, rent, new project, and auction listings with AI match scoring, 360&deg; immersive tours, and direct agent contact — Malaysia&apos;s AI property portal.
             </p>
             <div className="mt-7 max-w-2xl rounded-[1.5rem] border border-white/12 bg-white/10 p-3 shadow-2xl shadow-emerald-950/25 backdrop-blur-xl">
               <div className="flex flex-col gap-3 sm:flex-row">
@@ -201,13 +257,25 @@ export default function Home() {
                 </a>
               </div>
             </div>
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <a href="#contact" className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-emerald-400 px-7 font-black text-emerald-950 shadow-2xl shadow-emerald-700/20">
-                Book a Demo
+            <div className="mt-6 flex flex-wrap items-center gap-2" aria-label="Popular areas">
+              <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Popular:</span>
+              {popularAreas.map((areaName) => (
+                <a
+                  key={areaName}
+                  href={`/user.html#explore`}
+                  className="rounded-full border border-white/15 bg-white/[0.07] px-4 py-2 text-sm font-bold text-slate-200 backdrop-blur-xl transition hover:border-emerald-300/50 hover:text-white"
+                >
+                  {areaName}
+                </a>
+              ))}
+            </div>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <a href="/user.html" className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-emerald-400 px-7 font-black text-emerald-950 shadow-2xl shadow-emerald-700/20">
+                Start Searching
                 <ArrowRight className="h-5 w-5" />
               </a>
               <a href="/agents.html" className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full border border-white/15 bg-white/10 px-7 font-black text-white shadow-xl shadow-slate-950/5 backdrop-blur-xl">
-                Explore Platform
+                I&apos;m an Agent
               </a>
             </div>
           </motion.div>
@@ -265,16 +333,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="px-4 pb-16">
-        <div className="mx-auto grid max-w-7xl gap-4 rounded-[2rem] border border-slate-200 bg-white p-4 shadow-xl shadow-slate-950/5 md:grid-cols-4">
-          {metrics.map(([label, value]) => (
-            <motion.article key={label} variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="rounded-3xl bg-slate-50 p-6 text-center">
-              <strong className="text-4xl font-black tracking-[-0.04em] text-slate-950">{value}</strong>
-              <p className="mt-2 text-sm font-bold text-slate-500">{label}</p>
-            </motion.article>
-          ))}
-        </div>
-      </section>
+      <FeaturedListings />
 
       <section id="products" className="bg-white px-4 py-20">
         <SectionIntro eyebrow="Why RealityGenius" title="The market does not need another listing directory." body="It needs a clean operating layer where property supply is structured, verified, marketed, matched, and moved faster." />
@@ -318,51 +377,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="px-4 py-20">
-        <div className="mx-auto grid max-w-7xl gap-10 rounded-[2.4rem] bg-slate-950 p-6 text-white shadow-2xl shadow-slate-950/20 lg:grid-cols-[.85fr_1.15fr] lg:p-10">
-          <div className="self-center">
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-200">API Platform</p>
-            <h2 className="mt-4 text-4xl font-black tracking-[-0.045em] md:text-6xl">Built to connect the real workflow.</h2>
-            <p className="mt-5 text-lg leading-8 text-slate-300">Supabase, Telegram, WhatsApp, Stripe, and AI become one operational stack for Malaysian property teams.</p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-          {integrations.map(({ title, body, icon: Icon }) => (
-              <article key={title} className="rounded-3xl border border-white/10 bg-white/[0.07] p-5">
-                <Icon className="h-7 w-7 text-emerald-300" />
-                <h3 className="mt-5 text-xl font-black">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{body}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="pricing" className="bg-white px-4 py-20">
-        <SectionIntro eyebrow="Pricing Preview" title="Agent plans that scale from content to closing." body="Launch mode can keep tools open while paid tiers are validated. Stripe subscription logic is ready for production pricing." />
-        <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-3">
-          {pricing.map((plan) => (
-            <motion.article key={plan.name} variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className={`rounded-[2rem] border p-7 ${plan.featured ? "border-emerald-300 bg-slate-950 text-white shadow-2xl shadow-slate-950/20" : "border-slate-200 bg-slate-50"}`}>
-              <div className="flex items-center justify-between gap-4">
-                <h3 className="text-2xl font-black">{plan.name}</h3>
-                {plan.featured ? <span className="rounded-full bg-emerald-400 px-3 py-1 text-xs font-black text-emerald-950">Popular</span> : null}
-              </div>
-              <p className={`mt-4 leading-7 ${plan.featured ? "text-slate-300" : "text-slate-600"}`}>{plan.body}</p>
-              <div className="mt-7 flex items-end gap-2">
-                <strong className="text-5xl font-black tracking-[-0.05em]">{plan.price}</strong>
-                <span className={plan.featured ? "text-slate-300" : "text-slate-500"}>/mo</span>
-              </div>
-              <ul className="mt-8 grid gap-3">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-center gap-3 font-bold">
-                    <CheckCircle2 className={`h-5 w-5 ${plan.featured ? "text-emerald-300" : "text-emerald-600"}`} />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </motion.article>
-          ))}
-        </div>
-      </section>
+      <StreetRide />
 
       <section className="px-4 py-20">
         <SectionIntro eyebrow="FAQ" title="Common questions from agents and investors." body="Clear answers make the platform easier to trust, explain, and sell." />
