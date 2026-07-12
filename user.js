@@ -1264,8 +1264,54 @@ function setupInfiniteFeed() {
   feedObserver.observe(els.feedSentinel);
 }
 
+function bindCardGalleryCycling(card) {
+  if (card.dataset.cycleBound === "true") return;
+  card.dataset.cycleBound = "true";
+  const media = card.querySelector(".feed-media img, .card-media img");
+  if (!media) return;
+  const id = Number(card.dataset.id);
+
+  card.addEventListener("pointerenter", () => {
+    const property = properties.find((item) => item.id === id);
+    const urls = [...new Set((property?.gallery || [])
+      .map((slot) => slot.url)
+      .filter((url) => /^https?:\/\//i.test(String(url || ""))))];
+    if (urls.length < 2) return;
+
+    card.dataset.cycling = "true";
+    card._cycleOriginal = media.src;
+    let index = Math.max(0, urls.indexOf(media.src));
+
+    const advance = () => {
+      index = (index + 1) % urls.length;
+      const preload = new Image();
+      preload.onload = () => {
+        if (card.dataset.cycling !== "true") return;
+        media.classList.add("is-swapping");
+        setTimeout(() => {
+          if (card.dataset.cycling !== "true") return;
+          media.src = preload.src;
+          media.classList.remove("is-swapping");
+        }, 160);
+      };
+      preload.src = urls[index];
+    };
+
+    card._cycleTimer = setInterval(advance, 1200);
+    advance();
+  });
+
+  card.addEventListener("pointerleave", () => {
+    card.dataset.cycling = "false";
+    if (card._cycleTimer) clearInterval(card._cycleTimer);
+    media.classList.remove("is-swapping");
+    if (card._cycleOriginal) media.src = card._cycleOriginal;
+  });
+}
+
 function enhancePropertyCards() {
   document.querySelectorAll("[data-tilt-card]").forEach((card) => {
+    bindCardGalleryCycling(card);
     if (card.dataset.tiltBound === "true") return;
     card.dataset.tiltBound = "true";
 
