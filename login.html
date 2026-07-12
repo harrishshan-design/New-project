@@ -10,29 +10,80 @@
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-100QC1J9RT');</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rethink+Sans:wght@500;600;700;800&family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <style>
 :root{
---ink:#f8f5ec;
---muted:rgba(248,245,236,.68);
---line:rgba(248,245,236,.18);
---gold:#f6d27a;
---teal:#0f766e;
+--ink:#f6f9f2;
+--muted:rgba(238,244,234,.68);
+--line:rgba(238,244,234,.16);
+--gold:#e7cf9a;
+--emerald:#34d399;
+--emerald-deep:#1d4024;
 }
 *{box-sizing:border-box}
-html{min-height:100%;background:#070707}
+html{min-height:100%;background:#020617}
 body{
 margin:0;
 min-height:100vh;
-font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+font-family:"Rethink Sans",Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
 color:var(--ink);
 background:
-linear-gradient(90deg,rgba(0,0,0,.82),rgba(0,0,0,.38),rgba(0,0,0,.86)),
-url("https://images.unsplash.com/photo-1600607688969-a5bfcd646154?auto=format&fit=crop&w=2200&q=88") center/cover fixed;
+radial-gradient(circle at 12% 8%, rgba(52,211,153,.16), transparent 34%),
+radial-gradient(circle at 88% 6%, rgba(231,207,154,.12), transparent 32%),
+radial-gradient(circle at 70% 90%, rgba(47,120,105,.18), transparent 40%),
+linear-gradient(165deg,#020617 0%,#07130c 55%,#020a10 100%);
 display:grid;
 place-items:center;
 padding:24px;
+position:relative;
+overflow-x:hidden;
+}
+/* drifting ambient glow */
+body::before,
+body::after{
+content:"";
+position:fixed;
+border-radius:50%;
+filter:blur(90px);
+pointer-events:none;
+z-index:0;
+}
+body::before{
+width:420px;height:420px;
+left:-120px;top:12%;
+background:rgba(52,211,153,.14);
+animation:rgDrift 16s ease-in-out infinite alternate;
+}
+body::after{
+width:360px;height:360px;
+right:-100px;bottom:8%;
+background:rgba(231,207,154,.12);
+animation:rgDrift 19s ease-in-out infinite alternate-reverse;
+}
+@keyframes rgDrift{
+from{transform:translate3d(0,0,0) scale(1)}
+to{transform:translate3d(50px,-36px,0) scale(1.12)}
+}
+/* Malaysian roofline silhouette with twinkling windows */
+.skyline{
+position:fixed;
+inset:auto 0 0 0;
+height:150px;
+z-index:0;
+pointer-events:none;
+opacity:.6;
+}
+.skyline svg{width:100%;height:100%;display:block}
+.skyline .win{
+fill:var(--gold);
+animation:rgTwinkle 3.4s ease-in-out infinite;
+}
+.skyline .win:nth-child(odd){animation-delay:1.1s}
+.skyline .win:nth-child(3n){animation-delay:2.2s}
+@keyframes rgTwinkle{
+0%,100%{opacity:.85}
+50%{opacity:.25}
 }
 button,input{font:inherit}
 a{color:inherit}
@@ -42,28 +93,32 @@ left:16px;
 top:16px;
 z-index:20;
 padding:10px 14px;
-background:#f6d27a;
-color:#0b0b0b;
+background:var(--emerald);
+color:#04120b;
 border-radius:999px;
 font-weight:900;
+text-decoration:none;
 transform:translateY(-150%);
 transition:transform .2s ease;
 }
 .skip-link:focus{transform:translateY(0)}
 .login-shell{
+position:relative;
+z-index:1;
 width:min(1160px,100%);
-min-height:min(720px,calc(100vh - 48px));
+min-height:min(700px,calc(100vh - 48px));
 display:grid;
 grid-template-columns:minmax(0,1fr) minmax(340px,440px);
-gap:28px;
+gap:26px;
 align-items:stretch;
 }
 .login-story,
 .auth-panel{
 border:1px solid var(--line);
-background:rgba(7,7,7,.48);
-box-shadow:0 38px 100px rgba(0,0,0,.42);
-backdrop-filter:blur(18px);
+border-radius:30px;
+background:rgba(6,12,9,.55);
+box-shadow:0 38px 100px rgba(0,0,0,.5);
+backdrop-filter:blur(20px);
 }
 .login-story{
 padding:34px;
@@ -71,6 +126,19 @@ display:flex;
 flex-direction:column;
 justify-content:space-between;
 gap:30px;
+overflow:hidden;
+position:relative;
+}
+.login-story::after{
+content:"";
+position:absolute;
+right:-70px;
+top:-70px;
+width:230px;
+height:230px;
+border-radius:50%;
+background:radial-gradient(circle, rgba(52,211,153,.22), transparent 70%);
+pointer-events:none;
 }
 .topline{
 display:flex;
@@ -87,8 +155,9 @@ font-weight:900;
 letter-spacing:.08em;
 text-transform:uppercase;
 cursor:pointer;
+padding:6px 0;
 }
-.brand sup{font-size:.48rem}
+.brand sup{font-size:.48rem;color:var(--gold)}
 .home-link{
 min-height:42px;
 display:inline-flex;
@@ -102,7 +171,9 @@ font-weight:900;
 letter-spacing:.18em;
 text-decoration:none;
 text-transform:uppercase;
+transition:border-color .2s ease,color .2s ease;
 }
+.home-link:hover{border-color:var(--gold);color:var(--gold)}
 .login-copy{max-width:720px}
 .eyebrow{
 margin:0 0 18px;
@@ -114,10 +185,16 @@ text-transform:uppercase;
 }
 .login-copy h1{
 margin:0;
-font-size:clamp(3.4rem,7vw,7.4rem);
-line-height:.86;
-letter-spacing:-.08em;
-text-transform:uppercase;
+font-size:clamp(3rem,6.4vw,6.4rem);
+line-height:.9;
+letter-spacing:-.05em;
+}
+.login-copy h1 em{
+font-style:normal;
+background:linear-gradient(120deg,var(--emerald),#5eead4);
+-webkit-background-clip:text;
+background-clip:text;
+-webkit-text-fill-color:transparent;
 }
 .auth-shortcut{
 display:inline-flex;
@@ -125,18 +202,26 @@ align-items:center;
 justify-content:center;
 gap:10px;
 min-height:54px;
-padding:0 18px;
-background:#f8f5ec;
-color:#111;
+margin-top:22px;
+padding:0 22px;
+border-radius:999px;
+background:var(--emerald);
+color:#04120b;
 font-weight:900;
 text-decoration:none;
 width:max-content;
+box-shadow:0 18px 44px rgba(52,211,153,.25);
+transition:transform .2s ease,box-shadow .2s ease;
+}
+.auth-shortcut:hover{
+transform:translateY(-2px);
+box-shadow:0 22px 54px rgba(52,211,153,.38);
 }
 .login-copy p{
 max-width:560px;
 margin:22px 0 0;
 color:var(--muted);
-font-weight:800;
+font-weight:700;
 line-height:1.65;
 }
 .role-row{
@@ -147,7 +232,8 @@ gap:12px;
 .role-card{
 min-height:72px;
 border:1px solid var(--line);
-background:rgba(255,255,255,.06);
+border-radius:20px;
+background:rgba(255,255,255,.05);
 color:#fff;
 display:flex;
 align-items:center;
@@ -155,14 +241,20 @@ justify-content:center;
 gap:10px;
 font-weight:900;
 cursor:pointer;
-transition:background .18s ease,color .18s ease,border-color .18s ease;
+transition:background .2s ease,color .2s ease,border-color .2s ease,transform .2s ease;
 }
-.role-card.active,
+.role-card i{color:var(--gold)}
 .role-card:hover{
-background:#f8f5ec;
-border-color:#f8f5ec;
-color:#111;
+transform:translateY(-2px);
+border-color:rgba(52,211,153,.5);
 }
+.role-card.active{
+background:linear-gradient(120deg,#1d4024,#2f7869);
+border-color:rgba(52,211,153,.6);
+color:#f6f9f2;
+box-shadow:0 14px 40px rgba(29,64,36,.45);
+}
+.role-card.active i{color:#a7f3d0}
 .auth-panel{
 padding:26px;
 display:grid;
@@ -171,11 +263,11 @@ align-content:center;
 .auth-card{display:grid;gap:18px}
 .auth-head h2{
 margin:0;
-font-size:clamp(2.4rem,4vw,3.7rem);
-line-height:.9;
-letter-spacing:-.07em;
+font-size:clamp(2.2rem,3.6vw,3.2rem);
+line-height:.95;
+letter-spacing:-.04em;
 }
-.auth-head sup{font-size:.75rem}
+.auth-head sup{font-size:.75rem;color:var(--gold)}
 .auth-head p{
 margin:10px 0 0;
 color:var(--muted);
@@ -197,22 +289,25 @@ gap:8px;
 padding:0 12px;
 border:1px solid var(--line);
 border-radius:999px;
-background:rgba(255,255,255,.06);
+background:rgba(255,255,255,.05);
 color:var(--muted);
 font-size:.76rem;
 font-weight:900;
 }
+.trust-chip i{color:var(--emerald)}
 .auth-mode-toggle{
 display:grid;
 grid-template-columns:repeat(2,minmax(0,1fr));
 gap:8px;
 padding:6px;
 border:1px solid var(--line);
-background:rgba(255,255,255,.05);
+border-radius:999px;
+background:rgba(255,255,255,.04);
 }
 .auth-mode-toggle button{
 min-height:42px;
 border:0;
+border-radius:999px;
 background:transparent;
 color:var(--muted);
 font-size:.78rem;
@@ -220,15 +315,16 @@ font-weight:900;
 letter-spacing:.14em;
 text-transform:uppercase;
 cursor:pointer;
+transition:background .2s ease,color .2s ease;
 }
 .auth-mode-toggle button.active{
-background:#f8f5ec;
-color:#111;
+background:var(--emerald);
+color:#04120b;
 }
 .auth-form{display:grid;gap:14px}
 .field{display:grid;gap:8px}
 .field span{
-color:rgba(248,245,236,.76);
+color:rgba(238,244,234,.78);
 font-size:.92rem;
 font-weight:900;
 }
@@ -239,33 +335,52 @@ align-items:center;
 gap:12px;
 padding:0 16px;
 border:1px solid var(--line);
-background:rgba(255,255,255,.07);
+border-radius:18px;
+background:rgba(255,255,255,.06);
+transition:border-color .2s ease,box-shadow .2s ease;
 }
-.input-shell i{color:rgba(248,245,236,.58)}
+.input-shell:focus-within{
+border-color:rgba(52,211,153,.65);
+box-shadow:0 0 0 4px rgba(52,211,153,.12);
+}
+.input-shell i{color:rgba(238,244,234,.5)}
 input{
 width:100%;
 border:0;
 outline:0;
 background:transparent;
 color:#fff;
-font-weight:900;
+font-weight:800;
 }
-input::placeholder{color:rgba(248,245,236,.4)}
+input::placeholder{color:rgba(238,244,234,.42)}
 .primary-button{
 min-height:60px;
+display:inline-flex;
+align-items:center;
+justify-content:center;
+gap:10px;
 border:0;
-background:#f8f5ec;
-color:#111;
+border-radius:999px;
+background:var(--emerald);
+color:#04120b;
 font-weight:900;
 cursor:pointer;
+box-shadow:0 18px 44px rgba(52,211,153,.25);
+transition:transform .2s ease,box-shadow .2s ease;
+}
+.primary-button:hover{
+transform:translateY(-2px);
+box-shadow:0 22px 54px rgba(52,211,153,.38);
 }
 .ghost-link{
 min-height:42px;
 border:1px solid rgba(255,255,255,.14);
-background:rgba(255,255,255,.05);
-color:rgba(248,245,236,.78);
+border-radius:999px;
+background:rgba(255,255,255,.04);
+color:rgba(238,244,234,.78);
 font-weight:900;
 cursor:pointer;
+transition:background .2s ease,color .2s ease;
 }
 .ghost-link:hover{
 background:rgba(255,255,255,.1);
@@ -278,7 +393,8 @@ gap:8px;
 }
 .login-meta span{
 padding:10px;
-background:rgba(255,255,255,.07);
+border-radius:14px;
+background:rgba(255,255,255,.06);
 color:var(--muted);
 font-size:.82rem;
 font-weight:900;
@@ -287,13 +403,16 @@ text-align:center;
 .role-note{
 display:flex;
 gap:10px;
-padding:12px;
-background:rgba(15,118,110,.18);
-color:rgba(248,245,236,.78);
+padding:12px 14px;
+border-radius:16px;
+background:rgba(47,120,105,.16);
+border:1px solid rgba(47,120,105,.3);
+color:rgba(238,244,234,.8);
 font-size:.84rem;
-font-weight:800;
+font-weight:700;
 line-height:1.45;
 }
+.role-note i{color:var(--emerald)}
 .status{
 min-height:22px;
 color:#fda4af;
@@ -303,24 +422,51 @@ line-height:1.4;
 .status.ok{color:#7dd3c7}
 .security-text{
 margin:0;
-color:rgba(248,245,236,.52);
+color:rgba(238,244,234,.5);
 font-size:.82rem;
-font-weight:800;
+font-weight:700;
 line-height:1.45;
 }
 .hidden{display:none!important}
+@media (prefers-reduced-motion: reduce){
+body::before,body::after{animation:none}
+.skyline .win{animation:none}
+}
 @media (max-width:860px){
 body{padding:12px}
 .login-shell{grid-template-columns:1fr;min-height:auto}
-.login-story{min-height:360px;padding:22px}
-.auth-panel{padding:20px}
-.login-copy h1{font-size:3rem}
+.login-story{min-height:340px;padding:22px;border-radius:24px}
+.auth-panel{padding:20px;border-radius:24px}
+.login-copy h1{font-size:2.8rem}
 .role-row{grid-template-columns:1fr}
+.skyline{height:90px}
 }
 </style>
 </head>
 <body>
 <a class="skip-link" href="#loginForm">Skip to login form</a>
+
+<div class="skyline" aria-hidden="true">
+<svg viewBox="0 0 1200 150" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+<path fill="#04100a" d="M0 150V96l30-18 30 18v18h24V78l34-22 34 22v36h20V60h14V42l10-8 10 8v18h14v54h26V88l32-20 32 20v26h22V70l28-16 28 16v44h30V50h12l6-24 6 24h12v64h28V84l30-18 30 18v30h24V64l26-14 26 14v50h32V92l28-16 28 16v22h20V56h14V36l10-8 10 8v20h14v58h26V80l34-20 34 20v34h22V74l30-16 30 16v40h28V58h12l6-26 6 26h12v56h30V90l28-16 28 16v24h22V72l30-18 30 18v42h24v-36l30-18 30 18v54z"/>
+<g class="wins">
+<rect class="win" x="52" y="104" width="6" height="8"/>
+<rect class="win" x="120" y="86" width="6" height="8"/>
+<rect class="win" x="196" y="70" width="6" height="8"/>
+<rect class="win" x="286" y="96" width="6" height="8"/>
+<rect class="win" x="380" y="82" width="6" height="8"/>
+<rect class="win" x="470" y="66" width="6" height="8"/>
+<rect class="win" x="560" y="94" width="6" height="8"/>
+<rect class="win" x="648" y="76" width="6" height="8"/>
+<rect class="win" x="742" y="70" width="6" height="8"/>
+<rect class="win" x="838" y="90" width="6" height="8"/>
+<rect class="win" x="930" y="72" width="6" height="8"/>
+<rect class="win" x="1022" y="98" width="6" height="8"/>
+<rect class="win" x="1110" y="84" width="6" height="8"/>
+</g>
+</svg>
+</div>
+
 <main class="login-shell">
 <section class="login-story" aria-label="RealityGenius login intro">
 <div class="topline">
@@ -328,13 +474,13 @@ body{padding:12px}
 <a class="home-link" href="./index.html">Homepage</a>
 </div>
 <div class="login-copy">
-<p class="eyebrow">Login</p>
-<h1>Welcome back.</h1>
-<p>Choose Buyer or Agent, enter basic details, then continue. No email code is needed for public signup.</p>
+<p class="eyebrow">Malaysia's AI Property Portal</p>
+<h1>Welcome <em>home</em>.</h1>
+<p>Log in to keep exploring verified homes with AI insights and 360&deg; immersive tours — or list and close faster as an agent. Quick signup, no email code.</p>
 <a class="auth-shortcut" href="#loginForm"><i class="fa-solid fa-arrow-down"></i> Go to login</a>
 </div>
 <div class="role-row" aria-label="Choose login role">
-<button class="role-card active" id="optionUser" data-role="user" type="button"><i class="fa-solid fa-user"></i> Buyer</button>
+<button class="role-card active" id="optionUser" data-role="user" type="button"><i class="fa-solid fa-house-user"></i> Buyer</button>
 <button class="role-card" id="optionAgent" data-role="agent" type="button"><i class="fa-solid fa-user-tie"></i> Agent</button>
 <button class="role-card privileged-role" id="optionAdmin" data-role="admin" type="button" hidden><i class="fa-solid fa-shield-halved"></i> Admin</button>
 <button class="role-card privileged-role" id="optionMaster" data-role="master" type="button" hidden><i class="fa-solid fa-crown"></i> Master</button>
@@ -412,7 +558,7 @@ Next
 <i class="fa-solid fa-shield-heart"></i>
 <span>Use one real email and password. RealityGenius detects your role automatically.</span>
 </div>
-<div class="status" id="sharedStatus" role="status"></div>
+<div class="status" id="sharedStatus" role="status" aria-live="polite"></div>
 </form>
 <p class="security-text">We will open the right dashboard automatically.</p>
 </div>
