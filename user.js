@@ -403,6 +403,8 @@ const els = {
   signalBadge: document.getElementById("signalBadge"),
   feedLoading: document.getElementById("feedLoading"),
   feedSentinel: document.getElementById("feedSentinel"),
+  mapFeedButton: document.getElementById("mapFeedButton"),
+  mapFeed: document.getElementById("mapFeed"),
   propertyModal: document.getElementById("propertyModal"),
   modalBadge: document.getElementById("modalBadge"),
   modalTitle: document.getElementById("modalTitle"),
@@ -766,8 +768,11 @@ function renderFeedGalleryMarkup(property) {
   `;
 }
 
+let modalGalleryActiveIndex = 0;
+
 function renderModalGallery(property, activeIndex = 0) {
   const { gallery, verified, requiredMissing, total } = getGalleryCompleteness(property);
+  modalGalleryActiveIndex = activeIndex;
   const activeSlot = gallery[activeIndex] || gallery.find((item) => item.url) || gallery[0];
   els.modalImage.src = activeSlot?.url || property.image || "";
   els.modalImage.alt = `${property.title} - ${activeSlot?.label || "Property preview"}`;
@@ -980,8 +985,151 @@ function setFeedMode(mode) {
   writeStore(STORAGE_KEYS.feedMode, state.feedMode);
   els.gridFeedButton.classList.toggle("active", mode === "grid");
   els.videoFeedButton.classList.toggle("active", mode === "video");
+  els.mapFeedButton?.classList.toggle("active", mode === "map");
   resetFeedWindow();
   renderDashboard();
+}
+
+// ---------------------------------------------------------
+// MAP VIEW: Leaflet + OpenStreetMap, lazy-loaded. Listings are
+// pinned by matching their area/location text against known
+// Malaysian localities, with a small deterministic offset per
+// listing so same-area pins do not stack.
+// ---------------------------------------------------------
+const AREA_COORDS = {
+  "klcc": [3.1579, 101.7123],
+  "mont kiara": [3.1727, 101.6509],
+  "bangsar": [3.1281, 101.671],
+  "damansara": [3.1568, 101.6302],
+  "petaling jaya": [3.1073, 101.6067],
+  "subang jaya": [3.0567, 101.5851],
+  "shah alam": [3.0733, 101.5185],
+  "setia alam": [3.1029, 101.457],
+  "klang": [3.0449, 101.4457],
+  "port klang": [3.0038, 101.3929],
+  "puchong": [3.0322, 101.6188],
+  "cyberjaya": [2.9226, 101.6509],
+  "putrajaya": [2.9264, 101.6964],
+  "cheras": [3.0421, 101.7758],
+  "kajang": [2.9935, 101.7874],
+  "semenyih": [2.949, 101.843],
+  "ampang": [3.1488, 101.7614],
+  "sentul": [3.1855, 101.689],
+  "kepong": [3.2145, 101.635],
+  "bukit jalil": [3.0583, 101.691],
+  "sri petaling": [3.0697, 101.6907],
+  "rawang": [3.3213, 101.5767],
+  "seremban": [2.7297, 101.9381],
+  "penang": [5.4141, 100.3288],
+  "georgetown": [5.4141, 100.3288],
+  "butterworth": [5.3992, 100.3638],
+  "ipoh": [4.5975, 101.0901],
+  "melaka": [2.1896, 102.2501],
+  "johor bahru": [1.4927, 103.7414],
+  "iskandar": [1.4276, 103.6318],
+  "kota kinabalu": [5.9804, 116.0735],
+  "kuching": [1.5535, 110.3593],
+  "kuala lumpur": [3.139, 101.6869]
+};
+
+let leafletPromise = null;
+let listingMap = null;
+let listingMapMarkers = [];
+
+function loadLeaflet() {
+  if (window.L) return Promise.resolve();
+  if (leafletPromise) return leafletPromise;
+  leafletPromise = new Promise((resolve, reject) => {
+    const css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+    document.head.appendChild(css);
+    const script = document.createElement("script");
+    script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    script.onload = () => resolve();
+    script.onerror = () => {
+      leafletPromise = null;
+      reject(new Error("Map library failed to load"));
+    };
+    document.head.appendChild(script);
+  });
+  return leafletPromise;
+}
+
+function propertyMapCoords(property) {
+  const text = `${property.location || ""} ${property.area || ""}`.toLowerCase();
+  for (const [key, coords] of Object.entries(AREA_COORDS)) {
+    if (!text.includes(key)) continue;
+    const jitter = (salt) => {
+      const value = Math.sin(Number(property.id || 0) * 127.1 + salt * 311.7) * 43758.5453;
+      return (value - Math.floor(value)) * 0.022 - 0.011;
+    };
+    return [coords[0] + jitter(1), coords[1] + jitter(2)];
+  }
+  return null;
+}
+
+function shortPrice(value) {
+  const amount = Number(value || 0);
+  if (amount >= 1000000) return `RM ${(amount / 1000000).toFixed(2)}M`;
+  if (amount >= 1000) return `RM ${Math.round(amount / 1000)}k`;
+  return `RM ${amount}`;
+}
+
+function mapPopupMarkup(property) {
+  return `
+    <article class="map-popup">
+      <img src="${escapeAttr(getHeroImage(property))}" alt="${escapeAttr(property.title)}">
+      <strong>${escapeHtml(shortPrice(property.price))}</strong>
+      <p>${escapeHtml(property.title)}</p>
+      <button type="button" data-map-open="${property.id}">Explore this home</button>
+    </article>
+  `;
+}
+
+async function renderMapFeed() {
+  const container = els.mapFeed;
+  if (!container) return;
+  try {
+    await loadLeaflet();
+  } catch {
+    container.innerHTML = '<div class="map-feed-error">The map could not load right now. Switch back to Grid View or check your connection.</div>';
+    return;
+  }
+
+  if (!listingMap) {
+    listingMap = window.L.map("listingMap", { scrollWheelZoom: true }).setView([3.139, 101.6869], 11);
+    window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(listingMap);
+
+    container.addEventListener("click", (event) => {
+      const trigger = event.target.closest("[data-map-open]");
+      if (trigger) openPropertyModal(Number(trigger.dataset.mapOpen));
+    });
+  }
+
+  listingMapMarkers.forEach((marker) => marker.remove());
+  listingMapMarkers = [];
+
+  const bounds = [];
+  filteredProperties().forEach((property) => {
+    const coords = propertyMapCoords(property);
+    if (!coords) return;
+    const icon = window.L.divIcon({
+      className: "map-price-anchor",
+      html: `<span class="map-price-pill">${escapeHtml(shortPrice(property.price))}</span>`,
+      iconSize: [0, 0]
+    });
+    const marker = window.L.marker(coords, { icon }).addTo(listingMap);
+    marker.bindPopup(mapPopupMarkup(property), { maxWidth: 240 });
+    listingMapMarkers.push(marker);
+    bounds.push(coords);
+  });
+
+  if (bounds.length) listingMap.fitBounds(bounds, { padding: [46, 46], maxZoom: 13 });
+  setTimeout(() => listingMap.invalidateSize(), 90);
 }
 
 function getGuessChoices(property) {
@@ -2281,6 +2429,22 @@ function renderPersonalizedMatches() {
 }
 
 function renderProperties() {
+  if (state.feedMode === "map") {
+    teardownVideoFeedPlayback();
+    els.propertyGrid.hidden = true;
+    els.videoFeed.hidden = true;
+    els.feedLoading.hidden = true;
+    els.feedSentinel.hidden = true;
+    els.mapFeed.hidden = false;
+    els.gridFeedButton.classList.remove("active");
+    els.videoFeedButton.classList.remove("active");
+    els.mapFeedButton?.classList.add("active");
+    renderMapFeed();
+    return;
+  }
+  if (els.mapFeed) els.mapFeed.hidden = true;
+  els.mapFeedButton?.classList.remove("active");
+
   const list = state.feedMode === "video" ? filteredProperties() : getVisibleFeedProperties();
   if (!list.length) {
     const query = state.search.trim();
@@ -2441,6 +2605,15 @@ function incrementView(id) {
   checkGamificationMilestones("view");
 }
 
+function estimateMonthlyInstallment(price) {
+  const amount = Number(price || 0);
+  if (!amount) return 0;
+  const loan = amount * 0.9;
+  const monthlyRate = 0.043 / 12;
+  const months = 35 * 12;
+  return Math.round((loan * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -months)));
+}
+
 function openPropertyModal(id) {
   const property = properties.find((item) => item.id === id);
   if (!property) return;
@@ -2457,12 +2630,14 @@ function openPropertyModal(id) {
   els.modalSummary.textContent = property.summary;
   renderModalGallery(property);
   const { verified, total } = getGalleryCompleteness(property);
+  const monthlyEstimate = estimateMonthlyInstallment(property.price);
   els.modalStats.innerHTML = `
     <span>${property.bedrooms} bed / ${property.bathrooms} bath</span>
     <span>${property.sqft} sqft</span>
     <span>${property.yield}% yield</span>
     <span>${property.growth}% growth</span>
     <span>${verified}/${total} photos ready</span>
+    ${monthlyEstimate ? `<span title="Estimate: 10% down, 4.3% p.a., 35 years">&asymp; RM ${monthlyEstimate.toLocaleString("en-MY")}/mo</span>` : ""}
   `;
   els.modalAiReasons.innerHTML = decision.reasons.map((item) => `<li>${item}</li>`).join("");
   els.modalRisk.textContent = `Risk: ${decision.risk}`;
@@ -3251,6 +3426,7 @@ function bindEvents() {
   });
 
   els.gridFeedButton.addEventListener("click", () => setFeedMode("grid"));
+  els.mapFeedButton?.addEventListener("click", () => setFeedMode("map"));
   els.videoFeedButton.addEventListener("click", () => {
     setFeedMode("video");
     showToast("Welcome to the property reels");
@@ -3339,6 +3515,22 @@ function bindEvents() {
     if (event.key === "Escape") {
       document.querySelectorAll(".drawer.is-open").forEach((drawer) => closeDrawer(drawer.id));
       if (els.propertyModal.classList.contains("is-open")) closeModal();
+      return;
+    }
+
+    if (
+      ["ArrowLeft", "ArrowRight"].includes(event.key) &&
+      els.propertyModal.classList.contains("is-open") &&
+      !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || "")
+    ) {
+      const property = properties.find((item) => item.id === state.activePropertyId);
+      if (!property) return;
+      const { gallery } = getGalleryCompleteness(property);
+      const count = gallery.length;
+      if (count < 2) return;
+      event.preventDefault();
+      const step = event.key === "ArrowRight" ? 1 : -1;
+      selectModalGalleryImage((modalGalleryActiveIndex + step + count) % count);
       return;
     }
 
