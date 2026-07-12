@@ -10,6 +10,7 @@ const STORAGE_KEYS = {
   listingAnalytics: "rg_listing_analytics",
   listingCollabs: "rg_listing_agent_collabs",
   collabRequests: "rg_agent_collab_requests",
+  auctionNight: "rg_auction_night_config",
   adminApiKey: "rg_admin_api_key"
 };
 
@@ -54,7 +55,14 @@ const state = {
   listings: readStore(STORAGE_KEYS.listings, seedListings),
   reports: readStore(STORAGE_KEYS.reports, seedReports),
   auditLogs: readStore(STORAGE_KEYS.auditLogs, seedAuditLogs),
-  notifications: readStore(STORAGE_KEYS.notifications, seedNotifications)
+  notifications: readStore(STORAGE_KEYS.notifications, seedNotifications),
+  auctionNight: readStore(STORAGE_KEYS.auctionNight, {
+    status: "draft",
+    houseOneId: "",
+    houseTwoId: "",
+    adminNote: "",
+    updatedAt: ""
+  })
 };
 
 const els = {
@@ -89,6 +97,12 @@ const els = {
   noticeForm: document.getElementById("noticeForm"),
   noticeTitle: document.getElementById("noticeTitle"),
   noticeMessage: document.getElementById("noticeMessage"),
+  auctionNightForm: document.getElementById("auctionNightForm"),
+  auctionHouseOneSelect: document.getElementById("auctionHouseOneSelect"),
+  auctionHouseTwoSelect: document.getElementById("auctionHouseTwoSelect"),
+  auctionAdminNote: document.getElementById("auctionAdminNote"),
+  clearAuctionNightButton: document.getElementById("clearAuctionNightButton"),
+  auctionSlotGrid: document.getElementById("auctionSlotGrid"),
   reviewDrawer: document.getElementById("reviewDrawer"),
   drawerEyebrow: document.getElementById("drawerEyebrow"),
   drawerTitle: document.getElementById("drawerTitle"),
@@ -771,6 +785,13 @@ function openAiImportReview(id) {
 
 function renderAiImportPreview(item) {
   const extraction = item.extraction_json || {};
+  const telegramProfile = item.telegram_profile || {};
+  const approvedProfile = item.agent_profile_json || {};
+  const agentName = approvedProfile.name || telegramProfile.full_name || extraction.agentName || "";
+  const agentEmail = approvedProfile.email || telegramProfile.email || extraction.agentEmail || "";
+  const agentPhone = approvedProfile.phone || telegramProfile.phone || item.contact_phone || "";
+  const agentRen = approvedProfile.renId || telegramProfile.ren_id || "";
+  const agentAgency = approvedProfile.agencyName || telegramProfile.agency_name || "RealityGenius Telegram Desk";
   const imageUrls = Array.isArray(item.image_urls) ? item.image_urls : [];
   const highlights = Array.isArray(item.highlights) ? item.highlights.join("\n") : "";
   const facilities = Array.isArray(item.facilities) ? item.facilities.join("\n") : "";
@@ -787,6 +808,20 @@ function renderAiImportPreview(item) {
           <span class="chip ${aiImportStatusClass(item.status)}">${escapeHtml(item.status || "needs_review")}</span>
           <span class="chip">${Number(item.confidence_score || 0)}% confidence</span>
           <span class="chip">${escapeHtml(item.source || "telegram")}</span>
+          <span class="chip">Agent profile QC</span>
+        </div>
+        <div class="agent-profile-qc">
+          <div>
+            <strong>Admin cleans agent profile before live</strong>
+            <p>These details came from Telegram onboarding. Approve only after name, email, and phone look correct. REN can be blank if the agent typed skip.</p>
+          </div>
+          <div class="edit-grid">
+            <input class="field" id="aiImportAgentName" value="${escapeHtml(agentName)}" placeholder="Agent full name">
+            <input class="field" id="aiImportAgentEmail" value="${escapeHtml(agentEmail)}" placeholder="Agent email">
+            <input class="field" id="aiImportAgentPhone" value="${escapeHtml(agentPhone)}" placeholder="Agent phone">
+            <input class="field" id="aiImportAgentRen" value="${escapeHtml(agentRen)}" placeholder="REN ID optional">
+            <input class="field" id="aiImportAgentAgency" value="${escapeHtml(agentAgency)}" placeholder="Agency name">
+          </div>
         </div>
         <div class="edit-grid">
           <input class="field" id="aiImportTitle" value="${escapeHtml(item.title || "")}" placeholder="Title">
@@ -834,6 +869,16 @@ function collectAiImportEdits() {
   };
 }
 
+function collectAiImportAgentProfile() {
+  return {
+    fullName: document.getElementById("aiImportAgentName")?.value.trim(),
+    email: document.getElementById("aiImportAgentEmail")?.value.trim(),
+    phone: document.getElementById("aiImportAgentPhone")?.value.trim(),
+    renId: document.getElementById("aiImportAgentRen")?.value.trim(),
+    agencyName: document.getElementById("aiImportAgentAgency")?.value.trim()
+  };
+}
+
 async function reviewAiImport(id, action) {
   if (!adminReviewApiKey()) {
     renderAdminKeyState();
@@ -850,6 +895,7 @@ async function reviewAiImport(id, action) {
         id,
         action,
         edits: collectAiImportEdits(),
+        agentProfile: collectAiImportAgentProfile(),
         adminNotes: document.getElementById("aiImportNotes")?.value.trim() || "",
         reviewedBy: ADMIN_ID
       })
@@ -878,6 +924,7 @@ function persistAll() {
   writeStore(STORAGE_KEYS.reports, state.reports);
   writeStore(STORAGE_KEYS.auditLogs, state.auditLogs);
   writeStore(STORAGE_KEYS.notifications, state.notifications);
+  writeStore(STORAGE_KEYS.auctionNight, state.auctionNight);
 }
 
 function money(value) {
@@ -1158,11 +1205,18 @@ function runAiScan(shouldLog = true) {
 
 function switchSection(section, options = {}) {
   state.section = section;
-  els.navItems.forEach((item) => item.classList.toggle("active", item.dataset.section === section));
+  els.navItems.forEach((item) => {
+    const isActive = item.dataset.section === section;
+    item.classList.toggle("active", isActive);
+    if (isActive) item.setAttribute("aria-current", "true");
+    else item.removeAttribute("aria-current");
+  });
   els.panels.forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === section));
   history.replaceState(null, "", buildAdminHash(section, options));
   if (section === "listings") loadAgentQcListings();
   if (section === "ai-imports" && !options.skipLoad) loadAiImports();
+  if (section === "auction-night") renderAuctionNight();
+  if (!options.silent) showToast(`${section.replace(/-/g, " ")} opened`);
 }
 
 function renderMetrics() {
@@ -1400,6 +1454,110 @@ function renderNotifications() {
     : `<div class="notification-item"><strong>No notifications</strong><p>Trust operation alerts will appear here.</p></div>`;
 }
 
+function auctionEligibleListings() {
+  return state.listings.filter((listing) => ["approved", "pending_qc", "draft"].includes(listing.status));
+}
+
+function auctionListingOption(listing) {
+  const label = `${listing.title || "Untitled listing"} - ${listing.location || "Unknown location"} - ${listing.status.replace(/_/g, " ")}`;
+  return `<option value="${escapeHtml(listing.id)}">${escapeHtml(label)}</option>`;
+}
+
+function renderAuctionNight() {
+  if (!els.auctionNightForm) return;
+  const eligible = auctionEligibleListings();
+  const hasEnoughListings = eligible.length >= 2;
+  const options = `<option value="">${eligible.length ? "Choose listing for this slot" : "Approve listings first"}</option>${eligible.map(auctionListingOption).join("")}`;
+  els.auctionHouseOneSelect.innerHTML = options;
+  els.auctionHouseTwoSelect.innerHTML = options;
+  els.auctionHouseOneSelect.disabled = !eligible.length;
+  els.auctionHouseTwoSelect.disabled = !eligible.length;
+  els.auctionHouseOneSelect.value = state.auctionNight.houseOneId || "";
+  els.auctionHouseTwoSelect.value = state.auctionNight.houseTwoId || "";
+  els.auctionAdminNote.value = state.auctionNight.adminNote || "";
+  els.auctionNightForm.querySelector("button[type='submit']").disabled = !hasEnoughListings;
+
+  const slots = [
+    { key: "houseOneId", label: "House 1", time: "9:00 PM" },
+    { key: "houseTwoId", label: "House 2", time: "9:30 PM" }
+  ];
+
+  els.auctionSlotGrid.innerHTML = slots.map((slot) => {
+    const listing = findListing(state.auctionNight[slot.key]);
+    return `
+      <article class="auction-slot-card ${listing ? "is-filled" : ""}">
+        <span>${slot.label}</span>
+        <h4>${listing?.title || "No listing selected"}</h4>
+        <p>${slot.time} live bidding start</p>
+        <div class="listing-meta-grid">
+          <div><span>Status</span><strong>${listing?.status?.replace(/_/g, " ") || "empty"}</strong></div>
+          <div><span>Location</span><strong>${listing?.location || "Select listing"}</strong></div>
+          <div><span>Price guide</span><strong>${listing?.price ? money(listing.price) : "Admin review"}</strong></div>
+          <div><span>Agent</span><strong>${findAgent(listing?.agentId)?.name || listing?.agentName || "Unassigned"}</strong></div>
+        </div>
+      </article>
+    `;
+  }).join("") + (!eligible.length ? `
+    <article class="auction-empty-state">
+      <strong>No eligible listings yet</strong>
+      <p>Approve at least 2 listings in /admin/listings before publishing Friday Auction Night.</p>
+    </article>
+  ` : eligible.length === 1 ? `
+    <article class="auction-empty-state">
+      <strong>One more listing needed</strong>
+      <p>Auction Night needs exactly 2 selected homes, so approve or import one more listing before publishing.</p>
+    </article>
+  ` : "");
+}
+
+function publishAuctionNight(event) {
+  event.preventDefault();
+  const houseOneId = els.auctionHouseOneSelect.value;
+  const houseTwoId = els.auctionHouseTwoSelect.value;
+  if (!houseOneId || !houseTwoId) {
+    showToast("Select both auction houses first");
+    return;
+  }
+  if (houseOneId === houseTwoId) {
+    showToast("House 1 and House 2 must be different listings");
+    return;
+  }
+
+  state.auctionNight = {
+    status: "published",
+    houseOneId,
+    houseTwoId,
+    adminNote: els.auctionAdminNote.value.trim(),
+    schedule: {
+      opens: "Friday 8:30 PM",
+      houseOne: "Friday 9:00 PM",
+      houseTwo: "Friday 9:30 PM",
+      closes: "Friday 10:00 PM"
+    },
+    buyerSafeWording: "Winning a bid means the buyer has submitted the highest offer. Final purchase is subject to owner approval, booking fee, loan eligibility, agreement terms, and legal documentation.",
+    updatedAt: new Date().toISOString()
+  };
+  addAudit("auction_night_published", "auction", "friday", "Admin published 2 Friday Auction Night listing slots.");
+  addNotification("Auction Night published", "Friday Auction Night slots are ready for buyer bidding marketing.");
+  persistAll();
+  renderAll();
+  showToast("Auction Night published");
+}
+
+function clearAuctionNight() {
+  state.auctionNight = {
+    status: "draft",
+    houseOneId: "",
+    houseTwoId: "",
+    adminNote: "",
+    updatedAt: new Date().toISOString()
+  };
+  addAudit("auction_night_cleared", "auction", "friday", "Admin cleared Friday Auction Night listing slots.");
+  persistAll();
+  renderAll();
+  showToast("Auction slots cleared");
+}
+
 function renderAll() {
   renderMetrics();
   renderAgents();
@@ -1408,6 +1566,7 @@ function renderAll() {
   renderReports();
   renderAuditLogs();
   renderNotifications();
+  renderAuctionNight();
 }
 
 function openDrawer(eyebrow, title, body) {
@@ -1624,12 +1783,14 @@ function resetLocalAdminData() {
   localStorage.removeItem(STORAGE_KEYS.reports);
   localStorage.removeItem(STORAGE_KEYS.auditLogs);
   localStorage.removeItem(STORAGE_KEYS.notifications);
+  localStorage.removeItem(STORAGE_KEYS.auctionNight);
   state.agents = structuredClone(seedAgents);
   state.verificationLogs = [];
   state.listings = structuredClone(seedListings);
   state.reports = structuredClone(seedReports);
   state.auditLogs = structuredClone(seedAuditLogs);
   state.notifications = structuredClone(seedNotifications);
+  state.auctionNight = { status: "draft", houseOneId: "", houseTwoId: "", adminNote: "", updatedAt: "" };
   addAudit("admin_local_data_cleared", "admin", ADMIN_ID, "Local admin queues were cleared.");
   runAiScan(false);
   showToast("Local admin data cleared");
@@ -1658,6 +1819,8 @@ function bindEvents() {
   });
   els.closeDrawerButton.addEventListener("click", closeDrawer);
   els.noticeForm.addEventListener("submit", submitNotice);
+  els.auctionNightForm?.addEventListener("submit", publishAuctionNight);
+  els.clearAuctionNightButton?.addEventListener("click", clearAuctionNight);
   els.aiImportAccessForm?.addEventListener("submit", (event) => {
     event.preventDefault();
     const key = normalizeAdminApiKey(els.adminApiKeyInput?.value);
@@ -1688,6 +1851,12 @@ function bindEvents() {
   });
 
   document.addEventListener("click", (event) => {
+    const quickTarget = event.target instanceof Element ? event.target.closest("[data-admin-quick]") : null;
+    if (quickTarget) {
+      switchSection(quickTarget.dataset.adminQuick);
+      return;
+    }
+
     const target = event.target instanceof Element ? event.target.closest("[data-action]") : null;
     if (!target) return;
 
@@ -1730,8 +1899,9 @@ if (initialHash.reviewId) state.activeAiImportId = initialHash.reviewId;
 syncAiImportDateInput();
 renderAdminKeyState();
 removeAdminDemoRows();
-switchSection(["agents", "listings", "ai-imports", "reports", "audit", "notifications"].includes(initialHash.section) ? initialHash.section : "agents", {
-  reviewId: state.activeAiImportId || ""
+switchSection(["agents", "listings", "ai-imports", "reports", "auction-night", "audit", "notifications"].includes(initialHash.section) ? initialHash.section : "agents", {
+  reviewId: state.activeAiImportId || "",
+  silent: true
 });
 bindEvents();
 hydrateListingEnhancements();

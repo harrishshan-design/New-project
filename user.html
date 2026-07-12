@@ -94,7 +94,7 @@
 
           <div class="hero-search">
             <div class="market-intent-tabs" aria-label="Property search intent">
-              <a class="market-intent-tab active" href="#explore" data-quick-search="">For Sale</a>
+              <a class="market-intent-tab active" href="#explore" data-quick-search="" aria-current="true">For Sale</a>
               <a class="market-intent-tab" href="#explore" data-quick-search="rent">For Rent</a>
               <a class="market-intent-tab" href="#explore" data-quick-search="new project">New Projects</a>
               <a class="market-intent-tab" href="#auction-night">Auction</a>
@@ -121,11 +121,11 @@
             </div>
 
             <div class="filter-row">
-              <button class="filter-chip active" data-filter="all" type="button">All Picks</button>
-              <button class="filter-chip" data-filter="condo" type="button">City Condo</button>
-              <button class="filter-chip" data-filter="family" type="button">Family</button>
-              <button class="filter-chip" data-filter="investment" type="button">Investment</button>
-              <button class="filter-chip" data-filter="luxury" type="button">Luxury</button>
+              <button class="filter-chip active" data-filter="all" type="button" aria-pressed="true">All Picks</button>
+              <button class="filter-chip" data-filter="condo" type="button" aria-pressed="false">City Condo</button>
+              <button class="filter-chip" data-filter="family" type="button" aria-pressed="false">Family</button>
+              <button class="filter-chip" data-filter="investment" type="button" aria-pressed="false">Investment</button>
+              <button class="filter-chip" data-filter="luxury" type="button" aria-pressed="false">Luxury</button>
             </div>
             <div class="marketplace-shortcuts" aria-label="Popular property searches">
               <a href="#explore" data-quick-search="below RM500k">Below RM500k</a>
@@ -166,7 +166,7 @@
           <div class="hero-kpis">
             <article class="kpi-card">
               <span>Live feed</span>
-              <strong id="propertyCount">0</strong>
+              <strong id="propertyCount">0</strong><span class="sr-only" id="resultsAnnouncer" role="status" aria-live="polite"></span>
               <p>Relevant properties in your current view</p>
             </article>
             <article class="kpi-card">
@@ -496,7 +496,7 @@
         </div>
         <div class="property-feed" id="propertyGrid"></div>
         <div class="video-feed" id="videoFeed" hidden></div>
-        <div class="feed-loading" id="feedLoading" hidden>Loading more properties for your next scroll...</div>
+        <div class="feed-loading" id="feedLoading" role="status" hidden>Loading more properties for your next scroll...</div>
         <div class="feed-sentinel" id="feedSentinel" aria-hidden="true"></div>
       </section>
 
@@ -554,7 +554,7 @@
         <div class="eyebrow">Saved</div>
         <h3>Favorites</h3>
       </div>
-      <button class="close-button" data-close="favoritesDrawer" type="button"><i class="fa-solid fa-xmark"></i></button>
+      <button class="close-button" data-close="favoritesDrawer" type="button" aria-label="Close saved properties"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="drawer-list" id="favoritesDrawerList"></div>
   </aside>
@@ -565,13 +565,13 @@
         <div class="eyebrow">Notifications</div>
         <h3>Buyer alerts</h3>
       </div>
-      <button class="close-button" data-close="notificationsDrawer" type="button"><i class="fa-solid fa-xmark"></i></button>
+      <button class="close-button" data-close="notificationsDrawer" type="button" aria-label="Close alerts"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="drawer-list" id="notificationsDrawerList"></div>
   </aside>
 
   <div class="modal-backdrop" id="propertyModal" aria-hidden="true">
-    <div class="modal-card">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <div class="modal-topbar">
         <div>
           <div class="modal-state-row" aria-label="Current view state">
@@ -861,7 +861,7 @@
     </a>
   </nav>
 
-  <div class="toast" id="toast"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="./negotiation-store.js"></script>
   <script src="./negotiation-assistant.js"></script>
@@ -873,6 +873,7 @@
   <script src="./supabase-loader.js"></script>
   <script src="./auth.js"></script>
   <script src="./rg-smooth-scroll.js"></script>
+  <script src="./rg-a11y.js"></script>
   <script src="./user.js"></script>
   <script src="./rg-trust-loop.js" data-trust-role="user"></script>
   <script src="./rg-behavior-loop.js" data-behavior-role="user"></script>

@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RealtyGenius | Master God Mode</title>
+  <meta name="description" content="RealityGenius master dashboard for platform owner controls, user roles, revenue visibility, safety settings, and audit signals.">
+  <title>RealityGenius | Master Control</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -22,7 +23,7 @@
         <div class="brand-mark"><i class="fa-solid fa-eye"></i></div>
         <div>
           <div class="eyebrow">Platform Owner</div>
-          <h1>God Mode</h1>
+          <h1>Master Control</h1>
         </div>
       </div>
 
@@ -123,7 +124,7 @@
             <i class="fa-solid fa-magnifying-glass"></i>
             <input id="searchInput" type="text" placeholder="Search buyer, agent, property, transcript, agreement...">
           </div>
-          <select id="logTypeFilter" class="select-shell">
+          <select id="logTypeFilter" class="select-shell" aria-label="Filter log stream type">
             <option value="all">All streams</option>
             <option value="negotiation">Negotiations</option>
             <option value="voice">AI Voice Calls</option>
@@ -197,9 +198,9 @@
                 <span>Dial 1</span>
                 <strong>Developer Paid Ads Visibility</strong>
               </div>
-              <output id="paidAdsValue">+20%</output>
+              <output id="paidAdsValue" for="paidAdsSlider">+20%</output>
             </div>
-            <input id="paidAdsSlider" type="range" min="-50" max="80" step="5">
+            <input id="paidAdsSlider" type="range" min="-50" max="80" step="5" aria-label="Developer paid ads visibility boost percent">
             <p>Boost or suppress paid developer inventory in buyer feeds.</p>
           </article>
 
@@ -209,9 +210,9 @@
                 <span>Dial 2</span>
                 <strong>Stale Listing Penalty</strong>
               </div>
-              <output id="stalePenaltyValue">-50%</output>
+              <output id="stalePenaltyValue" for="stalePenaltySlider">-50%</output>
             </div>
-            <input id="stalePenaltySlider" type="range" min="-90" max="0" step="5">
+            <input id="stalePenaltySlider" type="range" min="-90" max="0" step="5" aria-label="Stale listing visibility penalty percent">
             <p>Reduce visibility for properties older than 60 days.</p>
           </article>
 
@@ -221,9 +222,9 @@
                 <span>Dial 3</span>
                 <strong>High Yield Investor Priority</strong>
               </div>
-              <output id="yieldPriorityValue">+35%</output>
+              <output id="yieldPriorityValue" for="yieldPrioritySlider">+35%</output>
             </div>
-            <input id="yieldPrioritySlider" type="range" min="-30" max="90" step="5">
+            <input id="yieldPrioritySlider" type="range" min="-30" max="90" step="5" aria-label="High yield investor priority boost percent">
             <p>Increase high-yield units for users who clicked Investor in quiz.</p>
           </article>
         </div>
@@ -296,11 +297,33 @@
     </main>
   </div>
 
-  <div class="toast" id="toast"></div>
+  <nav class="master-quick-dock" aria-label="Quick master actions">
+    <button type="button" data-master-quick="panopticon">
+      <i class="fa-solid fa-binoculars"></i>
+      <span>Logs</span>
+    </button>
+    <button type="button" data-master-quick="money">
+      <i class="fa-solid fa-money-bill-transfer"></i>
+      <span>Money</span>
+    </button>
+    <button type="button" data-master-quick="algorithm">
+      <i class="fa-solid fa-sliders"></i>
+      <span>AI</span>
+    </button>
+    <button type="button" data-master-quick="killswitch">
+      <i class="fa-solid fa-power-off"></i>
+      <span>Emergency</span>
+    </button>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-loader.js"></script>
   <script src="./auth.js"></script>
   <script src="./auth-gate.js" data-required-role="master" data-login-path="/login.html"></script>
+  <script src="./rg-smooth-scroll.js"></script>
+  <script src="./rg-a11y.js"></script>
   <script src="./master.js"></script>
 </body>
 </html>

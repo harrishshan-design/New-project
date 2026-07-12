@@ -1003,7 +1003,7 @@ function renderPropertyCardMarkup(property, index) {
   const heroImage = getHeroImage(property);
   const interestCount = sessionInterestForProperty(property);
   return `
-    <article class="property-card property-card--reveal" style="animation-delay:${index * 70}ms" data-tilt-card data-click-card data-id="${property.id}" tabindex="0" aria-label="Explore ${property.title}">
+    <article class="property-card property-card--reveal" style="animation-delay:${index * 70}ms" data-tilt-card data-click-card data-id="${property.id}" role="button" tabindex="0" aria-label="Explore ${property.title}">
       <div class="feed-media">
         <img src="${heroImage}" alt="${property.title}" loading="lazy">
         <span class="area-pill">${property.area}</span>
@@ -1897,7 +1897,7 @@ function renderLocationFallback(query) {
       </div>
       <div class="nearby-suggestion-grid">
         ${suggestions.map(({ property, reason }, index) => `
-          <article class="nearby-suggestion-card" data-click-card data-id="${property.id}" tabindex="0" aria-label="Explore nearby option ${escapeAttr(property.title)}">
+          <article class="nearby-suggestion-card" data-click-card data-id="${property.id}" role="button" tabindex="0" aria-label="Explore nearby option ${escapeAttr(property.title)}">
             <img src="${getHeroImage(property)}" alt="${escapeAttr(property.title)}" loading="lazy">
             <div>
               <span class="area-pill">${escapeHtml(property.area)}</span>
@@ -2008,6 +2008,11 @@ function renderMetrics() {
   const visible = state.feedMode === "video" ? filteredProperties() : getVisibleFeedProperties();
   const saved = getFavorites();
   els.propertyCount.textContent = visible.length;
+  const announcer = document.getElementById("resultsAnnouncer");
+  if (announcer) {
+    const summary = `${visible.length} propert${visible.length === 1 ? "y" : "ies"} match your search`;
+    if (announcer.textContent !== summary) announcer.textContent = summary;
+  }
   els.savedCount.textContent = saved.length;
   els.bookingCount.textContent = state.bookings.length;
   els.favoritesCount.textContent = saved.length;
@@ -2218,7 +2223,7 @@ function renderRecommendations() {
     const secretCard = property.secretOnly ? " recommendation-card--secret" : "";
     const heroImage = getHeroImage(property);
     return `
-      <article class="recommendation-card${secretCard}" data-click-card data-id="${property.id}" tabindex="0" aria-label="Explore ${property.title}">
+      <article class="recommendation-card${secretCard}" data-click-card data-id="${property.id}" role="button" tabindex="0" aria-label="Explore ${property.title}">
         <div class="card-media">
           <img src="${heroImage}" alt="${property.title}" loading="lazy">
           <span class="area-pill">${property.secretOnly ? "Highly Recommended" : `Pick ${index + 1}`}</span>
@@ -2258,7 +2263,7 @@ function renderPersonalizedMatches() {
     const decision = getDecision(property);
     const heroImage = getHeroImage(property);
     return `
-      <article class="personalized-card" data-click-card data-id="${property.id}" tabindex="0" aria-label="Explore personalized match ${escapeAttr(property.title)}">
+      <article class="personalized-card" data-click-card data-id="${property.id}" role="button" tabindex="0" aria-label="Explore personalized match ${escapeAttr(property.title)}">
         <img src="${heroImage}" alt="${escapeAttr(property.title)}" loading="lazy">
         <div>
           <span class="personalized-pill"><i class="fa-solid fa-wand-magic-sparkles"></i> Matches your pattern</span>
@@ -2344,7 +2349,7 @@ function renderSaved() {
   els.savedGrid.innerHTML = saved.map((property) => {
     const latestBooking = state.bookings.find((item) => item.propertyId === property.id);
     return `
-      <article class="saved-card" data-click-card data-id="${property.id}" tabindex="0" aria-label="Review ${property.title}">
+      <article class="saved-card" data-click-card data-id="${property.id}" role="button" tabindex="0" aria-label="Review ${property.title}">
         <div class="card-body">
           <div class="price-row">
             <div>
@@ -2440,6 +2445,7 @@ function openPropertyModal(id) {
   const property = properties.find((item) => item.id === id);
   if (!property) return;
 
+  modalReturnFocusTarget = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   state.activePropertyId = id;
   incrementView(id);
   trackListingAnalytics(property, "view", { source: "property_detail_modal", active: true });
@@ -2991,6 +2997,29 @@ function closeModal() {
   state.activePropertyId = null;
   resetArPrompt();
   configureAr(null, true);
+  if (modalReturnFocusTarget && document.contains(modalReturnFocusTarget)) {
+    modalReturnFocusTarget.focus({ preventScroll: true });
+  }
+  modalReturnFocusTarget = null;
+}
+
+let modalReturnFocusTarget = null;
+
+function trapModalFocus(event) {
+  if (event.key !== "Tab" || !els.propertyModal.classList.contains("is-open")) return;
+  const focusable = els.propertyModal.querySelectorAll(
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  );
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 }
 
 function configureImmersiveLaunch(property) {
@@ -3168,10 +3197,15 @@ function showToast(message) {
   }, 2200);
 }
 
+let drawerReturnFocusTarget = null;
+
 function openDrawer(id) {
   const drawer = document.getElementById(id);
+  drawerReturnFocusTarget = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   drawer.classList.add("is-open");
   drawer.setAttribute("aria-hidden", "false");
+  drawer.removeAttribute("inert");
+  drawer.querySelector(".close-button, button, [href]")?.focus({ preventScroll: true });
 
   if (id === "notificationsDrawer") {
     state.notifications = state.notifications.map((item) => ({ ...item, read: true }));
@@ -3186,6 +3220,11 @@ function closeDrawer(id) {
   blurIfFocusInside(drawer);
   drawer.classList.remove("is-open");
   drawer.setAttribute("aria-hidden", "true");
+  drawer.setAttribute("inert", "");
+  if (drawerReturnFocusTarget && document.contains(drawerReturnFocusTarget)) {
+    drawerReturnFocusTarget.focus({ preventScroll: true });
+  }
+  drawerReturnFocusTarget = null;
 }
 
 function bindEvents() {
@@ -3219,7 +3258,7 @@ function bindEvents() {
 
   document.querySelectorAll(".filter-chip").forEach((button) => {
     button.addEventListener("click", () => {
-      document.querySelectorAll(".filter-chip").forEach((chip) => chip.classList.remove("active"));
+      
       button.classList.add("active");
       state.filter = button.dataset.filter;
       resetFeedWindow();
@@ -3235,7 +3274,12 @@ function bindEvents() {
       const query = String(quickSearchTarget.dataset.quickSearch || "").trim();
       state.search = query;
       if (els.searchInput) els.searchInput.value = query;
-      document.querySelectorAll(".market-intent-tab").forEach((tab) => tab.classList.toggle("active", tab === quickSearchTarget));
+      document.querySelectorAll(".market-intent-tab").forEach((tab) => {
+        const isActive = tab === quickSearchTarget;
+        tab.classList.toggle("active", isActive);
+        if (isActive) tab.setAttribute("aria-current", "true");
+        else tab.removeAttribute("aria-current");
+      });
       resetFeedWindow();
       renderDashboard();
       if (quickSearchTarget.getAttribute("href") === "#explore") {
@@ -3287,6 +3331,9 @@ function bindEvents() {
       else closeDrawer(targetId);
     }
   });
+
+  document.addEventListener("keydown", trapModalFocus);
+  document.querySelectorAll('.drawer[aria-hidden="true"]').forEach((drawer) => drawer.setAttribute("inert", ""));
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
@@ -3439,7 +3486,9 @@ function applyInitialQueryParams() {
   if (filter && ["all", "condo", "family", "investment", "luxury"].includes(filter)) {
     state.filter = filter;
     document.querySelectorAll(".filter-chip").forEach((chip) => {
-      chip.classList.toggle("active", chip.dataset.filter === filter);
+      const isActive = chip.dataset.filter === filter;
+      chip.classList.toggle("active", isActive);
+      chip.setAttribute("aria-pressed", String(isActive));
     });
   }
 }

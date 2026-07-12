@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RealtyGenius | Admin Gatekeeper</title>
+  <meta name="description" content="RealityGenius admin dashboard for agent approval, listing QC, Telegram imports, and live property publishing.">
+  <title>RealityGenius | Admin Control</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -21,7 +22,7 @@
         <div class="brand-mark"><i class="fa-solid fa-shield-halved"></i></div>
         <div>
           <div class="eyebrow">Admin Dashboard</div>
-          <h1>The Gatekeeper</h1>
+          <h1>Admin Control</h1>
         </div>
       </div>
 
@@ -41,6 +42,10 @@
         <button class="nav-item" data-section="reports" type="button">
           <i class="fa-solid fa-triangle-exclamation"></i>
           <span>/admin/reports</span>
+        </button>
+        <button class="nav-item" data-section="auction-night" type="button">
+          <i class="fa-solid fa-gavel"></i>
+          <span>/admin/auction-night</span>
         </button>
         <button class="nav-item" data-section="audit" type="button">
           <i class="fa-solid fa-clock-rotate-left"></i>
@@ -220,6 +225,72 @@
         <div class="audit-list" id="auditList"></div>
       </section>
 
+      <section class="section-panel" data-panel="auction-night">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">Friday Auction Night Control</div>
+            <h3>Curate the 2 weekly auction homes</h3>
+          </div>
+          <div class="chip-row">
+            <span class="chip chip-hot">Admin curated</span>
+            <span class="chip">Owner approval required</span>
+            <span class="chip">Not auto-sold</span>
+          </div>
+        </div>
+
+        <div class="auction-admin-layout">
+          <form class="auction-control-card" id="auctionNightForm">
+            <div class="auction-admin-copy">
+              <span class="status-pill investigating">Friday schedule</span>
+              <h4>8:30 PM open / 10:00 PM close</h4>
+              <p>Publish only listings that are approved, complete, and ready for serious buyer offers.</p>
+            </div>
+
+            <label class="input-shell auction-select-shell">
+              <i class="fa-solid fa-house-chimney"></i>
+              <select id="auctionHouseOneSelect" aria-label="Select Auction Night House 1"></select>
+            </label>
+            <label class="input-shell auction-select-shell">
+              <i class="fa-solid fa-house-chimney-window"></i>
+              <select id="auctionHouseTwoSelect" aria-label="Select Auction Night House 2"></select>
+            </label>
+
+            <label class="input-shell auction-note-shell">
+              <i class="fa-solid fa-note-sticky"></i>
+              <textarea id="auctionAdminNote" rows="4" placeholder="Admin note for agent follow-up, owner approval, reserve expectation, or legal checks"></textarea>
+            </label>
+
+            <div class="drawer-actions">
+              <button class="primary-button" type="submit">
+                <i class="fa-solid fa-bullhorn"></i>
+                Publish Auction Night
+              </button>
+              <button class="ghost-button" id="clearAuctionNightButton" type="button">
+                <i class="fa-solid fa-ban"></i>
+                Clear Slots
+              </button>
+            </div>
+          </form>
+
+          <aside class="auction-safety-panel">
+            <div class="eyebrow">Buyer wording lock</div>
+            <h4>Highest offer, not automatic purchase</h4>
+            <p>
+              Winning a bid means the buyer has submitted the highest offer. Final purchase is subject to owner approval,
+              booking fee, loan eligibility, agreement terms, and legal documentation.
+            </p>
+            <div class="auction-benefit-list">
+              <span>More urgency</span>
+              <span>More listing views</span>
+              <span>Serious offer collection</span>
+              <span>Weekly social content</span>
+            </div>
+          </aside>
+        </div>
+
+        <div class="auction-slot-grid" id="auctionSlotGrid"></div>
+      </section>
+
       <section class="section-panel" data-panel="notifications">
         <div class="panel-head">
           <div>
@@ -261,11 +332,33 @@
     <div class="drawer-body" id="drawerBody"></div>
   </aside>
 
-  <div class="toast" id="toast"></div>
+  <nav class="admin-quick-dock" aria-label="Quick admin actions">
+    <button type="button" data-admin-quick="agents">
+      <i class="fa-solid fa-user-shield"></i>
+      <span>Agents</span>
+    </button>
+    <button type="button" data-admin-quick="listings">
+      <i class="fa-solid fa-list-check"></i>
+      <span>QC</span>
+    </button>
+    <button type="button" data-admin-quick="ai-imports">
+      <i class="fa-brands fa-telegram"></i>
+      <span>Imports</span>
+    </button>
+    <button type="button" data-admin-quick="auction-night">
+      <i class="fa-solid fa-gavel"></i>
+      <span>Auction</span>
+    </button>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-loader.js"></script>
   <script src="./auth.js"></script>
   <script src="./auth-gate.js" data-required-role="admin" data-login-path="/login.html"></script>
+  <script src="./rg-smooth-scroll.js"></script>
+  <script src="./rg-a11y.js"></script>
   <script src="./admin.js"></script>
 </body>
 </html>

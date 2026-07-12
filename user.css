@@ -6,7 +6,7 @@
   --line:#dfe2d5;
   --line-strong:#c4cbb7;
   --text:#172018;
-  --muted:#68725f;
+  --muted:#5b654f; /* was #68725f - raised for WCAG 4.5:1 on tinted backgrounds */
   --brand:#315f38;
   --brand-strong:#1d4024;
   --brand-soft:#e4edda;
@@ -5748,4 +5748,16 @@ body{
     transition:none;
     left:-70%;
   }
+}
+
+.sr-only{
+  position:absolute;
+  width:1px;
+  height:1px;
+  margin:-1px;
+  padding:0;
+  overflow:hidden;
+  clip:rect(0 0 0 0);
+  white-space:nowrap;
+  border:0;
 }

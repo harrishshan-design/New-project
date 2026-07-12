@@ -2851,7 +2851,12 @@ function renderNegotiationDesk() {
 }
 
 function syncSectionVisibility() {
-  els.navItems.forEach((item) => item.classList.toggle("active", item.dataset.section === state.section));
+  els.navItems.forEach((item) => {
+    const isActive = item.dataset.section === state.section;
+    item.classList.toggle("active", isActive);
+    if (isActive) item.setAttribute("aria-current", "true");
+    else item.removeAttribute("aria-current");
+  });
   els.shortcutItems.forEach((item) => item.classList.toggle("active", item.dataset.section === state.section));
   els.panels.forEach((panel) => {
     const show = panel.dataset.panel === state.section;
@@ -5632,6 +5637,7 @@ function openModal(id) {
   const feature = modalFeatureMap[id];
   if (feature && !requirePlan(feature)) return;
   const modal = document.getElementById(id);
+  agentModalReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   modal.classList.add("is-open");
   modal.setAttribute("aria-hidden", "false");
   if (id === "listingModal") {
@@ -5643,9 +5649,15 @@ function openModal(id) {
   }, 80);
 }
 
+let agentModalReturnFocus = null;
+
 function closeModal(id) {
   document.getElementById(id).classList.remove("is-open");
   document.getElementById(id).setAttribute("aria-hidden", "true");
+  if (agentModalReturnFocus && document.contains(agentModalReturnFocus)) {
+    agentModalReturnFocus.focus({ preventScroll: true });
+  }
+  agentModalReturnFocus = null;
 }
 
 function showToast(message) {
@@ -5658,6 +5670,11 @@ function showToast(message) {
 }
 
 function bindEvents() {
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    document.querySelectorAll(".modal-backdrop.is-open").forEach((modal) => closeModal(modal.id));
+  });
+
   els.navItems.forEach((button) => {
     button.addEventListener("click", () => {
       state.section = button.dataset.section;

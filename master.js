@@ -547,9 +547,15 @@ function rejectMasterCollabRequest(requestId) {
 
 function switchSection(section) {
   state.section = section;
-  els.navItems.forEach((item) => item.classList.toggle("active", item.dataset.section === section));
+  els.navItems.forEach((item) => {
+    const isActive = item.dataset.section === section;
+    item.classList.toggle("active", isActive);
+    if (isActive) item.setAttribute("aria-current", "true");
+    else item.removeAttribute("aria-current");
+  });
   els.panels.forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === section));
   history.replaceState(null, "", `#${section}`);
+  showToast(`${section.replace(/-/g, " ")} opened`);
 }
 
 function renderMetrics() {
@@ -916,6 +922,12 @@ function bindEvents() {
   els.clearAlertButton.addEventListener("click", clearGlobalAlert);
 
   document.addEventListener("click", (event) => {
+    const quickTarget = event.target instanceof Element ? event.target.closest("[data-master-quick]") : null;
+    if (quickTarget) {
+      switchSection(quickTarget.dataset.masterQuick);
+      return;
+    }
+
     const target = event.target instanceof Element ? event.target.closest("[data-master-task-status]") : null;
     if (target) {
       updateMasterTaskStatus(target.dataset.masterTaskStatus, target.dataset.status || "reviewing");

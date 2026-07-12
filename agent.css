@@ -2203,7 +2203,7 @@ button:disabled{
 
 .input-shell input::placeholder,
 .input-shell textarea::placeholder{
-  color:rgba(210,222,241,0.48);
+  color:rgba(210,222,241,0.72);
 }
 
 .input-shell textarea{
