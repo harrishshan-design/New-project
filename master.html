@@ -75,6 +75,52 @@
         </div>
       </header>
 
+      <section class="platform-pulse" aria-label="Live platform pulse">
+        <div class="pulse-head">
+          <div>
+            <div class="eyebrow">Live Platform Pulse</div>
+            <h3>Real numbers from Supabase and Stripe - not simulated.</h3>
+          </div>
+          <div class="pulse-key-row" id="pulseKeyRow" hidden>
+            <div class="input-shell">
+              <i class="fa-solid fa-key"></i>
+              <input id="pulseApiKeyInput" type="password" placeholder="Admin API key to unlock live data" autocomplete="off">
+            </div>
+            <button class="ghost-button" id="pulseApiKeySave" type="button">Unlock</button>
+          </div>
+        </div>
+
+        <div class="pulse-health" id="pulseHealth" aria-label="System health"></div>
+
+        <div class="pulse-grid" id="pulseGrid">
+          <article class="pulse-card">
+            <span>Paying agents</span>
+            <strong id="pulsePayingAgents">-</strong>
+            <p id="pulsePlanBreakdown">Live count of active Stripe subscriptions.</p>
+          </article>
+          <article class="pulse-card">
+            <span>Live listings</span>
+            <strong id="pulseLiveListings">-</strong>
+            <p>Approved and visible to buyers right now.</p>
+          </article>
+          <article class="pulse-card">
+            <span>Waiting for QC</span>
+            <strong id="pulsePendingListings">-</strong>
+            <p>Sitting in the admin review queue today.</p>
+          </article>
+          <article class="pulse-card">
+            <span>Total registered agents</span>
+            <strong id="pulseTotalAgents">-</strong>
+            <p>All agent accounts, paid and free.</p>
+          </article>
+        </div>
+
+        <div class="pulse-leaderboard">
+          <div class="eyebrow soft">Frontline Leaderboard</div>
+          <div class="leaderboard-list" id="pulseLeaderboard"></div>
+        </div>
+      </section>
+
       <section class="hero">
         <div class="hero-copy">
           <div class="hero-pill">God Mode Active</div>

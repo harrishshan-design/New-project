@@ -86,7 +86,17 @@ const els = {
   killStatus: document.getElementById("killStatus"),
   ownerAudit: document.getElementById("ownerAudit"),
   globalAlertPreview: document.getElementById("globalAlertPreview"),
-  toast: document.getElementById("toast")
+  toast: document.getElementById("toast"),
+  pulseKeyRow: document.getElementById("pulseKeyRow"),
+  pulseApiKeyInput: document.getElementById("pulseApiKeyInput"),
+  pulseApiKeySave: document.getElementById("pulseApiKeySave"),
+  pulseHealth: document.getElementById("pulseHealth"),
+  pulsePayingAgents: document.getElementById("pulsePayingAgents"),
+  pulsePlanBreakdown: document.getElementById("pulsePlanBreakdown"),
+  pulseLiveListings: document.getElementById("pulseLiveListings"),
+  pulsePendingListings: document.getElementById("pulsePendingListings"),
+  pulseTotalAgents: document.getElementById("pulseTotalAgents"),
+  pulseLeaderboard: document.getElementById("pulseLeaderboard")
 };
 
 function readStore(key, fallback) {
@@ -888,6 +898,8 @@ function bindEvents() {
   els.sectionJumps.forEach((button) => button.addEventListener("click", () => switchSection(button.dataset.sectionJump)));
   els.refreshButton.addEventListener("click", () => {
     renderAll();
+    loadSystemHealth();
+    loadMasterPulse();
     showToast("Streams refreshed");
   });
   window.RealtyGeniusPush?.installButton(document.getElementById("pushPermissionButton"), (result) => {
@@ -915,10 +927,9 @@ function bindEvents() {
   });
   els.saveAlgorithmButton.addEventListener("click", saveAlgorithm);
   els.resetAlgorithmButton.addEventListener("click", resetAlgorithm);
-  els.banAgencyButton.addEventListener("click", banAgency);
-  els.freezeEscrowButton.addEventListener("click", freezeEscrow);
+  // banAgencyButton, freezeEscrowButton, and pushAlertButton are bound
+  // via armDangerButton() below (arm-then-confirm), not here.
   els.unfreezeEscrowButton.addEventListener("click", unfreezeEscrow);
-  els.pushAlertButton.addEventListener("click", pushGlobalAlert);
   els.clearAlertButton.addEventListener("click", clearGlobalAlert);
 
   document.addEventListener("click", (event) => {
@@ -956,10 +967,172 @@ function bindEvents() {
   });
 }
 
+// ---------------------------------------------------------
+// LIVE PLATFORM PULSE: real Supabase/Stripe numbers, not the
+// simulated local-storage data the rest of this dashboard uses.
+// Shares the same admin API key as admin.html (both are owner-only).
+// ---------------------------------------------------------
+const MASTER_ADMIN_KEY_STORE = "rg_admin_api_key";
+
+function masterApiBaseUrl() {
+  if (window.REALTYGENIUS_API_BASE) return window.REALTYGENIUS_API_BASE.replace(/\/+$/, "");
+  if (window.REALTYGENIUS_CONFIG?.API_BASE) return window.REALTYGENIUS_CONFIG.API_BASE.replace(/\/+$/, "");
+  if (["realitygenius.company", "www.realitygenius.company"].includes(window.location.hostname)) {
+    return "https://hh-empire.onrender.com/api";
+  }
+  if (window.location.protocol === "file:") return "http://localhost:3000/api";
+  return `${window.location.origin}/api`;
+}
+
+function masterApiUrl(path) {
+  const base = masterApiBaseUrl();
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return base.endsWith("/api") && normalizedPath.startsWith("/api/")
+    ? `${base}${normalizedPath.slice(4)}`
+    : `${base}${normalizedPath}`;
+}
+
+function getMasterAdminKey() {
+  return (localStorage.getItem(MASTER_ADMIN_KEY_STORE) || "").trim();
+}
+
+async function loadSystemHealth() {
+  if (!els.pulseHealth) return;
+  try {
+    const response = await fetch(masterApiUrl("/telegram/health"));
+    const payload = await response.json().catch(() => ({}));
+    const config = payload.config || {};
+    const checks = [
+      { key: "supabase", label: "Supabase" },
+      { key: "stripe", label: "Stripe" },
+      { key: "openai", label: "OpenAI" },
+      { key: "anthropic", label: "Anthropic" },
+      { key: "telegramBot", label: "Telegram" }
+    ];
+    els.pulseHealth.innerHTML = checks.map((check) => `
+      <span class="health-chip ${config[check.key] ? "is-up" : "is-down"}">
+        <i class="fa-solid ${config[check.key] ? "fa-circle-check" : "fa-circle-xmark"}"></i>
+        ${check.label}
+      </span>
+    `).join("");
+  } catch {
+    els.pulseHealth.innerHTML = `<span class="health-chip is-down"><i class="fa-solid fa-triangle-exclamation"></i> Backend unreachable</span>`;
+  }
+}
+
+function renderPulseLocked(message) {
+  if (els.pulsePayingAgents) els.pulsePayingAgents.textContent = "-";
+  if (els.pulsePlanBreakdown) els.pulsePlanBreakdown.textContent = message;
+  if (els.pulseLiveListings) els.pulseLiveListings.textContent = "-";
+  if (els.pulsePendingListings) els.pulsePendingListings.textContent = "-";
+  if (els.pulseTotalAgents) els.pulseTotalAgents.textContent = "-";
+  if (els.pulseLeaderboard) {
+    els.pulseLeaderboard.innerHTML = `<p class="leaderboard-empty">${message}</p>`;
+  }
+}
+
+function renderLeaderboard(entries) {
+  if (!els.pulseLeaderboard) return;
+  if (!entries.length) {
+    els.pulseLeaderboard.innerHTML = `<p class="leaderboard-empty">No agent check-ins yet.</p>`;
+    return;
+  }
+  els.pulseLeaderboard.innerHTML = entries.map((entry, index) => `
+    <div class="leaderboard-row">
+      <span class="leaderboard-rank">#${index + 1}</span>
+      <span class="leaderboard-agent">${escapeHtml(entry.agentId)}</span>
+      <span class="leaderboard-tier">${escapeHtml(entry.tierLabel)}</span>
+      <span class="leaderboard-points">${entry.points.toLocaleString("en-MY")} pts</span>
+      <span class="leaderboard-streak"><i class="fa-solid fa-fire"></i> ${entry.streakDays}d</span>
+    </div>
+  `).join("");
+}
+
+async function loadMasterPulse() {
+  const key = getMasterAdminKey();
+  if (els.pulseKeyRow) els.pulseKeyRow.hidden = Boolean(key);
+  if (!key) {
+    renderPulseLocked("Enter the admin API key above to unlock live numbers.");
+    return;
+  }
+  try {
+    const response = await fetch(masterApiUrl("/master/pulse"), {
+      headers: { "X-Admin-Api-Key": key }
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || `Request failed (${response.status})`);
+
+    els.pulsePayingAgents.textContent = payload.agents.paying.toLocaleString("en-MY");
+    const planParts = Object.entries(payload.agents.byPlan || {}).map(([plan, count]) => `${count} ${plan}`);
+    els.pulsePlanBreakdown.textContent = planParts.length ? planParts.join(", ") : "No active paid plans yet.";
+    els.pulseLiveListings.textContent = payload.listings.live.toLocaleString("en-MY");
+    els.pulsePendingListings.textContent = payload.listings.pendingQc.toLocaleString("en-MY");
+    els.pulseTotalAgents.textContent = payload.agents.total.toLocaleString("en-MY");
+    renderLeaderboard(payload.leaderboard || []);
+  } catch (error) {
+    renderPulseLocked(error.message === "401" || /admin api key/i.test(error.message)
+      ? "That admin API key was rejected. Check the value and try again."
+      : "Could not load live data right now.");
+  }
+}
+
+function bindPulseEvents() {
+  els.pulseApiKeySave?.addEventListener("click", () => {
+    const value = els.pulseApiKeyInput.value.trim();
+    if (!value) {
+      showToast("Enter the admin API key first");
+      return;
+    }
+    localStorage.setItem(MASTER_ADMIN_KEY_STORE, value);
+    els.pulseApiKeyInput.value = "";
+    showToast("Admin key saved. Loading live data...");
+    loadMasterPulse();
+  });
+}
+
+// ---------------------------------------------------------
+// ARM-THEN-CONFIRM for high-impact kill-switch actions.
+// First click arms the button and shows a 5s confirm window;
+// a second click within that window runs the action. Prevents an
+// accidental single misclick from banning an agency or freezing
+// escrow.
+// ---------------------------------------------------------
+function armDangerButton(button, label, action) {
+  if (!button) return;
+  let armed = false;
+  let timer = null;
+  const originalHtml = button.innerHTML;
+
+  const disarm = () => {
+    armed = false;
+    clearTimeout(timer);
+    button.innerHTML = originalHtml;
+    button.classList.remove("is-armed");
+  };
+
+  button.addEventListener("click", () => {
+    if (!armed) {
+      armed = true;
+      button.classList.add("is-armed");
+      button.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Click again to confirm`;
+      timer = setTimeout(disarm, 5000);
+      return;
+    }
+    disarm();
+    action();
+  });
+}
+
 syncAlgorithmInputs();
 const initialSection = location.hash.replace("#", "") || "panopticon";
 switchSection(["panopticon", "money", "algorithm", "killswitch", "audit"].includes(initialSection) ? initialSection : "panopticon");
 bindEvents();
+bindPulseEvents();
+armDangerButton(els.banAgencyButton, "Ban Agency", banAgency);
+armDangerButton(els.freezeEscrowButton, "Freeze Escrow", freezeEscrow);
+armDangerButton(els.pushAlertButton, "Push Global Alert", pushGlobalAlert);
 renderTerminalClock();
 setInterval(renderTerminalClock, 1000);
 renderAll();
+loadSystemHealth();
+loadMasterPulse();

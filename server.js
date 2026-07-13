@@ -2816,6 +2816,55 @@ async function reviewAgentListing(payload = {}) {
     return { item: row };
 }
 
+// ---------------------------------------------------------
+// MASTER PULSE: real, read-only platform metrics for the owner
+// dashboard - paying agent counts, listing pipeline, and the
+// frontline leaderboard. Gated behind the same admin API key admin.html
+// already uses (both are owner-only surfaces).
+// ---------------------------------------------------------
+async function getMasterPulse() {
+    if (!hasSupabaseConfig()) return { __status: 500, error: "Supabase is not configured." };
+
+    const [agentUsers, listingRows, engagementRows] = await Promise.all([
+        selectSupabaseRows('users', "select=subscription_plan,subscription_status,features_unlocked&role=eq.agent&limit=5000").catch(() => []),
+        selectSupabaseRows('agent_property_listings', "select=status&limit=5000").catch(() => []),
+        selectSupabaseRows('agent_engagement', "select=agent_id,points,streak_days,listings_submitted&order=points.desc&limit=5").catch(() => [])
+    ]);
+
+    const agents = Array.isArray(agentUsers) ? agentUsers : [];
+    const paying = agents.filter((row) => row.features_unlocked === true);
+    const byPlan = {};
+    paying.forEach((row) => {
+        const plan = row.subscription_plan || 'unknown';
+        byPlan[plan] = (byPlan[plan] || 0) + 1;
+    });
+
+    const listings = Array.isArray(listingRows) ? listingRows : [];
+    const listingCounts = { live: 0, pendingQc: 0, rejected: 0, other: 0 };
+    listings.forEach((row) => {
+        const status = String(row.status || '').toLowerCase();
+        if (status === 'live' || status === 'approved') listingCounts.live += 1;
+        else if (status === 'pending_qc') listingCounts.pendingQc += 1;
+        else if (status === 'rejected') listingCounts.rejected += 1;
+        else listingCounts.other += 1;
+    });
+
+    const leaderboard = (Array.isArray(engagementRows) ? engagementRows : []).map((row) => ({
+        agentId: row.agent_id,
+        points: Number(row.points || 0),
+        streakDays: Number(row.streak_days || 0),
+        listingsSubmitted: Number(row.listings_submitted || 0),
+        tierLabel: agentTierForPoints(Number(row.points || 0)).label
+    }));
+
+    return {
+        agents: { total: agents.length, paying: paying.length, byPlan },
+        listings: listingCounts,
+        leaderboard,
+        generatedAt: new Date().toISOString()
+    };
+}
+
 async function listPublicProperties() {
     if (!hasSupabaseConfig()) return { items: [] };
     const importedRows = await selectSupabaseRows(
@@ -2986,6 +3035,12 @@ const server = http.createServer(async (req, res) => {
 
         if (url === '/api/properties') {
             return listPublicProperties();
+        }
+
+        if (url === '/api/master/pulse') {
+            const auth = requireAdminAccess(req);
+            if (!auth.ok) return { __status: auth.status, error: auth.error };
+            return getMasterPulse();
         }
 
         if (url === '/api/ar/generate') {
