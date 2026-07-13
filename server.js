@@ -2715,6 +2715,17 @@ async function getAgentEngagementRow(agentId) {
     return Array.isArray(rows) && rows[0] ? rows[0] : null;
 }
 
+async function agentFrontlineRank(agentId, points) {
+    try {
+        const rows = await selectSupabaseRows("agent_engagement", "select=agent_id,points&order=points.desc&limit=500");
+        const list = Array.isArray(rows) ? rows : [];
+        const ahead = list.filter((row) => Number(row.points || 0) > Number(points || 0) && row.agent_id !== agentId).length;
+        return { rank: ahead + 1, totalAgents: Math.max(list.length, 1) };
+    } catch {
+        return { rank: 0, totalAgents: 0 };
+    }
+}
+
 async function agentDailyCheckin(payload = {}) {
     if (!hasSupabaseConfig()) return { __status: 500, error: "Supabase is not configured." };
     const agentId = String(payload.agentId || payload.agent_id || '').trim();
@@ -2724,7 +2735,8 @@ async function agentDailyCheckin(payload = {}) {
     const existing = await getAgentEngagementRow(agentId);
 
     if (existing && existing.last_checkin_date === today) {
-        return { engagement: engagementSummary(existing, { checkedInToday: true, earnedToday: 0 }) };
+        const standing = await agentFrontlineRank(agentId, existing.points);
+        return { engagement: engagementSummary(existing, { checkedInToday: true, earnedToday: 0, ...standing }) };
     }
 
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -2744,7 +2756,8 @@ async function agentDailyCheckin(payload = {}) {
         updated_at: new Date().toISOString()
     }, "agent_id");
 
-    return { engagement: engagementSummary(row, { checkedInToday: true, earnedToday: earned }) };
+    const standing = await agentFrontlineRank(agentId, row?.points);
+    return { engagement: engagementSummary(row, { checkedInToday: true, earnedToday: earned, ...standing }) };
 }
 
 async function awardAgentListingPoints(agentId) {

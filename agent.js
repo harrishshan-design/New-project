@@ -493,6 +493,13 @@ const els = {
   routineCheckLeads: document.getElementById("routineCheckLeads"),
   routineQuickList: document.getElementById("routineQuickList"),
   routineRepeatListing: document.getElementById("routineRepeatListing"),
+  routineRank: document.getElementById("routineRank"),
+  routineRankText: document.getElementById("routineRankText"),
+  listingPipelineStrip: document.getElementById("listingPipelineStrip"),
+  pipelinePendingCount: document.getElementById("pipelinePendingCount"),
+  pipelineLiveCount: document.getElementById("pipelineLiveCount"),
+  pipelineRejectedCount: document.getElementById("pipelineRejectedCount"),
+  pipelineDraftCount: document.getElementById("pipelineDraftCount"),
   overviewJumpListings: document.getElementById("overviewJumpListings"),
   overviewDownloadListingTemplate: document.getElementById("overviewDownloadListingTemplate"),
   overviewListingExcelInput: document.getElementById("overviewListingExcelInput"),
@@ -1466,6 +1473,33 @@ function renderAgentRoutine() {
   setRoutineCheckState(els.routineCheckLogin, Boolean(summary.checkedInToday || summary.lastCheckinDate === todayStamp()));
   setRoutineCheckState(els.routineCheckListing, listingUploadedToday());
   setRoutineCheckState(els.routineCheckLeads, leadsReviewedToday());
+
+  if (els.routineRank) {
+    const hasRank = Number(summary.rank || 0) > 0 && Number(summary.totalAgents || 0) > 1;
+    els.routineRank.hidden = !hasRank;
+    if (hasRank) {
+      els.routineRankText.textContent = summary.rank === 1
+        ? `#1 frontline agent of ${summary.totalAgents} - buyers see you first`
+        : `Frontline rank #${summary.rank} of ${summary.totalAgents} agents`;
+    }
+  }
+
+  renderListingPipeline();
+}
+
+function renderListingPipeline() {
+  if (!els.listingPipelineStrip) return;
+  const statusOf = (listing) => String(listing.status || "").toLowerCase();
+  const counts = {
+    pending: state.listings.filter((listing) => statusOf(listing) === "pending qc").length,
+    live: state.listings.filter((listing) => statusOf(listing) === "live").length,
+    rejected: state.listings.filter((listing) => statusOf(listing) === "rejected").length,
+    draft: state.listings.filter((listing) => statusOf(listing) === "draft").length
+  };
+  els.pipelinePendingCount.textContent = counts.pending;
+  els.pipelineLiveCount.textContent = counts.live;
+  els.pipelineRejectedCount.textContent = counts.rejected;
+  els.pipelineDraftCount.textContent = counts.draft;
 }
 
 function reviewLeadsRoutine() {
@@ -2099,10 +2133,27 @@ function renderCleanListingGrid() {
             <i class="fa-solid fa-cube"></i>
             AR
           </button>` : ""}
+          ${listing.backendId && listing.status === "Live" ? `<button class="ghost-button share-listing-button" data-action="share-listing" data-id="${listing.id}" type="button">
+            <i class="fa-brands fa-whatsapp"></i>
+            Share
+          </button>` : ""}
         </div>
       </article>
     `;
   }).join("");
+}
+
+function shareListingToWhatsApp(id) {
+  const listing = state.listings.find((item) => String(item.id) === String(id));
+  if (!listing?.backendId) {
+    showToast("This listing gets a shareable page once it is live.");
+    return;
+  }
+  const publicUrl = `https://realitygenius.company/property/${listing.backendId}`;
+  const price = listing.price ? `RM ${Math.round(listing.price).toLocaleString("en-MY")}` : "";
+  const text = `🏠 ${listing.title}${price ? ` — ${price}` : ""}\n📍 ${listing.address || listing.area || "Malaysia"}\nView photos, AI insights & 360° tour:\n${publicUrl}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+  showToast("WhatsApp share ready. The link shows a rich preview.");
 }
 
 function pushNotifications(title, message) {
@@ -5720,6 +5771,11 @@ function bindEvents() {
     if (!listingUploadedToday()) openListingDeviceUpload();
   });
   els.routineCheckLeads?.addEventListener("click", reviewLeadsRoutine);
+  els.listingPipelineStrip?.addEventListener("click", (event) => {
+    if (!event.target.closest(".pipeline-stat")) return;
+    state.section = "listings";
+    syncSectionVisibility();
+  });
   [
     els.listingTitle,
     els.listingArea,
@@ -5793,6 +5849,7 @@ function bindEvents() {
     if (action === "toggle-listing-status") toggleListingStatus(rawId);
     if (action === "open-listing-image") openListingAsset(rawId, "image");
     if (action === "open-listing-ar") openListingAsset(rawId, "ar");
+    if (action === "share-listing") shareListingToWhatsApp(rawId);
     if (action === "agent-counter") handleNegotiationAction(id, "counter");
     if (action === "agent-accept") handleNegotiationAction(id, "accept");
     if (action === "agent-reject") handleNegotiationAction(id, "reject");

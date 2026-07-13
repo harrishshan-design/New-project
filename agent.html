@@ -440,6 +440,10 @@
                 <div class="routine-progress-track"><div class="routine-progress-fill" id="routineTierProgress"></div></div>
                 <span id="routineTierNext">Earn points to reach Dedicated Agent</span>
               </div>
+              <div class="routine-rank" id="routineRank" hidden>
+                <i class="fa-solid fa-trophy"></i>
+                <span id="routineRankText">Frontline rank</span>
+              </div>
             </div>
 
             <div class="routine-checklist" id="routineChecklist">
@@ -472,6 +476,25 @@
                 <small>Prefill everything</small>
               </button>
             </div>
+          </div>
+
+          <div class="listing-pipeline-strip" id="listingPipelineStrip" role="group" aria-label="Listing pipeline summary">
+            <button class="pipeline-stat" data-pipeline="pending" type="button">
+              <strong id="pipelinePendingCount">0</strong>
+              <span>Waiting for QC</span>
+            </button>
+            <button class="pipeline-stat is-live" data-pipeline="live" type="button">
+              <strong id="pipelineLiveCount">0</strong>
+              <span>Live to buyers</span>
+            </button>
+            <button class="pipeline-stat is-rejected" data-pipeline="rejected" type="button">
+              <strong id="pipelineRejectedCount">0</strong>
+              <span>Needs fixing</span>
+            </button>
+            <button class="pipeline-stat" data-pipeline="draft" type="button">
+              <strong id="pipelineDraftCount">0</strong>
+              <span>Drafts</span>
+            </button>
           </div>
         </section>
 

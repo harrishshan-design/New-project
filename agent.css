@@ -5282,3 +5282,80 @@ body{
     grid-template-columns:1fr;
   }
 }
+
+/* ---------- Routine rank + listing pipeline strip ---------- */
+
+.routine-rank{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:11px 14px;
+  border-radius:var(--radius-md);
+  border:1px solid rgba(247,169,59,0.4);
+  background:rgba(247,169,59,0.1);
+  color:#ffd894;
+  font-size:13px;
+  font-weight:900;
+}
+
+.routine-rank i{
+  color:#f7a93b;
+}
+
+.listing-pipeline-strip{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  margin-top:18px;
+}
+
+.pipeline-stat{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:2px;
+  padding:14px 16px;
+  border-radius:var(--radius-md);
+  border:1px solid var(--line);
+  background:rgba(255,255,255,0.03);
+  color:var(--text);
+  font-family:inherit;
+  cursor:pointer;
+  text-align:left;
+  transition:border-color .2s ease, background .2s ease, transform .2s ease;
+}
+
+.pipeline-stat:hover{
+  border-color:var(--line-strong);
+  background:rgba(255,255,255,0.06);
+  transform:translateY(-2px);
+}
+
+.pipeline-stat strong{
+  font-size:24px;
+  line-height:1;
+}
+
+.pipeline-stat span{
+  font-size:12px;
+  font-weight:700;
+  color:var(--muted);
+}
+
+.pipeline-stat.is-live strong{color:var(--green)}
+.pipeline-stat.is-rejected strong{color:var(--red)}
+
+.share-listing-button{
+  border-color:rgba(35,194,107,0.45)!important;
+  color:#7fe0ab!important;
+}
+
+.share-listing-button:hover{
+  background:rgba(35,194,107,0.12)!important;
+}
+
+@media (max-width:900px){
+  .listing-pipeline-strip{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
