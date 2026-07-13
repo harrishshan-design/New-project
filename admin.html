@@ -82,6 +82,27 @@
         </div>
       </header>
 
+      <section class="daily-ops" aria-label="Daily operations checklist">
+        <div class="daily-ops-head">
+          <div>
+            <div class="eyebrow">Daily Ops Checklist</div>
+            <h3 id="dailyOpsTitle">Clear the queue. Then you're done.</h3>
+          </div>
+          <div class="daily-ops-progress">
+            <span id="dailyOpsProgressText">Checking queues...</span>
+            <div class="daily-ops-track"><div class="daily-ops-fill" id="dailyOpsFill"></div></div>
+          </div>
+        </div>
+        <div class="daily-ops-grid" id="dailyOpsGrid"></div>
+        <div class="daily-ops-done" id="dailyOpsDone" hidden>
+          <i class="fa-solid fa-mug-hot"></i>
+          <div>
+            <strong>All clear — nothing is waiting on you.</strong>
+            <span>New agents, listings, imports, or reports will appear here the moment they need review.</span>
+          </div>
+        </div>
+      </section>
+
       <section class="hero">
         <div class="hero-copy">
           <div class="hero-pill">Airport security for marketplace trust</div>

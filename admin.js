@@ -68,6 +68,11 @@ const state = {
 const els = {
   navItems: [...document.querySelectorAll("[data-section]")],
   panels: [...document.querySelectorAll("[data-panel]")],
+  dailyOpsGrid: document.getElementById("dailyOpsGrid"),
+  dailyOpsDone: document.getElementById("dailyOpsDone"),
+  dailyOpsTitle: document.getElementById("dailyOpsTitle"),
+  dailyOpsProgressText: document.getElementById("dailyOpsProgressText"),
+  dailyOpsFill: document.getElementById("dailyOpsFill"),
   pendingAgentCount: document.getElementById("pendingAgentCount"),
   pendingListingCount: document.getElementById("pendingListingCount"),
   openReportCount: document.getElementById("openReportCount"),
@@ -1225,6 +1230,72 @@ function renderMetrics() {
   els.pendingListingCount.textContent = state.listings.filter((listing) => listing.status === "pending_qc").length + pendingImports;
   els.openReportCount.textContent = state.reports.filter((report) => ["open", "investigating"].includes(report.status)).length;
   els.suspendedCount.textContent = state.agents.filter((agent) => agent.status === "suspended").length;
+  renderDailyOps();
+}
+
+// Daily ops checklist: the four queues that actually need a human,
+// reframed as a short daily routine. Zero-count queues show as clear
+// so the admin knows exactly when the day's review work is finished.
+function getDailyOpsItems() {
+  return [
+    {
+      key: "listings",
+      icon: "fa-house-circle-check",
+      label: "Approve or reject QC listings",
+      hint: "~2 min each. Agents are waiting on you to go live.",
+      count: state.listings.filter((listing) => listing.status === "pending_qc").length,
+      section: "listings"
+    },
+    {
+      key: "agents",
+      icon: "fa-user-check",
+      label: "Verify pending agents",
+      hint: "REN and IC check before they can list.",
+      count: state.agents.filter((agent) => agent.status === "pending").length,
+      section: "agents"
+    },
+    {
+      key: "imports",
+      icon: "fa-robot",
+      label: "Review Telegram AI imports",
+      hint: "Confirm extracted price, photos, and location.",
+      count: state.aiImports.filter((item) => item.status === "needs_review").length,
+      section: "ai-imports"
+    },
+    {
+      key: "reports",
+      icon: "fa-flag",
+      label: "Close open buyer reports",
+      hint: "Trust cases hurt the marketplace the longer they sit.",
+      count: state.reports.filter((report) => ["open", "investigating"].includes(report.status)).length,
+      section: "reports"
+    }
+  ];
+}
+
+function renderDailyOps() {
+  if (!els.dailyOpsGrid) return;
+  const items = getDailyOpsItems();
+  const clearCount = items.filter((item) => item.count === 0).length;
+  const allClear = clearCount === items.length;
+
+  els.dailyOpsGrid.innerHTML = items.map((item) => `
+    <button class="daily-ops-item ${item.count === 0 ? "is-clear" : ""}" data-ops-section="${item.section}" type="button" ${item.count === 0 ? 'aria-label="' + item.label + ' - queue clear"' : ""}>
+      <span class="daily-ops-icon"><i class="fa-solid ${item.count === 0 ? "fa-circle-check" : item.icon}"></i></span>
+      <span class="daily-ops-copy">
+        <strong>${item.label}</strong>
+        <small>${item.count === 0 ? "Queue clear - nothing waiting." : item.hint}</small>
+      </span>
+      <span class="daily-ops-count">${item.count === 0 ? "Done" : item.count}</span>
+    </button>
+  `).join("");
+
+  els.dailyOpsProgressText.textContent = allClear ? "4 of 4 queues clear" : `${clearCount} of ${items.length} queues clear`;
+  els.dailyOpsFill.style.width = `${Math.round((clearCount / items.length) * 100)}%`;
+  els.dailyOpsTitle.textContent = allClear
+    ? "You're done for today."
+    : `${items.reduce((sum, item) => sum + item.count, 0)} items need your eyes. Clear them, then you're done.`;
+  els.dailyOpsDone.hidden = !allClear;
 }
 
 function renderAgents() {
@@ -1808,6 +1879,11 @@ function showToast(message) {
 function bindEvents() {
   els.navItems.forEach((button) => {
     button.addEventListener("click", () => switchSection(button.dataset.section));
+  });
+
+  els.dailyOpsGrid?.addEventListener("click", (event) => {
+    const item = event.target.closest("[data-ops-section]");
+    if (item) switchSection(item.dataset.opsSection);
   });
 
   els.runScanButton.addEventListener("click", runAiScan);

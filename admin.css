@@ -109,7 +109,7 @@ button:disabled{
   display:grid;
   place-items:center;
   border-radius:18px;
-  background:#071629 url("/brand/realitygenius-icon-192.png") center/cover no-repeat;
+  background:#071629 url("/apple-touch-icon.png") center/cover no-repeat;
   color:transparent;
   overflow:hidden;
   box-shadow:0 18px 44px rgba(245,158,11,0.28);
@@ -229,6 +229,59 @@ button:disabled{
   display:flex;
   gap:10px;
   flex-wrap:wrap;
+}
+
+.admin-quick-dock{
+  position:fixed;
+  left:50%;
+  bottom:18px;
+  z-index:95;
+  display:flex;
+  gap:8px;
+  padding:8px;
+  border:1px solid var(--line-strong);
+  border-radius:999px;
+  background:rgba(13,18,32,0.88);
+  box-shadow:var(--shadow-strong);
+  backdrop-filter:blur(18px);
+  transform:translateX(-50%);
+}
+
+.admin-quick-dock button{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  min-height:42px;
+  padding:0 14px;
+  border:0;
+  border-radius:999px;
+  background:transparent;
+  color:var(--text);
+  font:inherit;
+  font-size:.86rem;
+  font-weight:900;
+  white-space:nowrap;
+}
+
+.admin-quick-dock button:hover{
+  background:var(--brand-soft);
+}
+
+@media (max-width:720px){
+  .admin-quick-dock{
+    left:10px;
+    right:10px;
+    bottom:10px;
+    justify-content:space-between;
+    transform:none;
+  }
+
+  .admin-quick-dock button{
+    flex:1;
+    justify-content:center;
+    padding:0 8px;
+    font-size:.76rem;
+  }
 }
 
 .shortcut-rail{
@@ -423,10 +476,140 @@ button:disabled{
 
 .agent-layout,
 .reports-layout,
-.notifications-layout{
+.notifications-layout,
+.auction-admin-layout{
   display:grid;
   grid-template-columns:1.35fr .65fr;
   gap:16px;
+}
+
+.auction-control-card,
+.auction-safety-panel,
+.auction-slot-card{
+  min-width:0;
+  padding:18px;
+  border:1px solid var(--line);
+  border-radius:22px;
+  background:rgba(255,255,255,0.04);
+  box-shadow:0 16px 42px rgba(0,0,0,0.18);
+}
+
+.auction-control-card{
+  display:grid;
+  gap:14px;
+}
+
+.auction-admin-copy h4,
+.auction-safety-panel h4,
+.auction-slot-card h4{
+  margin:8px 0 6px;
+  font-family:"Space Grotesk",sans-serif;
+  letter-spacing:0;
+}
+
+.auction-admin-copy p,
+.auction-safety-panel p,
+.auction-slot-card p{
+  margin:0;
+  color:var(--muted);
+  line-height:1.6;
+}
+
+.auction-select-shell select,
+.auction-note-shell textarea{
+  width:100%;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:var(--text);
+  font:inherit;
+}
+
+.auction-select-shell select option{
+  color:#0f172a;
+}
+
+.auction-note-shell{
+  align-items:flex-start;
+}
+
+.auction-note-shell i{
+  margin-top:4px;
+}
+
+.auction-note-shell textarea{
+  min-height:112px;
+  resize:vertical;
+}
+
+.auction-safety-panel{
+  background:
+    radial-gradient(circle at 100% 0%, rgba(245,158,11,0.18), transparent 30%),
+    rgba(255,255,255,0.04);
+}
+
+.auction-benefit-list{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:16px;
+}
+
+.auction-benefit-list span{
+  display:inline-flex;
+  padding:8px 10px;
+  border:1px solid rgba(245,158,11,0.2);
+  border-radius:999px;
+  background:rgba(245,158,11,0.1);
+  color:#ffe2b8;
+  font-size:.76rem;
+  font-weight:900;
+}
+
+.auction-slot-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+  margin-top:16px;
+}
+
+.auction-slot-card{
+  background:
+    radial-gradient(circle at 0% 0%, rgba(96,165,250,0.12), transparent 34%),
+    rgba(255,255,255,0.04);
+}
+
+.auction-empty-state{
+  grid-column:1/-1;
+  padding:18px;
+  border:1px dashed rgba(245,158,11,0.34);
+  border-radius:20px;
+  background:rgba(245,158,11,0.08);
+}
+
+.auction-empty-state strong{
+  color:#ffe2b8;
+}
+
+.auction-empty-state p{
+  margin:6px 0 0;
+  color:var(--muted);
+  line-height:1.55;
+}
+
+.auction-slot-card.is-filled{
+  border-color:rgba(34,197,94,0.24);
+}
+
+.auction-slot-card > span{
+  color:#ffe2b8;
+  font-size:.78rem;
+  font-weight:900;
+  text-transform:uppercase;
+}
+
+.auction-slot-card h4{
+  font-size:1.35rem;
 }
 
 .ai-import-date-row{
@@ -443,6 +626,35 @@ button:disabled{
 .report-card.ai-import-review-target{
   border-color:rgba(20,184,166,0.5);
   background:rgba(20,184,166,0.08);
+}
+
+.agent-profile-qc{
+  display:grid;
+  gap:12px;
+  margin:14px 0;
+  padding:14px;
+  border:1px solid rgba(37,199,217,.24);
+  border-radius:18px;
+  background:
+    radial-gradient(circle at top right,rgba(37,199,217,.14),transparent 34%),
+    rgba(255,255,255,.045);
+}
+
+.agent-profile-qc strong,
+.agent-profile-qc p{
+  display:block;
+  margin:0;
+}
+
+.agent-profile-qc strong{
+  color:#fff;
+}
+
+.agent-profile-qc p{
+  margin-top:5px;
+  color:var(--muted);
+  line-height:1.45;
+  font-size:.9rem;
 }
 
 .queue-table,
@@ -815,6 +1027,8 @@ button:disabled{
   .agent-layout,
   .reports-layout,
   .notifications-layout,
+  .auction-admin-layout,
+  .auction-slot-grid,
   .qc-layout{
     grid-template-columns:1fr;
   }
@@ -999,12 +1213,184 @@ button:disabled{
 
   .hero-metrics,
   .table-card,
-  .listing-meta-grid{
+  .listing-meta-grid,
+  .auction-slot-grid{
     grid-template-columns:1fr;
   }
 
   .review-drawer{
     width:100%;
     max-width:100%;
+  }
+}
+
+/* ---------- Daily ops checklist ---------- */
+
+.daily-ops{
+  margin-bottom:22px;
+  padding:22px;
+  border:1px solid rgba(245,158,11,0.28);
+  border-radius:var(--radius-lg, 22px);
+  background:
+    radial-gradient(circle at 90% 0%, rgba(245,158,11,0.12), transparent 42%),
+    var(--surface-card);
+}
+
+.daily-ops-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:18px;
+  margin-bottom:16px;
+  flex-wrap:wrap;
+}
+
+.daily-ops-head h3{
+  margin:6px 0 0;
+  font-size:22px;
+}
+
+.daily-ops-progress{
+  min-width:200px;
+}
+
+.daily-ops-progress span{
+  display:block;
+  margin-bottom:8px;
+  font-size:12px;
+  font-weight:800;
+  color:var(--muted);
+  text-align:right;
+}
+
+.daily-ops-track{
+  height:8px;
+  border-radius:999px;
+  background:rgba(255,255,255,0.08);
+  overflow:hidden;
+}
+
+.daily-ops-fill{
+  height:100%;
+  width:0%;
+  border-radius:999px;
+  background:linear-gradient(90deg, var(--brand), var(--green));
+  transition:width .5s ease;
+}
+
+.daily-ops-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+
+.daily-ops-item{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:15px 16px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:rgba(255,255,255,0.03);
+  color:var(--text);
+  font-family:inherit;
+  cursor:pointer;
+  text-align:left;
+  transition:border-color .2s ease, background .2s ease, transform .2s ease;
+}
+
+.daily-ops-item:hover{
+  border-color:rgba(245,158,11,0.5);
+  background:rgba(255,255,255,0.06);
+  transform:translateY(-2px);
+}
+
+.daily-ops-icon{
+  flex-shrink:0;
+  display:grid;
+  place-items:center;
+  width:42px;
+  height:42px;
+  border-radius:13px;
+  background:rgba(245,158,11,0.14);
+  color:var(--brand);
+  font-size:17px;
+}
+
+.daily-ops-copy{
+  min-width:0;
+  flex:1;
+}
+
+.daily-ops-copy strong{
+  display:block;
+  font-size:14px;
+}
+
+.daily-ops-copy small{
+  display:block;
+  margin-top:3px;
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.4;
+}
+
+.daily-ops-count{
+  flex-shrink:0;
+  min-width:44px;
+  padding:8px 12px;
+  border-radius:999px;
+  background:var(--brand);
+  color:#160f02;
+  font-size:14px;
+  font-weight:900;
+  text-align:center;
+}
+
+.daily-ops-item.is-clear{
+  opacity:.82;
+}
+
+.daily-ops-item.is-clear .daily-ops-icon{
+  background:rgba(34,197,94,0.14);
+  color:var(--green);
+}
+
+.daily-ops-item.is-clear .daily-ops-count{
+  background:rgba(34,197,94,0.16);
+  color:var(--green);
+}
+
+.daily-ops-done{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-top:14px;
+  padding:16px 18px;
+  border-radius:16px;
+  border:1px solid rgba(34,197,94,0.35);
+  background:rgba(34,197,94,0.08);
+}
+
+.daily-ops-done i{
+  font-size:22px;
+  color:var(--green);
+}
+
+.daily-ops-done strong{
+  display:block;
+  font-size:15px;
+}
+
+.daily-ops-done span{
+  display:block;
+  margin-top:3px;
+  font-size:13px;
+  color:var(--muted);
+}
+
+@media (max-width:900px){
+  .daily-ops-grid{
+    grid-template-columns:1fr;
   }
 }
