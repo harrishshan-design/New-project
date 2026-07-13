@@ -832,7 +832,12 @@ function nameFromEmail(email = '') {
 }
 
 async function createConfirmedSupabaseAuthUser({ email, password, metadata }) {
-    if (!SUPABASE_PROJECT_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    if (!hasSupabaseConfig() || !SUPABASE_PROJECT_URL) {
+        console.error('[Signup] Supabase Auth admin misconfigured:', {
+            hasRestUrl: Boolean(SUPABASE_REST_URL),
+            hasProjectUrl: Boolean(SUPABASE_PROJECT_URL),
+            hasServiceRoleKey: Boolean(SUPABASE_SERVICE_ROLE_KEY)
+        });
         throw new Error('Supabase Auth admin is not configured.');
     }
     const response = await fetch(`${SUPABASE_PROJECT_URL}/auth/v1/admin/users`, {
