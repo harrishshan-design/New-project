@@ -1527,6 +1527,70 @@ function sanitizeListingDescription(value = '') {
         .slice(0, LISTING_DESCRIPTION_MAX_LENGTH);
 }
 
+const LISTING_DESCRIPTION_EMOJI_PATTERN = /[\u{1F1E6}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}‼⁉❗]/gu;
+const LISTING_DESCRIPTION_MARKETING_WORDS = /\b(AVAILABLE|SOLD OUT|FOR SALE|FLEXIBLE BOOKING|HOT UNIT|LIMITED UNIT|FAST BOOKING|NEGOTIABLE|MUST VIEW)\b/g;
+const LISTING_DESCRIPTION_CTA_LINE_PATTERNS = [
+    /share\s*&?\s*like/i,
+    /like\s*&?\s*share/i,
+    /berminat.*(contact|hubungi|whatsapp)/i,
+    /contact\s*(sy|saya)\b/i,
+    /hubungi\s*(sy|saya)\b/i,
+    /whatsapp\s*(me|sy|saya)\b/i,
+    /^rumah\s*bahagia/i
+];
+
+function isListingDescriptionBannerLine(line) {
+    return /^[=\-_*~.]{3,}$/.test(line);
+}
+
+function isListingDescriptionPriceEchoLine(line) {
+    return /^(asking\s*price|harga(\s*jual)?|price)\s*:/i.test(line);
+}
+
+function isListingDescriptionHashtagLine(line) {
+    const tokens = line.split(/\s+/).filter(Boolean);
+    if (!tokens.length) return false;
+    const hashtagCount = tokens.filter((token) => token.startsWith('#')).length;
+    return hashtagCount >= 3 && hashtagCount / tokens.length >= 0.5;
+}
+
+function isListingDescriptionCtaLine(line) {
+    const unquoted = line.replace(/^[\s"'“”‘’]+|[\s"'“”‘’]+$/g, '');
+    return LISTING_DESCRIPTION_CTA_LINE_PATTERNS.some((pattern) => pattern.test(unquoted));
+}
+
+// Cleans up the raw WhatsApp/Facebook-broadcast style text agents often
+// paste straight into the description field: repeated "====" banners,
+// duplicated "Asking Price: RM..." lines, emoji, hashtag spam, and
+// generic marketing filler ("SHARE & LIKE", "contact sy"). Deliberately
+// conservative - it strips clearly-identifiable noise line-by-line and
+// leaves the substantive detail/amenity lines untouched, rather than
+// attempting a full AI rewrite that could misrepresent the listing.
+function tidyListingDescription(raw = '') {
+    const withoutEmoji = String(raw || '').replace(LISTING_DESCRIPTION_EMOJI_PATTERN, '');
+    const lines = withoutEmoji
+        .split(/\r\n|\r|\n/)
+        .map((line) => line.replace(/#[\w-]+/g, '').trim())
+        .filter((line) => {
+            if (!line) return false;
+            if (isListingDescriptionBannerLine(line)) return false;
+            if (isListingDescriptionPriceEchoLine(line)) return false;
+            if (isListingDescriptionHashtagLine(line)) return false;
+            if (isListingDescriptionCtaLine(line)) return false;
+            if (/^["'.]+$/.test(line)) return false;
+            return true;
+        })
+        .map((line) => line
+            .replace(LISTING_DESCRIPTION_MARKETING_WORDS, '')
+            .replace(/^[-*•]\s*/, '- ')
+            .replace(/\s{2,}/g, ' ')
+            .replace(/^[\s-]+|[\s-]+$/g, '')
+            .trim())
+        .filter(Boolean);
+
+    return sanitizeListingDescription(lines.join('\n'));
+}
+
 // Attractive, tidy fallback used only when the agent leaves the
 // description blank. Agent listings don't collect bedrooms/bathrooms/
 // sqft today, so this leans on what's always available: property
@@ -1584,7 +1648,7 @@ async function pickAgentListingPayload(payload = {}) {
         required: false
     }));
 
-    const description = sanitizeListingDescription(payload.description);
+    const description = tidyListingDescription(payload.description);
 
     return {
         id: existingId || undefined,
@@ -1640,7 +1704,7 @@ function agentListingToPublicProperty(item) {
         confidenceScore: 88,
         yield: 4.2,
         growth: 5.1,
-        summary: sanitizeListingDescription(item.description) || buildFallbackListingSummary({
+        summary: tidyListingDescription(item.description) || buildFallbackListingSummary({
             propertyType,
             area,
             galleryCount: gallery.length,
