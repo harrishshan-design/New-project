@@ -1062,7 +1062,9 @@ async function adminLookupUser(payload = {}) {
             name: user.name || user.full_name || '',
             role: normalizeAuthRole(user.role),
             status: user.status || '',
-            secondaryRole: normalizeSecondaryRole(user.secondary_role)
+            secondaryRole: normalizeSecondaryRole(user.secondary_role),
+            createdAt: user.created_at || null,
+            lastLoginAt: user.last_login_at || null
         }
     };
 }

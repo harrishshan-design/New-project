@@ -661,17 +661,24 @@ function renderDualRoleResult(message, tone = "") {
   const user = message;
   const otherRole = user.role === "agent" ? "user" : "agent";
   const hasSecondary = Boolean(user.secondaryRole);
+  const formatStamp = (value) => {
+    if (!value) return "Unknown";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "Unknown" : date.toLocaleString();
+  };
   els.dualRoleResult.innerHTML = `
     <div class="dual-role-card">
       <div class="dual-role-identity">
         <strong>${escapeHtml(user.name || user.email)}</strong>
         <span>${escapeHtml(user.email)} - primary role: ${escapeHtml(user.role)}${user.status ? ` (${escapeHtml(user.status)})` : ""}</span>
+        <span>Signed up: ${escapeHtml(formatStamp(user.createdAt))}</span>
+        <span>Last login: ${escapeHtml(formatStamp(user.lastLoginAt))}</span>
         <span>${hasSecondary ? `Dual access granted: can also log in as ${escapeHtml(user.secondaryRole)}` : "No dual access granted"}</span>
       </div>
       <div class="dual-role-actions">
         ${hasSecondary
           ? `<button class="ghost-button" type="button" data-dual-role-action="clear">Remove dual access</button>`
-          : `<button class="primary-button" type="button" data-dual-role-action="grant" data-dual-role-value="${escapeHtml(otherRole)}">Also grant ${escapeHtml(otherRole)} access</button>`
+          : `<button class="primary-button" type="button" data-dual-role-action="grant" data-dual-role-value="${escapeHtml(otherRole)}">Accept dual role - also allow ${escapeHtml(otherRole)} login</button>`
         }
       </div>
     </div>
