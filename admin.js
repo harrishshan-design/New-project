@@ -710,6 +710,35 @@ async function lookupDualRoleAccount() {
   }
 }
 
+async function syncRealPendingAgents() {
+  if (!adminReviewApiKey()) return;
+  try {
+    const response = await fetch(aiImportApiUrl("/admin/agents/pending"), {
+      headers: adminJsonHeaders()
+    });
+    if (!response.ok) return;
+    const payload = await response.json().catch(() => ({}));
+    const realAgents = (payload.agents || []).map((agent) => ({
+      id: `real-${agent.id}`,
+      realId: agent.id,
+      isRealAccount: true,
+      name: agent.name || agent.email,
+      email: agent.email,
+      phone: agent.phone || "",
+      agencyName: agent.agencyName || "",
+      renNumber: agent.renNumber || "",
+      status: "pending",
+      icHash: `real-${agent.id}`,
+      aiFlags: [],
+      createdAt: agent.createdAt || new Date().toISOString()
+    }));
+    state.agents = [...realAgents, ...state.agents.filter((item) => !item.isRealAccount)];
+    renderAll();
+  } catch {
+    // Silent - demo agent data still renders if the real fetch fails.
+  }
+}
+
 async function setDualRoleAccess(secondaryRole) {
   if (!dualRoleLookupResult?.email) return;
   try {
@@ -1802,6 +1831,13 @@ function updateAgentStatus(id, status) {
   renderAll();
   closeDrawer();
   showToast(`Agent ${status}`);
+  if (agent.isRealAccount && agent.realId) {
+    fetch(aiImportApiUrl("/admin/agents/set-status"), {
+      method: "POST",
+      headers: adminJsonHeaders(),
+      body: JSON.stringify({ id: agent.realId, status })
+    }).catch(() => showToast("Saved locally, but the real account update failed to sync."));
+  }
 }
 
 async function approveListing(id) {
@@ -2081,6 +2117,7 @@ switchSection(["agents", "listings", "ai-imports", "reports", "auction-night", "
 });
 bindEvents();
 hydrateListingEnhancements();
+syncRealPendingAgents();
 
 window.addEventListener("storage", (event) => {
   if (event.key === STORAGE_KEYS.listingAnalytics) {

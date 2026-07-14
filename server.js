@@ -1117,6 +1117,42 @@ async function publicDualRoleLookup(payload = {}) {
     }
 }
 
+async function adminListPendingAgents() {
+    const rows = await selectSupabaseRows('users', `select=*&role=eq.agent&status=eq.pending&order=created_at.desc&limit=200`);
+    return {
+        agents: (rows || []).map((row) => ({
+            id: row.id,
+            email: row.email,
+            name: row.name || row.full_name || row.email,
+            phone: row.phone || '',
+            agencyName: row.agency_name || '',
+            renNumber: row.ren_id || '',
+            status: row.status || 'pending',
+            createdAt: row.created_at || null
+        }))
+    };
+}
+
+async function adminSetAgentStatus(payload = {}) {
+    const id = String(payload.id || '').trim();
+    const status = String(payload.status || '').trim().toLowerCase();
+    const allowed = ['pending', 'approved', 'rejected', 'suspended'];
+    if (!id) return { __status: 400, error: 'id is required.' };
+    if (!allowed.includes(status)) return { __status: 400, error: `status must be one of ${allowed.join(', ')}.` };
+
+    const row = await patchSupabaseRow('users', id, {
+        status,
+        updated_at: new Date().toISOString()
+    });
+    if (!row) return { __status: 404, error: 'Agent account not found.' };
+    await createAdminNotification(
+        'Agent verification updated',
+        `${row.email || id} was marked ${status}.`,
+        { category: 'agent_verification', userId: id, status }
+    );
+    return { agent: { id: row.id, status: row.status } };
+}
+
 function extractUrls(text = '') {
     return String(text || '').match(/https?:\/\/[^\s)>\]]+/gi) || [];
 }
@@ -3275,6 +3311,18 @@ const server = http.createServer(async (req, res) => {
             const auth = requireAdminAccess(req);
             if (!auth.ok) return { __status: auth.status, error: auth.error };
             return adminSetSecondaryRole(payload);
+        }
+
+        if (url === '/api/admin/agents/pending') {
+            const auth = requireAdminAccess(req);
+            if (!auth.ok) return { __status: auth.status, error: auth.error };
+            return adminListPendingAgents();
+        }
+
+        if (url === '/api/admin/agents/set-status') {
+            const auth = requireAdminAccess(req);
+            if (!auth.ok) return { __status: auth.status, error: auth.error };
+            return adminSetAgentStatus(payload);
         }
 
         if (url === '/api/create-checkout-session' || url === '/api/stripe/create-checkout-session' || url === '/api/billing/create-checkout-session') {
