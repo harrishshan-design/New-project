@@ -2298,19 +2298,41 @@ function agentMeApiUrl() {
   return `${window.location.origin}/api/agent/me`;
 }
 
+// Same-origin (Vercel) is tried first; the Render backend is a resilient
+// fallback if Vercel's own Supabase/Stripe env vars aren't configured.
+// Session creation is idempotent from a billing standpoint - it never
+// charges anything by itself - so retrying against a second backend on
+// failure is safe.
+async function fetchJsonWithFallback(urls, options) {
+  let lastError;
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, options);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        lastError = new Error(data.error || `Request failed with ${response.status}`);
+        continue;
+      }
+      return data;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error("Request failed.");
+}
+
 async function refreshAgentSubscription({ silent = false } = {}) {
   const token = await readAgentAuthToken();
   if (!token) return null;
 
   try {
-    const response = await fetch(agentMeApiUrl(), {
+    const payload = await fetchJsonWithFallback([agentMeApiUrl(), agentApiUrl("/agent/me")], {
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${token}`
       }
     });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok || !payload.agent) throw new Error(payload.error || "Unable to refresh subscription");
+    if (!payload.agent) throw new Error(payload.error || "Unable to refresh subscription");
 
     const agent = payload.agent;
     const planId = normalizeAgentPlan(agent.subscription_plan);
@@ -2473,7 +2495,7 @@ async function activateAgentPlan(planId) {
   showToast(`Opening ${plan.name} checkout`);
 
   try {
-    const response = await fetch(stripeCheckoutApiUrl(), {
+    const data = await fetchJsonWithFallback([stripeCheckoutApiUrl(), agentApiUrl("/billing/create-checkout-session")], {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -2483,11 +2505,6 @@ async function activateAgentPlan(planId) {
         plan: plan.billingPlan || plan.id
       })
     });
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(data.error || `Checkout failed with ${response.status}`);
-    }
 
     if (data.url) {
       state.subscription = {
