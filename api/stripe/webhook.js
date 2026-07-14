@@ -1,8 +1,9 @@
-const Stripe = require("stripe");
-
-const stripe = process.env.STRIPE_SECRET_KEY
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2026-02-25.clover" })
-  : null;
+const {
+  findUser,
+  normalizePlan,
+  patchUserSubscription,
+  stripeClient
+} = require("../_subscription");
 
 module.exports.config = {
   api: {
@@ -19,106 +20,70 @@ function readRawBody(req) {
   });
 }
 
-function supabaseRestUrl() {
-  const raw = String(process.env.SUPABASE_URL || "").trim().replace(/\/+$/, "");
-  if (!raw) return "";
-  return raw.endsWith("/rest/v1") ? raw : `${raw}/rest/v1`;
+async function updateFromStripeObject(object = {}, statusOverride = "") {
+  const metadata = object.metadata || {};
+  const customerEmail = object.customer_details?.email || object.customer_email || metadata.email || "";
+  const agentId = metadata.agent_id || metadata.userId || object.client_reference_id || "";
+  const plan = normalizePlan(metadata.plan);
+  if (!plan) return false;
+
+  const user = await findUser({ id: agentId }) || await findUser({ email: customerEmail });
+  if (!user?.id) return false;
+
+  return patchUserSubscription(user, {
+    plan,
+    status: statusOverride || object.status || "active",
+    customerId: object.customer,
+    subscriptionId: object.subscription || object.id,
+    checkoutSessionId: object.object === "checkout.session" ? object.id : ""
+  });
 }
 
-function normalizePlan(plan = "") {
-  const normalized = String(plan || "").trim().toLowerCase();
-  if (normalized === "premium") return "elite";
-  if (["starter", "pro", "elite"].includes(normalized)) return normalized;
-  return "";
-}
-
-async function updateAgentSubscription({ email, plan, status, customerId, subscriptionId, checkoutSessionId }) {
-  const restUrl = supabaseRestUrl();
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
-  const cleanEmail = String(email || "").trim().toLowerCase();
-  const cleanPlan = normalizePlan(plan);
-  if (!restUrl || !key || !cleanEmail || !cleanPlan) return false;
-
-  const lookup = await fetch(`${restUrl}/users?select=*&email=eq.${encodeURIComponent(cleanEmail)}&limit=1`, {
-    headers: {
-      apikey: key,
-      Authorization: `Bearer ${key}`,
-      Accept: "application/json"
-    }
-  });
-  const rows = await lookup.json().catch(() => []);
-  const user = Array.isArray(rows) ? rows[0] : null;
-  if (!lookup.ok || !user?.id) return false;
-
-  const profile = typeof user.profile_json === "string"
-    ? JSON.parse(user.profile_json || "{}")
-    : user.profile_json || {};
-
-  const patch = await fetch(`${restUrl}/users?id=eq.${encodeURIComponent(user.id)}`, {
-    method: "PATCH",
-    headers: {
-      apikey: key,
-      Authorization: `Bearer ${key}`,
-      "Content-Type": "application/json",
-      Prefer: "return=minimal"
-    },
-    body: JSON.stringify({
-      profile_json: {
-        ...profile,
-        subscription: {
-          ...(profile.subscription || {}),
-          planId: cleanPlan,
-          status,
-          provider: "stripe",
-          customerId: customerId || profile.subscription?.customerId || "",
-          subscriptionId: subscriptionId || profile.subscription?.subscriptionId || "",
-          checkoutSessionId: checkoutSessionId || profile.subscription?.checkoutSessionId || "",
-          updatedAt: new Date().toISOString()
-        }
-      },
-      updated_at: new Date().toISOString()
-    })
-  });
-
-  return patch.ok;
+async function updateFromInvoice(invoice = {}, status) {
+  const metadata = invoice.subscription_details?.metadata || invoice.metadata || {};
+  return updateFromStripeObject({
+    object: "invoice",
+    metadata,
+    customer: invoice.customer,
+    customer_email: metadata.email || invoice.customer_email,
+    subscription: invoice.subscription || invoice.parent?.subscription_details?.subscription
+  }, status);
 }
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+  const stripe = stripeClient();
   if (!stripe) return res.status(500).json({ error: "STRIPE_SECRET_KEY is not configured." });
+  if (!process.env.STRIPE_WEBHOOK_SECRET) return res.status(500).json({ error: "STRIPE_WEBHOOK_SECRET is not configured." });
 
   const rawBody = await readRawBody(req);
   let event;
 
   try {
-    event = process.env.STRIPE_WEBHOOK_SECRET
-      ? stripe.webhooks.constructEvent(rawBody, req.headers["stripe-signature"], process.env.STRIPE_WEBHOOK_SECRET)
-      : JSON.parse(rawBody.toString("utf8"));
+    event = stripe.webhooks.constructEvent(rawBody, req.headers["stripe-signature"], process.env.STRIPE_WEBHOOK_SECRET);
   } catch (error) {
     return res.status(400).json({ error: error.message || "Invalid Stripe webhook payload." });
   }
 
   if (event.type === "checkout.session.completed") {
-    const session = event.data.object;
-    await updateAgentSubscription({
-      email: session.customer_details?.email || session.metadata?.email,
-      plan: session.metadata?.plan,
-      status: "active",
-      customerId: session.customer,
-      subscriptionId: session.subscription,
-      checkoutSessionId: session.id
-    });
+    await updateFromStripeObject(event.data.object, "active");
   }
 
-  if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
-    const subscription = event.data.object;
-    await updateAgentSubscription({
-      email: subscription.metadata?.email,
-      plan: subscription.metadata?.plan,
-      status: event.type === "customer.subscription.deleted" ? "cancelled" : subscription.status,
-      customerId: subscription.customer,
-      subscriptionId: subscription.id
-    });
+  if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated") {
+    await updateFromStripeObject(event.data.object, event.data.object.status || "active");
+  }
+
+  if (event.type === "customer.subscription.deleted") {
+    await updateFromStripeObject(event.data.object, "cancelled");
+  }
+
+  if (event.type === "invoice.payment_succeeded") {
+    await updateFromInvoice(event.data.object, "active");
+  }
+
+  if (event.type === "invoice.payment_failed") {
+    await updateFromInvoice(event.data.object, "past_due");
   }
 
   return res.status(200).json({ received: true, type: event.type });
