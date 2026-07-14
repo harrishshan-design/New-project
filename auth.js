@@ -21,7 +21,6 @@
     API_BASE: "https://hh-empire.onrender.com/api",
     AGENT_PRODUCT_KEYS: "RG-AGENT-FULL-2026"
   };
-  const DUAL_BUYER_AGENT_EMAILS = new Set(["hanushiniah02@gmail.com"]);
 
   let cachedClient = null;
 
@@ -341,8 +340,21 @@
     }, password);
   }
 
-  function hasDualBuyerAgentAccess(email = "") {
-    return DUAL_BUYER_AGENT_EMAILS.has(String(email || "").trim().toLowerCase());
+  // Admin-controlled dual role access (set via admin.html, no code deploy
+  // needed): looks up whether this email has a secondary role granted, so
+  // login.html's role tabs both work for that one account. Returns null on
+  // any failure so login never breaks because this lookup is unavailable.
+  async function fetchSecondaryRole(email = "") {
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    if (!normalizedEmail) return null;
+    try {
+      const response = await fetch(authApiUrl(`/auth/dual-role?email=${encodeURIComponent(normalizedEmail)}`));
+      if (!response.ok) return null;
+      const data = await response.json().catch(() => ({}));
+      return data.secondaryRole || null;
+    } catch {
+      return null;
+    }
   }
 
   function readAgentProductKeySession() {
@@ -426,6 +438,14 @@
     const localResult = signInWithLocalAccount(normalizedEmail, password);
     if (localResult) return localResult;
 
+    // Memoized so the dual-role lookup only ever fires once per signIn()
+    // call, even though it may be consulted at more than one branch below.
+    let secondaryRolePromise = null;
+    const hasDualAccessTo = async (role) => {
+      if (!secondaryRolePromise) secondaryRolePromise = fetchSecondaryRole(normalizedEmail);
+      return (await secondaryRolePromise) === role;
+    };
+
     const client = getClient();
     const { data, error } = await client.auth.signInWithPassword({
       email: normalizedEmail,
@@ -434,7 +454,7 @@
     if (error) {
       const fallback = signInWithLocalAccount(normalizedEmail, password);
       if (fallback) return fallback;
-      if (preferredRole === "agent" || (hasDualBuyerAgentAccess(normalizedEmail) && preferredRole === "user")) {
+      if (preferredRole === "agent" || (preferredRole === "user" && await hasDualAccessTo("user"))) {
         return writeLocalPublicSession({
           email: normalizedEmail,
           name: nameFromEmail(normalizedEmail),
@@ -456,7 +476,7 @@
     if (!profile.role) throw new Error("Your account role is missing. Please contact admin.");
     if (
       ["user", "agent"].includes(preferredRole)
-      && (hasDualBuyerAgentAccess(normalizedEmail) || (preferredRole === "agent" && profile.role !== preferredRole))
+      && ((await hasDualAccessTo(preferredRole)) || (preferredRole === "agent" && profile.role !== preferredRole))
     ) {
       return writeLocalPublicSession({
         email: normalizedEmail,
@@ -471,7 +491,7 @@
       }, password);
     }
     if (!statusAllowsDashboard(profile)) {
-      if (preferredRole === "agent" || (hasDualBuyerAgentAccess(normalizedEmail) && preferredRole === "user")) {
+      if (preferredRole === "agent" || (preferredRole === "user" && await hasDualAccessTo("user"))) {
         return writeLocalPublicSession({
           email: normalizedEmail,
           name: profile.name || nameFromEmail(normalizedEmail),

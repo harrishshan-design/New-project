@@ -93,6 +93,9 @@ const els = {
   aiImportDateInput: document.getElementById("aiImportDateInput"),
   todayAiImportsButton: document.getElementById("todayAiImportsButton"),
   aiImportStatus: document.getElementById("aiImportStatus"),
+  dualRoleEmailInput: document.getElementById("dualRoleEmailInput"),
+  dualRoleLookupButton: document.getElementById("dualRoleLookupButton"),
+  dualRoleResult: document.getElementById("dualRoleResult"),
   aiImportList: document.getElementById("aiImportList"),
   aiImportPreview: document.getElementById("aiImportPreview"),
   reportList: document.getElementById("reportList"),
@@ -640,6 +643,82 @@ async function reviewRemoteAgentListing(listing, status) {
 
 function aiImportApiUrl(path) {
   return `${adminApiBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+// ---------------------------------------------------------
+// DUAL ROLE ACCESS: grant an existing account a second role (agent who
+// should also get buyer access, or vice versa) via a real backend call -
+// no code deploy needed, unlike the old hardcoded email list this replaces.
+// ---------------------------------------------------------
+let dualRoleLookupResult = null;
+
+function renderDualRoleResult(message, tone = "") {
+  if (!els.dualRoleResult) return;
+  if (typeof message === "string") {
+    els.dualRoleResult.innerHTML = `<p class="dual-role-status-note ${tone === "error" ? "is-error" : ""}">${escapeHtml(message)}</p>`;
+    return;
+  }
+  const user = message;
+  const otherRole = user.role === "agent" ? "user" : "agent";
+  const hasSecondary = Boolean(user.secondaryRole);
+  els.dualRoleResult.innerHTML = `
+    <div class="dual-role-card">
+      <div class="dual-role-identity">
+        <strong>${escapeHtml(user.name || user.email)}</strong>
+        <span>${escapeHtml(user.email)} - primary role: ${escapeHtml(user.role)}${user.status ? ` (${escapeHtml(user.status)})` : ""}</span>
+        <span>${hasSecondary ? `Dual access granted: can also log in as ${escapeHtml(user.secondaryRole)}` : "No dual access granted"}</span>
+      </div>
+      <div class="dual-role-actions">
+        ${hasSecondary
+          ? `<button class="ghost-button" type="button" data-dual-role-action="clear">Remove dual access</button>`
+          : `<button class="primary-button" type="button" data-dual-role-action="grant" data-dual-role-value="${escapeHtml(otherRole)}">Also grant ${escapeHtml(otherRole)} access</button>`
+        }
+      </div>
+    </div>
+  `;
+}
+
+async function lookupDualRoleAccount() {
+  const email = els.dualRoleEmailInput?.value.trim().toLowerCase();
+  if (!email) {
+    showToast("Enter an email first");
+    return;
+  }
+  if (!adminReviewApiKey()) {
+    renderDualRoleResult("Save admin API key first (see Listing QC Desk) before looking up accounts.", "error");
+    return;
+  }
+  renderDualRoleResult("Looking up account...");
+  try {
+    const response = await fetch(aiImportApiUrl(`/admin/users/lookup?email=${encodeURIComponent(email)}`), {
+      headers: adminJsonHeaders()
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || "Account not found.");
+    dualRoleLookupResult = payload.user;
+    renderDualRoleResult(dualRoleLookupResult);
+  } catch (error) {
+    dualRoleLookupResult = null;
+    renderDualRoleResult(error.message || "Unable to look up this account.", "error");
+  }
+}
+
+async function setDualRoleAccess(secondaryRole) {
+  if (!dualRoleLookupResult?.email) return;
+  try {
+    const response = await fetch(aiImportApiUrl("/admin/users/set-secondary-role"), {
+      method: "POST",
+      headers: adminJsonHeaders(),
+      body: JSON.stringify({ email: dualRoleLookupResult.email, secondaryRole: secondaryRole || "" })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || "Could not update dual role access.");
+    dualRoleLookupResult = { ...dualRoleLookupResult, secondaryRole: payload.user?.secondaryRole || "" };
+    renderDualRoleResult(dualRoleLookupResult);
+    showToast(secondaryRole ? `Dual access granted: ${secondaryRole}` : "Dual access removed");
+  } catch (error) {
+    showToast(error.message || "Could not update dual role access.");
+  }
 }
 
 function setAiImportStatus(message, tone = "") {
@@ -1924,6 +2003,20 @@ function bindEvents() {
     state.activeAiImportId = null;
     history.replaceState(null, "", buildAdminHash("ai-imports"));
     loadAiImports();
+  });
+
+  els.dualRoleLookupButton?.addEventListener("click", lookupDualRoleAccount);
+  els.dualRoleEmailInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      lookupDualRoleAccount();
+    }
+  });
+  els.dualRoleResult?.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target.closest("[data-dual-role-action]") : null;
+    if (!target) return;
+    if (target.dataset.dualRoleAction === "grant") setDualRoleAccess(target.dataset.dualRoleValue);
+    if (target.dataset.dualRoleAction === "clear") setDualRoleAccess("");
   });
 
   document.addEventListener("click", (event) => {

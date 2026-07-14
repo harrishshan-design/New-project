@@ -40,6 +40,8 @@ const PLAN_FEATURES = {
     referral_autopilot: false,
     team_setup: false
   },
+  // Elite is the top self-serve tier - every feature flag unlocked,
+  // matching or exceeding best_closers so nothing stays locked for it.
   elite_agent: {
     ai_content_creator: true,
     whatsapp_followups: true,
@@ -49,7 +51,7 @@ const PLAN_FEATURES = {
     dsr_calculator: true,
     viewing_itinerary: true,
     co_broke_matchmaker: true,
-    auction_slots: 2,
+    auction_slots: 4,
     referral_autopilot: true,
     team_setup: true
   },

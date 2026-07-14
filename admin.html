@@ -137,6 +137,24 @@
       <section class="section-panel active" data-panel="agents">
         <div class="panel-head">
           <div>
+            <div class="eyebrow">Dual Role Access</div>
+            <h3>Grant an account both buyer and agent login</h3>
+            <p class="subtext">Real Supabase lookup - not a demo panel. The account can then use either tab on the login page with the same password.</p>
+          </div>
+        </div>
+        <div class="dual-role-tool">
+          <div class="dual-role-search">
+            <div class="input-shell">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input id="dualRoleEmailInput" type="email" placeholder="Enter the account's email">
+            </div>
+            <button class="primary-button" id="dualRoleLookupButton" type="button">Look up</button>
+          </div>
+          <div class="dual-role-result" id="dualRoleResult"></div>
+        </div>
+
+        <div class="panel-head">
+          <div>
             <div class="eyebrow">Agent Verification System</div>
             <h3>Pending agents</h3>
           </div>

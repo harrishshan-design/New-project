@@ -560,6 +560,8 @@ const PLAN_FEATURES = {
         referral_autopilot: false,
         team_setup: false
     },
+    // Elite is the top self-serve tier - every feature flag unlocked,
+    // matching or exceeding best_closers so nothing stays locked for it.
     elite_agent: {
         ai_content_creator: true,
         whatsapp_followups: true,
@@ -569,7 +571,7 @@ const PLAN_FEATURES = {
         dsr_calculator: true,
         viewing_itinerary: true,
         co_broke_matchmaker: true,
-        auction_slots: 2,
+        auction_slots: 4,
         referral_autopilot: true,
         team_setup: true
     },
@@ -1036,6 +1038,81 @@ async function getAgentMe(req) {
             features_unlocked: active && effectivePlan !== 'free'
         }
     };
+}
+
+// ---------------------------------------------------------
+// DUAL ROLE ACCESS: admin can grant an existing account a second role
+// (e.g. an agent who should also get buyer access), without a code
+// deploy. login.html's role tabs both work for that account from then on.
+// ---------------------------------------------------------
+function normalizeSecondaryRole(value = '') {
+    const normalized = normalizeAuthRole(value);
+    return ['user', 'agent'].includes(normalized) ? normalized : '';
+}
+
+async function adminLookupUser(payload = {}) {
+    const email = String(payload.email || '').trim().toLowerCase();
+    if (!email) return { __status: 400, error: 'Email is required.' };
+    const user = await findUserByEmail(email);
+    if (!user?.id) return { __status: 404, error: 'No account found with that email.' };
+    return {
+        user: {
+            id: user.id,
+            email: user.email,
+            name: user.name || user.full_name || '',
+            role: normalizeAuthRole(user.role),
+            status: user.status || '',
+            secondaryRole: normalizeSecondaryRole(user.secondary_role)
+        }
+    };
+}
+
+async function adminSetSecondaryRole(payload = {}) {
+    const email = String(payload.email || '').trim().toLowerCase();
+    if (!email) return { __status: 400, error: 'Email is required.' };
+    const requested = String(payload.secondaryRole ?? '').trim();
+    const secondaryRole = requested ? normalizeSecondaryRole(requested) : '';
+    if (requested && !secondaryRole) return { __status: 400, error: 'secondaryRole must be "user" or "agent".' };
+
+    const user = await findUserByEmail(email);
+    if (!user?.id) return { __status: 404, error: 'No account found with that email.' };
+    const primaryRole = normalizeAuthRole(user.role);
+    if (secondaryRole && secondaryRole === primaryRole) {
+        return { __status: 400, error: `This account's primary role is already ${primaryRole}.` };
+    }
+
+    const row = await patchSupabaseRow('users', user.id, {
+        secondary_role: secondaryRole || null,
+        updated_at: new Date().toISOString()
+    });
+    await createAdminNotification(
+        secondaryRole ? 'Dual role granted' : 'Dual role removed',
+        secondaryRole
+            ? `${email} can now also log in as ${secondaryRole === 'agent' ? 'an agent' : 'a buyer'}.`
+            : `${email}'s dual role access was removed.`,
+        { category: 'dual_role_access', email, secondaryRole: secondaryRole || null }
+    );
+    return {
+        user: {
+            id: row?.id || user.id,
+            email,
+            role: primaryRole,
+            secondaryRole
+        }
+    };
+}
+
+// Public (no admin key) - login.html needs this before the user is
+// authenticated, and it only ever reveals a role hint, nothing sensitive.
+async function publicDualRoleLookup(payload = {}) {
+    const email = String(payload.email || '').trim().toLowerCase();
+    if (!email) return { secondaryRole: null };
+    try {
+        const user = await findUserByEmail(email);
+        return { secondaryRole: normalizeSecondaryRole(user?.secondary_role) || null };
+    } catch {
+        return { secondaryRole: null };
+    }
 }
 
 function extractUrls(text = '') {
@@ -3177,6 +3254,22 @@ const server = http.createServer(async (req, res) => {
 
         if (url === '/api/agent/me') {
             return getAgentMe(req);
+        }
+
+        if (url === '/api/auth/dual-role') {
+            return publicDualRoleLookup(payload);
+        }
+
+        if (url === '/api/admin/users/lookup') {
+            const auth = requireAdminAccess(req);
+            if (!auth.ok) return { __status: auth.status, error: auth.error };
+            return adminLookupUser(payload);
+        }
+
+        if (url === '/api/admin/users/set-secondary-role') {
+            const auth = requireAdminAccess(req);
+            if (!auth.ok) return { __status: auth.status, error: auth.error };
+            return adminSetSecondaryRole(payload);
         }
 
         if (url === '/api/create-checkout-session' || url === '/api/stripe/create-checkout-session' || url === '/api/billing/create-checkout-session') {
