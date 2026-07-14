@@ -547,7 +547,7 @@ const PLAN_FEATURES = {
         referral_autopilot: false,
         team_setup: false
     },
-    elite_agent: {
+    pro_agent: {
         ai_content_creator: true,
         whatsapp_followups: true,
         ar_builder_demo: true,
@@ -559,6 +559,19 @@ const PLAN_FEATURES = {
         auction_slots: 1,
         referral_autopilot: false,
         team_setup: false
+    },
+    elite_agent: {
+        ai_content_creator: true,
+        whatsapp_followups: true,
+        ar_builder_demo: true,
+        ar_builder_saved: true,
+        document_vault: true,
+        dsr_calculator: true,
+        viewing_itinerary: true,
+        co_broke_matchmaker: true,
+        auction_slots: 2,
+        referral_autopilot: true,
+        team_setup: true
     },
     best_closers: {
         ai_content_creator: true,
@@ -578,15 +591,27 @@ const PLAN_FEATURES = {
 function stripePriceMap() {
     return {
         starter_rg: STRIPE_STARTER_PRICE_ID,
-        elite_agent: STRIPE_ELITE_PRICE_ID || STRIPE_PRO_PRICE_ID,
+        pro_agent: STRIPE_PRO_PRICE_ID,
+        elite_agent: STRIPE_ELITE_PRICE_ID,
         extra_auction_slot: STRIPE_EXTRA_AUCTION_PRICE_ID
     };
 }
 
+// Stripe Payment Links (buy.stripe.com/...) don't carry metadata.plan
+// the way a dynamically-created Checkout Session does, so the webhook
+// identifies the plan from the payment_link id on the initial
+// checkout.session.completed event instead. See handleStripeWebhook().
+const STRIPE_PAYMENT_LINK_PLAN_MAP = {
+    'plink_1TszRB77rIkUQD3362McP8au': 'starter_rg',
+    'plink_1TszU177rIkUQD33v3a1g8Gf': 'pro_agent',
+    'plink_1TszUo77rIkUQD33IzB33sdS': 'elite_agent'
+};
+
 function normalizeStripePlan(plan = '') {
     const normalized = String(plan || '').trim().toLowerCase();
     if (['starter', 'starter_rg'].includes(normalized)) return 'starter_rg';
-    if (['pro', 'elite', 'premium', 'elite_agent'].includes(normalized)) return 'elite_agent';
+    if (['pro', 'pro_agent'].includes(normalized)) return 'pro_agent';
+    if (['elite', 'premium', 'elite_agent'].includes(normalized)) return 'elite_agent';
     if (['best', 'best_closers'].includes(normalized)) return 'best_closers';
     if (normalized === 'free') return 'free';
     return '';
@@ -595,6 +620,7 @@ function normalizeStripePlan(plan = '') {
 function legacyStripePlan(plan = '') {
     const normalized = normalizeStripePlan(plan);
     if (normalized === 'starter_rg') return 'starter';
+    if (normalized === 'pro_agent') return 'pro';
     if (normalized === 'elite_agent' || normalized === 'best_closers') return 'elite';
     return 'free';
 }
@@ -610,18 +636,31 @@ async function findUserByEmail(email = '') {
 }
 
 async function updateAgentStripePlan({ email, userId, plan, status, customerId, subscriptionId, checkoutSessionId }) {
-    const cleanPlan = normalizeStripePlan(plan);
-    const legacyPlan = legacyStripePlan(cleanPlan);
-    const permissions = PLAN_FEATURES[cleanPlan] || PLAN_FEATURES.free;
     let user = null;
     if (userId) {
         const rows = await selectSupabaseRows('users', `select=*&id=${supabaseEq(userId)}&limit=1`);
         user = Array.isArray(rows) ? rows[0] || null : null;
     }
-    if (!user?.id) {
+    if (!user?.id && email) {
         user = await findUserByEmail(email);
     }
-    if (!user?.id || !cleanPlan) return null;
+    // Subscription lifecycle events (renewal, cancellation) have no
+    // agent_id/email at all - once the initial checkout has recorded
+    // stripe_customer_id, later events can still be matched by it.
+    if (!user?.id && customerId) {
+        const rows = await selectSupabaseRows('users', `select=*&stripe_customer_id=${supabaseEq(customerId)}&limit=1`);
+        user = Array.isArray(rows) ? rows[0] || null : null;
+    }
+    if (!user?.id) return null;
+
+    // Payment Link-originated checkouts only carry a resolvable plan on the
+    // initial checkout.session.completed event (via STRIPE_PAYMENT_LINK_PLAN_MAP).
+    // Later lifecycle events (renewal, cancellation) have no plan info at all -
+    // fall back to whatever's already on the user's row instead of dropping
+    // status changes like cancellations.
+    const cleanPlan = normalizeStripePlan(plan) || normalizeStripePlan(user.subscription_plan) || 'free';
+    const legacyPlan = legacyStripePlan(cleanPlan);
+    const permissions = PLAN_FEATURES[cleanPlan] || PLAN_FEATURES.free;
     const currentProfile = typeof user.profile_json === 'string' ? safeJsonParse(user.profile_json, {}) : user.profile_json || {};
     return patchSupabaseRow('users', user.id, {
         plan: legacyPlan,
@@ -716,7 +755,7 @@ async function handleStripeWebhook(rawBody, signature) {
         await updateAgentStripePlan({
             email: session.customer_details?.email || session.metadata?.email,
             userId: session.metadata?.agent_id || session.metadata?.userId || session.client_reference_id,
-            plan: session.metadata?.plan,
+            plan: session.metadata?.plan || STRIPE_PAYMENT_LINK_PLAN_MAP[session.payment_link] || '',
             status: 'active',
             customerId: session.customer,
             subscriptionId: session.subscription,

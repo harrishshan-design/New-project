@@ -1,6 +1,7 @@
 const {
   findUser,
   normalizePlan,
+  planFromPaymentLink,
   patchUserSubscription,
   stripeClient
 } = require("../_subscription");
@@ -24,10 +25,16 @@ async function updateFromStripeObject(object = {}, statusOverride = "") {
   const metadata = object.metadata || {};
   const customerEmail = object.customer_details?.email || object.customer_email || metadata.email || "";
   const agentId = metadata.agent_id || metadata.userId || object.client_reference_id || "";
-  const plan = normalizePlan(metadata.plan);
-  if (!plan) return false;
+  // Stripe Payment Links don't carry metadata.plan the way a dynamically
+  // created Checkout Session does, so the plan is identified from the
+  // payment_link id instead - only present on checkout.session.completed.
+  // Later lifecycle events (renewal, cancellation) resolve to "" here and
+  // patchUserSubscription falls back to whatever's already recorded.
+  const plan = normalizePlan(metadata.plan) || planFromPaymentLink(object.payment_link);
 
-  const user = await findUser({ id: agentId }) || await findUser({ email: customerEmail });
+  const user = await findUser({ id: agentId })
+    || await findUser({ email: customerEmail })
+    || await findUser({ stripeCustomerId: object.customer });
   if (!user?.id) return false;
 
   return patchUserSubscription(user, {

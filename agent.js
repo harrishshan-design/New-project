@@ -21,37 +21,53 @@ const STORAGE_KEYS = {
   globalAlert: "rg_global_platform_alert"
 };
 
-const FREE_LAUNCH_MODE = true;
+const FREE_LAUNCH_MODE = false;
 
+// Direct Stripe Payment Links - agents redirect straight to Stripe's
+// hosted page (client_reference_id + prefilled_email appended at click
+// time so the webhook can match the payment back to this agent).
 const AGENT_PLAN_TIERS = [
   {
     id: "starter",
     billingPlan: "starter_rg",
     name: "Starter RG",
     price: 29,
+    trialDays: 0,
+    paymentLinkUrl: "https://buy.stripe.com/3cI5kwbHJ2Hgf7r1TG3Nm00",
     tagline: "For solo agents who want content and faster listing preparation.",
     badge: "Entry",
     features: ["Everything in Free", "AI Content Creator", "WhatsApp follow-up captions", "AI AR Builder demo preview", "Smart listing checklist"]
   },
   {
     id: "pro",
-    billingPlan: "elite_agent",
-    name: "Elite Agent",
-    price: 79,
+    billingPlan: "pro_agent",
+    name: "Pro Agent",
+    price: 59,
+    trialDays: 30,
+    paymentLinkUrl: "https://buy.stripe.com/4gMbIU5jla9I9N769W3Nm01",
     tagline: "For active agents running serious buyer pipelines and premium listings.",
     badge: "Recommended",
-    features: ["Everything in Starter RG", "AI Document Vault", "DSR calculator", "Smart viewing itinerary", "Co-broke matchmaker", "1 Friday Auction Night slot"]
+    features: ["Everything in Starter RG", "AI Document Vault", "DSR calculator", "Smart viewing itinerary", "Co-broke matchmaker", "1 Friday Auction Night slot", "30 days free trial"]
   },
   {
     id: "elite",
     billingPlan: "elite_agent",
     name: "Elite Agent",
-    price: 79,
+    price: 99,
+    trialDays: 30,
+    paymentLinkUrl: "https://buy.stripe.com/8x2cMY5jlepY1gB1TG3Nm02",
     tagline: "For agents who want the full automation engine.",
     badge: "Best Value",
-    features: ["Premium listing boost", "Auto marketing captions", "Priority buyer routing", "Friday Auction Night slot"]
+    features: ["Everything in Pro Agent", "Extra Friday Auction Night slot", "Referral autopilot", "Team setup support", "30 days free trial"]
   }
 ];
+
+const EXTRA_AUCTION_SLOT = {
+  name: "Extra Auction Slot",
+  price: 49,
+  trialDays: 30,
+  paymentLinkUrl: "https://buy.stripe.com/dRm9AMcLN1Dce3n1TG3Nm03"
+};
 
 const FREE_AGENT_PLAN = {
   id: "free",
@@ -108,6 +124,7 @@ const FEATURE_UNLOCK_COPY = {
 const BACKEND_PLAN_TO_AGENT_PLAN = {
   free: "free",
   starter_rg: "starter",
+  pro_agent: "pro",
   elite_agent: "elite",
   best_closers: "elite"
 };
@@ -2288,11 +2305,6 @@ function agentApiUrl(path) {
   return `${base}${normalizedPath}`;
 }
 
-function stripeCheckoutApiUrl() {
-  if (window.location.protocol === "file:") return "http://localhost:3000/api/billing/create-checkout-session";
-  return `${window.location.origin}/api/billing/create-checkout-session`;
-}
-
 function agentMeApiUrl() {
   if (window.location.protocol === "file:") return "http://localhost:3000/api/agent/me";
   return `${window.location.origin}/api/agent/me`;
@@ -2465,22 +2477,37 @@ async function readAgentAuthToken() {
   return "";
 }
 
-async function activateAgentPlan(planId) {
-  const plan = AGENT_PLAN_TIERS.find((tier) => tier.id === planId);
-  if (!plan) return;
-  if (FREE_LAUNCH_MODE) {
-    setAgentPlan(plan.id, "live_active");
-    showToast(`${plan.name} tools are open for free during launch`);
-    renderWorkspace();
-    return;
-  }
+// Appends client_reference_id (the real Supabase user id) and
+// prefilled_email to a static Stripe Payment Link URL. Stripe carries
+// client_reference_id straight through to the resulting Checkout
+// Session, which is how the webhook knows which agent paid - a plain
+// Payment Link has no other way to identify who clicked it.
+function buildStripePaymentLinkUrl(baseUrl, { agentId = "", email = "" } = {}) {
+  const url = new URL(baseUrl);
+  if (agentId) url.searchParams.set("client_reference_id", agentId);
+  if (email) url.searchParams.set("prefilled_email", email);
+  return url.toString();
+}
 
+async function goToStripePaymentLink(paymentLinkUrl, context = {}) {
   const token = await readAgentAuthToken();
   if (!token) {
     showToast("Login as an approved agent before upgrading");
     window.location.href = "/login.html?role=agent&next=/agent.html";
     return;
   }
+  const profile = readLiveAgentProfile();
+  const agentId = window.RealtyGeniusSession?.authUserId || profile.id || "";
+  const email = window.RealtyGeniusSession?.email || profile.email || "";
+  persistAll();
+  showToast(context.toastMessage || "Opening secure Stripe checkout");
+  window.location.assign(buildStripePaymentLinkUrl(paymentLinkUrl, { agentId, email }));
+}
+
+async function activateAgentPlan(planId) {
+  const plan = AGENT_PLAN_TIERS.find((tier) => tier.id === planId);
+  if (!plan) return;
+
   state.subscription = {
     ...state.subscription,
     planId: plan.id,
@@ -2490,53 +2517,12 @@ async function activateAgentPlan(planId) {
     status: "checkout_processing",
     testMode: false
   };
-  persistAll();
   renderAgentBilling();
-  showToast(`Opening ${plan.name} checkout`);
+  await goToStripePaymentLink(plan.paymentLinkUrl, { toastMessage: `Opening ${plan.name} checkout` });
+}
 
-  try {
-    const data = await fetchJsonWithFallback([stripeCheckoutApiUrl(), agentApiUrl("/billing/create-checkout-session")], {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        plan: plan.billingPlan || plan.id
-      })
-    });
-
-    if (data.url) {
-      state.subscription = {
-        planId: plan.id,
-        planName: plan.name,
-        amount: plan.price,
-        currency: "MYR",
-        status: "checkout_processing",
-        testMode: false,
-        startedAt: new Date().toISOString(),
-        checkoutId: data.id || ""
-      };
-      persistAll();
-      window.location.assign(data.url);
-      return;
-    }
-
-    if (data.testMode || data.status === "test_active") {
-      throw new Error("Billing returned test mode. Real activation requires a live Stripe checkout.");
-    }
-  } catch (error) {
-    if (window.RGLogError) window.RGLogError(error, { feature: "agent_billing_checkout", planId: plan.id });
-    state.subscription = {
-      ...state.subscription,
-      status: "checkout_cancelled",
-      testMode: false
-    };
-    persistAll();
-    renderAgentBilling();
-    showToast(error.message || "Checkout could not open");
-    return;
-  }
+async function purchaseExtraAuctionSlot() {
+  await goToStripePaymentLink(EXTRA_AUCTION_SLOT.paymentLinkUrl, { toastMessage: "Opening Extra Auction Slot checkout" });
 }
 
 function readLeakProofDeals() {
@@ -5801,6 +5787,7 @@ function bindEvents() {
   els.listingExcelQuickInput?.addEventListener("change", importListingsFromExcel);
   els.quickDeviceListingUpload?.addEventListener("click", openListingDeviceUpload);
   els.routineQuickList?.addEventListener("click", openListingDeviceUpload);
+  document.getElementById("buyExtraAuctionSlotButton")?.addEventListener("click", purchaseExtraAuctionSlot);
   els.routineRepeatListing?.addEventListener("click", duplicateLastListing);
   els.routineCheckListing?.addEventListener("click", () => {
     if (!listingUploadedToday()) openListingDeviceUpload();
