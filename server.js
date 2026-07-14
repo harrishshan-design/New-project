@@ -1559,15 +1559,55 @@ function isListingDescriptionCtaLine(line) {
     return LISTING_DESCRIPTION_CTA_LINE_PATTERNS.some((pattern) => pattern.test(unquoted));
 }
 
+// Bare section labels ("DETAILS", "Amenities:", "Facilities") carry no
+// information on their own - useful as a WhatsApp visual break, but
+// clutter in a flowing description.
+function isListingDescriptionSectionLabelLine(line) {
+    return /^(details|amenities|amenity|facilities|facility|specifications?|info(rmation)?|nearby|features?)\s*:?$/i.test(line.trim());
+}
+
+function normalizeListingDescriptionLine(line) {
+    return line
+        .replace(LISTING_DESCRIPTION_MARKETING_WORDS, '')
+        .replace(/^[-*•]\s*/, '')
+        .replace(/\s+:/g, ':')
+        .replace(/\s{2,}/g, ' ')
+        .replace(/[\s,;.-]+$/, '')
+        .trim();
+}
+
+function normalizeForComparison(value = '') {
+    return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+// True when `line` is basically a restatement of the listing title -
+// agents often open their WhatsApp text with the same headline that's
+// already shown as the listing's own title, so repeating it in the
+// description just reads as clutter.
+function isListingDescriptionTitleEcho(line, title = '') {
+    const normalizedTitle = normalizeForComparison(title);
+    if (!normalizedTitle) return false;
+    const normalizedLine = normalizeForComparison(line);
+    if (!normalizedLine) return false;
+    return normalizedLine.includes(normalizedTitle) || normalizedTitle.includes(normalizedLine);
+}
+
 // Cleans up the raw WhatsApp/Facebook-broadcast style text agents often
 // paste straight into the description field: repeated "====" banners,
-// duplicated "Asking Price: RM..." lines, emoji, hashtag spam, and
-// generic marketing filler ("SHARE & LIKE", "contact sy"). Deliberately
+// duplicated "Asking Price: RM..." lines, emoji, hashtag spam, generic
+// marketing filler ("SHARE & LIKE", "contact sy"), bare section labels,
+// and a headline that just repeats the listing's own title. Deliberately
 // conservative - it strips clearly-identifiable noise line-by-line and
-// leaves the substantive detail/amenity lines untouched, rather than
-// attempting a full AI rewrite that could misrepresent the listing.
-function tidyListingDescription(raw = '') {
+// leaves the substantive detail/amenity content untouched (just
+// re-punctuated into readable sentences), rather than attempting a full
+// AI rewrite that could misrepresent the listing.
+function tidyListingDescription(raw = '', { title = '' } = {}) {
     const withoutEmoji = String(raw || '').replace(LISTING_DESCRIPTION_EMOJI_PATTERN, '');
+    // Only the very first substantive line is ever checked against the
+    // title, so a genuine mid-listing mention of the project name later
+    // on is never mistaken for the opening headline echo.
+    let isFirstContentLine = true;
+
     const lines = withoutEmoji
         .split(/\r\n|\r|\n/)
         .map((line) => line.replace(/#[\w-]+/g, '').trim())
@@ -1577,18 +1617,22 @@ function tidyListingDescription(raw = '') {
             if (isListingDescriptionPriceEchoLine(line)) return false;
             if (isListingDescriptionHashtagLine(line)) return false;
             if (isListingDescriptionCtaLine(line)) return false;
+            if (isListingDescriptionSectionLabelLine(line)) return false;
             if (/^["'.]+$/.test(line)) return false;
+            if (isFirstContentLine) {
+                isFirstContentLine = false;
+                if (isListingDescriptionTitleEcho(line, title)) return false;
+            }
             return true;
         })
-        .map((line) => line
-            .replace(LISTING_DESCRIPTION_MARKETING_WORDS, '')
-            .replace(/^[-*•]\s*/, '- ')
-            .replace(/\s{2,}/g, ' ')
-            .replace(/^[\s-]+|[\s-]+$/g, '')
-            .trim())
+        .map(normalizeListingDescriptionLine)
         .filter(Boolean);
 
-    return sanitizeListingDescription(lines.join('\n'));
+    const prose = lines
+        .map((line) => (/[.!?]$/.test(line) ? line : `${line}.`))
+        .join(' ');
+
+    return sanitizeListingDescription(prose);
 }
 
 // Attractive, tidy fallback used only when the agent leaves the
@@ -1648,7 +1692,7 @@ async function pickAgentListingPayload(payload = {}) {
         required: false
     }));
 
-    const description = tidyListingDescription(payload.description);
+    const description = tidyListingDescription(payload.description, { title });
 
     return {
         id: existingId || undefined,
@@ -1704,7 +1748,7 @@ function agentListingToPublicProperty(item) {
         confidenceScore: 88,
         yield: 4.2,
         growth: 5.1,
-        summary: tidyListingDescription(item.description) || buildFallbackListingSummary({
+        summary: tidyListingDescription(item.description, { title: item.title }) || buildFallbackListingSummary({
             propertyType,
             area,
             galleryCount: gallery.length,
