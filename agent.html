@@ -991,6 +991,15 @@
             <option value="Bungalow"></option>
           </datalist>
         </div>
+        <div class="listing-purpose-toggle" role="radiogroup" aria-label="Listing purpose">
+          <button class="purpose-pill-button is-active" id="listingPurposeSale" data-listing-purpose="sale" type="button" role="radio" aria-checked="true">
+            <i class="fa-solid fa-tag"></i> For Sale
+          </button>
+          <button class="purpose-pill-button" id="listingPurposeRent" data-listing-purpose="rent" type="button" role="radio" aria-checked="false">
+            <i class="fa-solid fa-key"></i> For Rent
+          </button>
+          <input type="hidden" id="listingPurpose" value="sale">
+        </div>
         <div class="input-shell">
           <i class="fa-solid fa-user-tie"></i>
           <input id="listingLandlordName" type="text" placeholder="Landlord / co-agent name">

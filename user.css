@@ -2402,6 +2402,26 @@ a{
   color:var(--brand-strong);
 }
 
+.purpose-pill{
+  position:absolute;
+  left:14px;
+  top:52px;
+  border-radius:999px;
+  padding:6px 12px;
+  font-size:.72rem;
+  font-weight:800;
+}
+
+.purpose-pill.is-sale{
+  background:rgba(35,194,107,0.92);
+  color:#0d2419;
+}
+
+.purpose-pill.is-rent{
+  background:rgba(255,177,66,0.92);
+  color:#3a2200;
+}
+
 .score-pill{
   right:14px;
   background:rgba(32,23,20,0.82);

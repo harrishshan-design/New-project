@@ -1820,6 +1820,7 @@ async function pickAgentListingPayload(payload = {}) {
         price,
         description,
         property_type: String(payload.property_type || payload.propertyType || "Residential").trim() || "Residential",
+        listing_purpose: String(payload.listing_purpose || payload.listingPurpose || "sale").trim().toLowerCase() === "rent" ? "rent" : "sale",
         address: String(payload.address || payload.location || area).trim(),
         landlord_name: String(payload.landlord_name || payload.landlordName || '').trim(),
         landlord_phone: cleanPhone(payload.landlord_phone || payload.landlordPhone || ''),
@@ -1840,6 +1841,7 @@ function agentListingToPublicProperty(item) {
     const area = item.area || item.address || "Malaysia";
     const type = inferPropertyType(propertyType).toLowerCase();
     const sqft = Number(item.built_up_sqft || 0);
+    const purpose = item.listing_purpose === "rent" ? "rent" : "sale";
     return {
         id: numericPublicId(`agent-${item.id}`),
         agentListingId: item.id,
@@ -1849,6 +1851,7 @@ function agentListingToPublicProperty(item) {
         area,
         location: item.address || area,
         type,
+        purpose,
         intent: /industrial|commercial/i.test(propertyType) ? "investment" : "family",
         price,
         bedrooms: Number(item.bedrooms || 0),
@@ -1873,7 +1876,7 @@ function agentListingToPublicProperty(item) {
             panoramaCount: (item.pano_urls || []).length
         }),
         vibe: "Admin-approved agent listing",
-        tags: ["agent-upload", type, "admin-approved"],
+        tags: ["agent-upload", type, "admin-approved", purpose === "rent" ? "for-rent" : "for-sale"],
         verifiedType: "agent",
         verificationSource: "admin_approved",
         adminApproved: true,

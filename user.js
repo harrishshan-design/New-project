@@ -1155,6 +1155,7 @@ function renderPropertyCardMarkup(property, index) {
       <div class="feed-media">
         <img src="${heroImage}" alt="${property.title}" loading="lazy">
         <span class="area-pill">${property.area}</span>
+        <span class="purpose-pill ${(property.purpose || "sale") === "rent" ? "is-rent" : "is-sale"}">${(property.purpose || "sale") === "rent" ? "For Rent" : "For Sale"}</span>
         <span class="score-pill score-pill--match">AI ${property.aiScore}% Match</span>
         <span class="interest-pill" title="Session-based buyer interest estimate, not a live viewer count"><i class="fa-solid fa-users-viewfinder"></i> ${interestCount} interest estimate</span>
         <span class="photo-count-pill"><i class="fa-solid fa-images"></i> ${verified}/${total}</span>
@@ -1689,7 +1690,7 @@ function getMasterFeedScore(property) {
 function filteredProperties() {
   const query = state.search.trim().toLowerCase();
   let list = feedProperties.filter((property) => {
-    const matchesFilter = state.filter === "all" || property.type === state.filter || property.intent === state.filter;
+    const matchesFilter = state.filter === "all" || property.type === state.filter || property.intent === state.filter || (property.purpose || "sale") === state.filter;
     const searchHaystack = `${property.title} ${property.location} ${property.area} ${property.vibe}`.toLowerCase();
     const matchesSearch = !query || searchHaystack.includes(query);
     return matchesFilter && matchesSearch;
@@ -2624,7 +2625,7 @@ function openPropertyModal(id) {
   trackListingAnalytics(property, "view", { source: "property_detail_modal", active: true });
 
   const decision = getDecision(property);
-  els.modalBadge.textContent = property.area;
+  els.modalBadge.textContent = `${property.area} · ${(property.purpose || "sale") === "rent" ? "For Rent" : "For Sale"}`;
   els.modalTitle.textContent = property.title;
   els.modalLocation.textContent = property.location;
   els.modalSummary.textContent = property.summary;

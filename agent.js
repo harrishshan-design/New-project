@@ -476,6 +476,9 @@ const els = {
   listingStatus: document.getElementById("listingStatus"),
   listingAddress: document.getElementById("listingAddress"),
   listingPropertyType: document.getElementById("listingPropertyType"),
+  listingPurpose: document.getElementById("listingPurpose"),
+  listingPurposeSale: document.getElementById("listingPurposeSale"),
+  listingPurposeRent: document.getElementById("listingPurposeRent"),
   listingLandlordName: document.getElementById("listingLandlordName"),
   listingLandlordPhone: document.getElementById("listingLandlordPhone"),
   listingImageLink: document.getElementById("listingImageLink"),
@@ -941,6 +944,7 @@ function buildListingFromData(data, source = "manual", rowNumber = null) {
       status: ["manual", "excel"].includes(source) ? "Pending QC" : normalizeStatus(row.status),
       enquiries: Number(row.enquiries || 0),
       propertyType: String(row.property_type || row.propertyType || "Condo").trim() || "Condo",
+      listingPurpose: String(row.listing_purpose || row.listingPurpose || "sale").trim().toLowerCase() === "rent" ? "rent" : "sale",
       address: String(row.address || `${area}, Klang Valley`).trim(),
       landlordName: String(row.landlord_name || row.landlordName || "Landlord / co-agent").trim(),
       landlordPhone: String(row.landlord_phone || row.landlordPhone || "60123456789").replace(/[^\d+]/g, ""),
@@ -1013,6 +1017,7 @@ function listingToBuyerProperty(listing) {
     area: listing.area,
     location: listing.address || `${listing.area}, Malaysia`,
     type,
+    purpose: listing.listingPurpose === "rent" ? "rent" : "sale",
     intent: /industrial|commercial|shop|office/i.test(`${listing.propertyType} ${listing.title}`) ? "investment" : "family",
     price: Number(listing.price || 0),
     bedrooms: estimateListingBedrooms(listing),
@@ -1147,6 +1152,7 @@ function serializeAgentListingForBackend(listing) {
     area: listing.area,
     price: listing.price,
     propertyType: listing.propertyType,
+    listingPurpose: listing.listingPurpose === "rent" ? "rent" : "sale",
     address: listing.address,
     landlordName: listing.landlordName,
     landlordPhone: listing.landlordPhone,
@@ -1187,6 +1193,7 @@ function mergeBackendListingRow(listing, row = {}) {
     area: row.area || listing.area,
     price: row.price == null ? listing.price : Number(row.price),
     propertyType: row.property_type || listing.propertyType,
+    listingPurpose: row.listing_purpose === "rent" ? "rent" : (row.listing_purpose === "sale" ? "sale" : listing.listingPurpose),
     address: row.address || listing.address,
     landlordName: row.landlord_name || listing.landlordName,
     landlordPhone: row.landlord_phone || listing.landlordPhone,
@@ -1547,6 +1554,7 @@ function duplicateLastListing() {
   if (els.listingPrice) els.listingPrice.value = last.price ? `RM ${Math.round(last.price).toLocaleString("en-MY")}` : "";
   if (els.listingAddress) els.listingAddress.value = last.address || "";
   if (els.listingPropertyType) els.listingPropertyType.value = last.propertyType || "";
+  setListingPurpose(last.listingPurpose === "rent" ? "rent" : "sale");
   if (els.listingLandlordName) els.listingLandlordName.value = last.landlordName || "";
   if (els.listingLandlordPhone) els.listingLandlordPhone.value = last.landlordPhone || "";
   if (els.listingDescription) {
@@ -2010,6 +2018,7 @@ function renderListingGrid() {
       <div class="listing-media">
         <img src="${listing.image}" alt="${listing.title}" loading="lazy">
         <span class="meta-pill">${listing.propertyType}</span>
+        <span class="purpose-pill ${listing.listingPurpose === "rent" ? "is-rent" : "is-sale"}">${listing.listingPurpose === "rent" ? "For Rent" : "For Sale"}</span>
         <span class="listing-photo-count">${media.verified}/${media.total} photos</span>
       </div>
       <div class="listing-gallery-strip">
@@ -3371,6 +3380,15 @@ function updateListingDescriptionCount() {
   els.listingDescriptionCount.textContent = els.listingDescription.value.length;
 }
 
+function setListingPurpose(purpose) {
+  const value = purpose === "rent" ? "rent" : "sale";
+  if (els.listingPurpose) els.listingPurpose.value = value;
+  els.listingPurposeSale?.classList.toggle("is-active", value === "sale");
+  els.listingPurposeSale?.setAttribute("aria-checked", String(value === "sale"));
+  els.listingPurposeRent?.classList.toggle("is-active", value === "rent");
+  els.listingPurposeRent?.setAttribute("aria-checked", String(value === "rent"));
+}
+
 async function addListing(event) {
   event.preventDefault();
   if (!requirePlan("addListing")) return;
@@ -3381,6 +3399,7 @@ async function addListing(event) {
     price: parseMoneyValue(els.listingPrice.value),
     status: els.listingStatus.value,
     property_type: els.listingPropertyType.value.trim(),
+    listing_purpose: els.listingPurpose?.value.trim() || "sale",
     address: els.listingAddress.value.trim(),
     landlord_name: els.listingLandlordName.value.trim(),
     landlord_phone: els.listingLandlordPhone.value.trim(),
@@ -3432,6 +3451,7 @@ async function addListing(event) {
   ];
 
   els.listingForm.reset();
+  setListingPurpose("sale");
   if (els.listingBulkPhotoLinks) els.listingBulkPhotoLinks.value = "";
   resetListingDevicePhotos();
   resetListingPanoPhotos();
@@ -5827,6 +5847,9 @@ function bindEvents() {
     });
   });
   els.listingEnhancerPhotos?.addEventListener("change", handleListingEnhancerPhotos);
+
+  els.listingPurposeSale?.addEventListener("click", () => setListingPurpose("sale"));
+  els.listingPurposeRent?.addEventListener("click", () => setListingPurpose("rent"));
 
   els.leadForm.addEventListener("submit", addLead);
   els.listingForm.addEventListener("submit", addListing);

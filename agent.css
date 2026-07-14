@@ -5376,3 +5376,57 @@ body{
     grid-template-columns:repeat(2,minmax(0,1fr));
   }
 }
+
+.listing-purpose-toggle{
+  grid-column:1 / -1;
+  display:flex;
+  gap:10px;
+}
+
+.purpose-pill-button{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:12px 16px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.14);
+  background:rgba(255,255,255,0.04);
+  color:var(--text-soft,#9fb0c9);
+  font-weight:600;
+  cursor:pointer;
+  transition:border-color .15s ease,background .15s ease,color .15s ease;
+}
+
+.purpose-pill-button:hover{
+  border-color:rgba(255,255,255,0.28);
+}
+
+.purpose-pill-button.is-active{
+  border-color:rgba(35,194,107,0.55);
+  background:rgba(35,194,107,0.14);
+  color:#7fe0ab;
+}
+
+.purpose-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:700;
+  background:rgba(255,255,255,0.12);
+  color:#e8edf6;
+}
+
+.purpose-pill.is-rent{
+  background:rgba(255,177,66,0.16);
+  color:#ffb142;
+}
+
+.purpose-pill.is-sale{
+  background:rgba(35,194,107,0.16);
+  color:#7fe0ab;
+}
