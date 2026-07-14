@@ -2463,7 +2463,6 @@ a{
 .mini-stats,
 .card-tags,
 .saved-meta,
-.modal-stats,
 .card-actions{
   display:flex;
   gap:10px;
@@ -2472,8 +2471,7 @@ a{
 
 .mini-stat,
 .tag,
-.saved-meta span,
-.modal-stats span{
+.saved-meta span{
   display:inline-flex;
   align-items:center;
   gap:8px;
@@ -2482,6 +2480,27 @@ a{
   background:#f7f2ec;
   color:var(--muted);
   font-size:.84rem;
+}
+
+.modal-stats{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:10px;
+}
+
+.modal-stats span{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  gap:6px;
+  padding:12px 10px;
+  border-radius:14px;
+  background:#f7f2ec;
+  color:var(--muted);
+  font-size:.84rem;
+  font-weight:600;
+  line-height:1.3;
 }
 
 .tag{
@@ -4575,14 +4594,23 @@ model-viewer{
 
   .mini-stats,
   .card-tags,
-  .saved-meta,
-  .modal-stats{
+  .saved-meta{
     gap:8px;
   }
 
   .mini-stat,
   .tag,
-  .saved-meta span,
+  .saved-meta span{
+    padding:9px 10px;
+    border-radius:13px;
+    font-size:.8rem;
+  }
+
+  .modal-stats{
+    grid-template-columns:repeat(2, 1fr);
+    gap:8px;
+  }
+
   .modal-stats span{
     padding:9px 10px;
     border-radius:13px;
