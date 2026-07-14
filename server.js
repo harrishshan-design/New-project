@@ -1517,6 +1517,28 @@ async function prepareAgentGalleryUrls(value, context = {}) {
     return prepared;
 }
 
+const LISTING_DESCRIPTION_MAX_LENGTH = 500;
+
+function sanitizeListingDescription(value = '') {
+    return String(value || '')
+        .replace(/[\x00-\x1f\x7f]+/g, ' ')
+        .replace(/\s{2,}/g, ' ')
+        .trim()
+        .slice(0, LISTING_DESCRIPTION_MAX_LENGTH);
+}
+
+// Attractive, tidy fallback used only when the agent leaves the
+// description blank. Agent listings don't collect bedrooms/bathrooms/
+// sqft today, so this leans on what's always available: property
+// type, area, price, verified photo count, and 360 tour availability.
+function buildFallbackListingSummary({ propertyType, area, galleryCount, panoramaCount }) {
+    const photoText = galleryCount
+        ? `Verified with ${galleryCount} photo${galleryCount === 1 ? '' : 's'}`
+        : 'Freshly listed';
+    const tourText = panoramaCount ? ' and a 360° walkthrough' : '';
+    return `${propertyType} in ${area}. ${photoText}${tourText} - message the agent for a private viewing.`;
+}
+
 function parseListingPrice(value) {
     if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
     const normalized = String(value || '').replace(/rm/gi, '').replace(/,/g, '').trim();
@@ -1562,12 +1584,15 @@ async function pickAgentListingPayload(payload = {}) {
         required: false
     }));
 
+    const description = sanitizeListingDescription(payload.description);
+
     return {
         id: existingId || undefined,
         agent_id: agentId,
         title,
         area,
         price,
+        description,
         property_type: String(payload.property_type || payload.propertyType || "Residential").trim() || "Residential",
         address: String(payload.address || payload.location || area).trim(),
         landlord_name: String(payload.landlord_name || payload.landlordName || '').trim(),
@@ -1615,7 +1640,12 @@ function agentListingToPublicProperty(item) {
         confidenceScore: 88,
         yield: 4.2,
         growth: 5.1,
-        summary: `${propertyType} in ${area}. Admin-approved agent listing with ${gallery.length} verified public image URLs.`,
+        summary: sanitizeListingDescription(item.description) || buildFallbackListingSummary({
+            propertyType,
+            area,
+            galleryCount: gallery.length,
+            panoramaCount: (item.pano_urls || []).length
+        }),
         vibe: "Admin-approved agent listing",
         tags: ["agent-upload", type, "admin-approved"],
         verifiedType: "agent",

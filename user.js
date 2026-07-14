@@ -1179,7 +1179,7 @@ function renderPropertyCardMarkup(property, index) {
           <span class="mini-stat"><i class="fa-solid fa-chart-line"></i> ${property.yield}% yield</span>
         </div>
         ${renderFeedGalleryMarkup(property)}
-        <p class="summary">${property.summary}</p>
+        <p class="summary">${escapeHtml(property.summary)}</p>
         <div class="card-tags">
           <span class="tag">${pack.roi}% ROI</span>
           <span class="tag">${pack.risk} Risk</span>
@@ -1261,9 +1261,9 @@ function renderVideoFeedMarkup(property) {
           <span class="reel-pill">Verified listing</span>
         </div>
         <div class="video-feed-copy">
-          <span class="video-feed-location">${property.area}</span>
-          <h4>${property.title}</h4>
-          <p>${property.summary}</p>
+          <span class="video-feed-location">${escapeHtml(property.area)}</span>
+          <h4>${escapeHtml(property.title)}</h4>
+          <p>${escapeHtml(property.summary)}</p>
           <div class="video-feed-tags">
             <span>${money(property.price)}</span>
             <span>${decision.roi}% ROI</span>

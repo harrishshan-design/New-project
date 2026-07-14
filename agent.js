@@ -178,7 +178,8 @@ const LISTING_EXCEL_REQUIRED_COLUMNS = [
 
 const LISTING_EXCEL_OPTIONAL_COLUMNS = [
   ...LISTING_OPTIONAL_MEDIA_SLOTS.map((slot) => slot.key),
-  "ar_link"
+  "ar_link",
+  "description"
 ];
 
 const LISTING_EXCEL_HEADERS = [
@@ -474,6 +475,8 @@ const els = {
   listingPanoPhotos: document.getElementById("listingPanoPhotos"),
   listingPanoPhotoPreview: document.getElementById("listingPanoPhotoPreview"),
   listingPanoPhotoStatus: document.getElementById("listingPanoPhotoStatus"),
+  listingDescription: document.getElementById("listingDescription"),
+  listingDescriptionCount: document.getElementById("listingDescriptionCount"),
   listingArLink: document.getElementById("listingArLink"),
   listingExcelInput: document.getElementById("listingExcelInput"),
   listingImportStatus: document.getElementById("listingImportStatus"),
@@ -936,6 +939,7 @@ function buildListingFromData(data, source = "manual", rowNumber = null) {
       maintenanceFee: String(row.maintenance_fee || row.maintenanceFee || "Confirm latest JMB figure").trim(),
       developer: String(row.developer || "Developer background pending").trim(),
       transactions: parseTransactionColumns(row),
+      description: String(row.description || "").trim().slice(0, 500),
       importSource: source,
       importedAt: source === "excel" ? new Date().toISOString() : null,
       createdAt: new Date().toISOString(),
@@ -1129,6 +1133,7 @@ function serializeAgentListingForBackend(listing) {
     address: listing.address,
     landlordName: listing.landlordName,
     landlordPhone: listing.landlordPhone,
+    description: String(listing.description || "").trim().slice(0, 500),
     galleryUrls,
     temporaryImageCount: temporaryCount,
     panoUrls: (listing.panoramas || [])
@@ -1168,6 +1173,7 @@ function mergeBackendListingRow(listing, row = {}) {
     address: row.address || listing.address,
     landlordName: row.landlord_name || listing.landlordName,
     landlordPhone: row.landlord_phone || listing.landlordPhone,
+    description: row.description || listing.description || "",
     gallery,
     galleryCount: gallery.length,
     verifiedPhotoCount: gallery.length,
@@ -1526,6 +1532,10 @@ function duplicateLastListing() {
   if (els.listingPropertyType) els.listingPropertyType.value = last.propertyType || "";
   if (els.listingLandlordName) els.listingLandlordName.value = last.landlordName || "";
   if (els.listingLandlordPhone) els.listingLandlordPhone.value = last.landlordPhone || "";
+  if (els.listingDescription) {
+    els.listingDescription.value = last.description || "";
+    updateListingDescriptionCount();
+  }
   if (els.listingArLink) els.listingArLink.value = last.arLink || "";
 
   const gallery = (last.gallery || []).map((slot) => slot.url).filter((url) => /^https?:\/\//i.test(String(url || "")));
@@ -3353,6 +3363,11 @@ function resetListingPanoPhotos() {
   renderListingPanoPhotoPreview();
 }
 
+function updateListingDescriptionCount() {
+  if (!els.listingDescriptionCount || !els.listingDescription) return;
+  els.listingDescriptionCount.textContent = els.listingDescription.value.length;
+}
+
 async function addListing(event) {
   event.preventDefault();
   if (!requirePlan("addListing")) return;
@@ -3377,6 +3392,7 @@ async function addListing(event) {
     photo_9_link: devicePhotos.photo_9_link || "",
     photo_10_link: devicePhotos.photo_10_link || "",
     extra_photo_links: els.listingExtraPhotoLinks.value.trim(),
+    description: els.listingDescription.value.trim(),
     ar_link: els.listingArLink.value.trim(),
     enquiries: 0
   }, "manual");
@@ -3416,6 +3432,7 @@ async function addListing(event) {
   if (els.listingBulkPhotoLinks) els.listingBulkPhotoLinks.value = "";
   resetListingDevicePhotos();
   resetListingPanoPhotos();
+  updateListingDescriptionCount();
   updateListingQcChecklist();
   closeModal("listingModal");
   persistAll();
@@ -5763,6 +5780,7 @@ function bindEvents() {
   els.autoFillListingPhotos?.addEventListener("click", autofillListingPhotoLinks);
   els.listingDevicePhotos?.addEventListener("change", handleListingDevicePhotos);
   els.listingPanoPhotos?.addEventListener("change", handleListingPanoPhotos);
+  els.listingDescription?.addEventListener("input", updateListingDescriptionCount);
   els.listingExcelQuickInput?.addEventListener("change", importListingsFromExcel);
   els.quickDeviceListingUpload?.addEventListener("click", openListingDeviceUpload);
   els.routineQuickList?.addEventListener("click", openListingDeviceUpload);
@@ -6013,6 +6031,7 @@ removeAgentDemoRows();
 bindEvents();
 renderListingDevicePhotoPreview();
 renderListingEnhancerPhotoPreview();
+updateListingDescriptionCount();
 renderWorkspace();
 refreshAgentSubscription({ silent: true });
 performDailyCheckin();

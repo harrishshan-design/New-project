@@ -1031,6 +1031,11 @@
         </label>
         <div class="device-photo-status full-width" id="listingPanoPhotoStatus">No panoramas selected yet.</div>
         <div class="device-photo-preview full-width" id="listingPanoPhotoPreview"></div>
+        <div class="input-shell full-width">
+          <i class="fa-solid fa-pen-nib"></i>
+          <textarea id="listingDescription" rows="4" maxlength="500" placeholder="e.g. Bright corner unit with renovated kitchen, low-density facilities, and a 5-minute walk to the LRT. Motivated seller, flexible move-in date."></textarea>
+        </div>
+        <div class="device-photo-status full-width" id="listingDescriptionStatus">Optional, but a good description gets more buyer clicks. <span id="listingDescriptionCount">0</span>/500</div>
         <div class="input-shell">
           <i class="fa-solid fa-cube"></i>
           <input id="listingArLink" type="url" placeholder="AR model link (.glb/.gltf or Google Drive)">
@@ -1053,7 +1058,7 @@
         <div>
           <div class="eyebrow">Bulk Excel Import</div>
           <h4>Required columns</h4>
-          <p>title, area, price, status, property_type, address, landlord_name, landlord_phone, image_link, ar_link</p>
+          <p>title, area, price, status, property_type, address, landlord_name, landlord_phone, image_link, ar_link, description (optional)</p>
           <p class="subtext">Pictures must be public Google Drive links. AR links can be public Google Drive files or direct .glb/.gltf URLs.</p>
         </div>
         <label class="excel-upload">
