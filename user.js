@@ -1154,8 +1154,10 @@ function renderPropertyCardMarkup(property, index) {
     <article class="property-card property-card--reveal" style="animation-delay:${index * 70}ms" data-tilt-card data-click-card data-id="${property.id}" role="button" tabindex="0" aria-label="Explore ${property.title}">
       <div class="feed-media">
         <img src="${heroImage}" alt="${property.title}" loading="lazy">
-        <span class="area-pill">${property.area}</span>
-        <span class="purpose-pill ${(property.purpose || "sale") === "rent" ? "is-rent" : "is-sale"}">${(property.purpose || "sale") === "rent" ? "For Rent" : "For Sale"}</span>
+        <div class="feed-topleft-tags">
+          <span class="area-pill">${property.area}</span>
+          <span class="purpose-pill ${(property.purpose || "sale") === "rent" ? "is-rent" : "is-sale"}">${(property.purpose || "sale") === "rent" ? "For Rent" : "For Sale"}</span>
+        </div>
         <span class="score-pill score-pill--match">AI ${property.aiScore}% Match</span>
         <span class="interest-pill" title="Session-based buyer interest estimate, not a live viewer count"><i class="fa-solid fa-users-viewfinder"></i> ${interestCount} interest estimate</span>
         <span class="photo-count-pill"><i class="fa-solid fa-images"></i> ${verified}/${total}</span>

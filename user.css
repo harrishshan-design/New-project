@@ -2396,6 +2396,22 @@ a{
   font-weight:800;
 }
 
+.feed-topleft-tags{
+  position:absolute;
+  top:14px;
+  left:14px;
+  right:110px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:flex-start;
+  gap:8px;
+}
+
+.feed-topleft-tags .area-pill,
+.feed-topleft-tags .purpose-pill{
+  position:static;
+}
+
 .area-pill{
   left:14px;
   background:rgba(255,250,245,0.92);
@@ -2403,11 +2419,8 @@ a{
 }
 
 .purpose-pill{
-  position:absolute;
-  left:14px;
-  top:52px;
   border-radius:999px;
-  padding:6px 12px;
+  padding:8px 12px;
   font-size:.72rem;
   font-weight:800;
 }
