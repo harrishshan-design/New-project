@@ -82,6 +82,20 @@
         </div>
       </header>
 
+      <section class="admin-key-banner" id="adminKeyBanner" aria-label="Admin API key status">
+        <div class="admin-key-banner-text">
+          <i class="fa-solid fa-key"></i>
+          <div>
+            <strong id="adminKeyBannerTitle">Admin API key not set</strong>
+            <span id="adminKeyBannerSubtext">Required to load real agents, listings, reports, and imports - without it every panel shows empty demo data.</span>
+          </div>
+        </div>
+        <div class="admin-key-banner-form">
+          <input id="adminKeyBannerInput" type="password" placeholder="Paste admin API key">
+          <button class="primary-button" id="adminKeyBannerSaveButton" type="button">Save Key</button>
+        </div>
+      </section>
+
       <section class="daily-ops" aria-label="Daily operations checklist">
         <div class="daily-ops-head">
           <div>
@@ -216,7 +230,7 @@
           <form class="notice-composer" id="aiImportAccessForm">
             <div class="input-shell">
               <i class="fa-solid fa-key"></i>
-              <input id="adminApiKeyInput" type="password" placeholder="Admin API key for AI import review">
+              <input id="adminApiKeyInput" type="password" placeholder="Admin API key (also used by Listings, Agents, Reports)">
             </div>
             <button class="primary-button full-width" id="saveAdminApiKeyButton" type="submit">
               <i class="fa-solid fa-lock"></i>

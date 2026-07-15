@@ -89,6 +89,11 @@ const els = {
   aiImportAccessForm: document.getElementById("aiImportAccessForm"),
   adminApiKeyInput: document.getElementById("adminApiKeyInput"),
   saveAdminApiKeyButton: document.getElementById("saveAdminApiKeyButton"),
+  adminKeyBanner: document.getElementById("adminKeyBanner"),
+  adminKeyBannerTitle: document.getElementById("adminKeyBannerTitle"),
+  adminKeyBannerSubtext: document.getElementById("adminKeyBannerSubtext"),
+  adminKeyBannerInput: document.getElementById("adminKeyBannerInput"),
+  adminKeyBannerSaveButton: document.getElementById("adminKeyBannerSaveButton"),
   refreshAiImportsButton: document.getElementById("refreshAiImportsButton"),
   aiImportDateInput: document.getElementById("aiImportDateInput"),
   todayAiImportsButton: document.getElementById("todayAiImportsButton"),
@@ -811,6 +816,21 @@ function renderAdminKeyState() {
     els.saveAdminApiKeyButton.innerHTML = hasKey
       ? '<i class="fa-solid fa-rotate"></i> Update Saved Key'
       : '<i class="fa-solid fa-lock"></i> Trust This Device';
+  }
+  if (els.adminKeyBanner) {
+    els.adminKeyBanner.classList.toggle("is-saved", hasKey);
+  }
+  if (els.adminKeyBannerTitle) {
+    els.adminKeyBannerTitle.textContent = hasKey ? "Admin API key saved on this device" : "Admin API key not set";
+  }
+  if (els.adminKeyBannerSubtext) {
+    els.adminKeyBannerSubtext.textContent = hasKey
+      ? "Real agents, listings, reports, and imports will load from Supabase on every panel."
+      : "Required to load real agents, listings, reports, and imports - without it every panel shows empty demo data.";
+  }
+  if (els.adminKeyBannerInput) {
+    els.adminKeyBannerInput.placeholder = hasKey ? "Update saved key" : "Paste admin API key";
+    els.adminKeyBannerInput.value = "";
   }
 }
 
@@ -2066,6 +2086,20 @@ function bindEvents() {
     setAiImportStatus("Trusted device saved. You will not need to re-enter the admin key on this browser.");
     state.agentListingsHydrated = false;
     if (state.section === "listings") loadAgentQcListings(true);
+    loadAiImports();
+  });
+  els.adminKeyBannerSaveButton?.addEventListener("click", () => {
+    const key = normalizeAdminApiKey(els.adminKeyBannerInput?.value);
+    if (!key) {
+      showToast("Paste the admin API key first.");
+      return;
+    }
+    localStorage.setItem(STORAGE_KEYS.adminApiKey, key);
+    renderAdminKeyState();
+    showToast("Admin key saved. Loading real data...");
+    state.agentListingsHydrated = false;
+    loadAgentQcListings(true);
+    syncRealPendingAgents();
     loadAiImports();
   });
   els.refreshAiImportsButton?.addEventListener("click", loadAiImports);
