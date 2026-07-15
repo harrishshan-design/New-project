@@ -96,6 +96,9 @@ const els = {
   dualRoleEmailInput: document.getElementById("dualRoleEmailInput"),
   dualRoleLookupButton: document.getElementById("dualRoleLookupButton"),
   dualRoleResult: document.getElementById("dualRoleResult"),
+  dualRoleRoleFilter: document.getElementById("dualRoleRoleFilter"),
+  dualRoleBrowseButton: document.getElementById("dualRoleBrowseButton"),
+  dualRoleBrowseList: document.getElementById("dualRoleBrowseList"),
   aiImportList: document.getElementById("aiImportList"),
   aiImportPreview: document.getElementById("aiImportPreview"),
   reportList: document.getElementById("reportList"),
@@ -683,6 +686,36 @@ function renderDualRoleResult(message, tone = "") {
       </div>
     </div>
   `;
+}
+
+async function browseUsersByRole() {
+  const role = els.dualRoleRoleFilter?.value || "buyer";
+  if (!els.dualRoleBrowseList) return;
+  if (!adminReviewApiKey()) {
+    els.dualRoleBrowseList.innerHTML = `<p class="dual-role-status-note is-error">Save admin API key first before browsing accounts.</p>`;
+    return;
+  }
+  els.dualRoleBrowseList.innerHTML = `<p class="dual-role-status-note">Loading ${escapeHtml(role)} accounts...</p>`;
+  try {
+    const response = await fetch(aiImportApiUrl(`/admin/users/by-role?role=${encodeURIComponent(role)}`), {
+      headers: adminJsonHeaders()
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || "Unable to load accounts.");
+    const users = payload.users || [];
+    if (!users.length) {
+      els.dualRoleBrowseList.innerHTML = `<p class="dual-role-status-note">No ${escapeHtml(role)} accounts found.</p>`;
+      return;
+    }
+    els.dualRoleBrowseList.innerHTML = users.map((user) => `
+      <button class="dual-role-browse-row" type="button" data-browse-email="${escapeHtml(user.email)}">
+        <strong>${escapeHtml(user.name || user.email)}</strong>
+        <span>${escapeHtml(user.email)}${user.status ? ` - ${escapeHtml(user.status)}` : ""}${user.secondaryRole ? ` - dual: ${escapeHtml(user.secondaryRole)}` : ""}</span>
+      </button>
+    `).join("");
+  } catch (error) {
+    els.dualRoleBrowseList.innerHTML = `<p class="dual-role-status-note is-error">${escapeHtml(error.message || "Unable to load accounts.")}</p>`;
+  }
 }
 
 async function lookupDualRoleAccount() {
@@ -1842,64 +1875,66 @@ function updateAgentStatus(id, status) {
 
 async function approveListing(id) {
   const listing = findListing(id);
-  if (!listing) return;
-  let remote = null;
-  try {
-    remote = await reviewRemoteAgentListing(listing, "live") || await reviewRemoteEnhancement(listing, "approved_live");
-  } catch (error) {
-    showToast(error.message || "Unable to approve backend listing");
+  if (!listing) {
+    showToast("Could not find that listing - try refreshing the QC list.");
     return;
   }
-  const approvedListing = { ...listing, ...(remote || {}), status: "approved", approvedAt: new Date().toISOString() };
-  state.listings = state.listings.map((item) => String(item.id) === String(id) ? approvedListing : item);
-  if (remote) {
-    state.listings = state.listings.map((item) => String(item.id) === String(id) ? { ...remote, status: "approved" } : item);
+  try {
+    const remote = await reviewRemoteAgentListing(listing, "live") || await reviewRemoteEnhancement(listing, "approved_live");
+    const approvedListing = { ...listing, ...(remote || {}), status: "approved", approvedAt: new Date().toISOString() };
+    state.listings = state.listings.map((item) => String(item.id) === String(id) ? approvedListing : item);
+    if (remote) {
+      state.listings = state.listings.map((item) => String(item.id) === String(id) ? { ...remote, status: "approved" } : item);
+    }
+    if (listing.backendTable !== "agent_property_listings") {
+      publishApprovedListingToBuyer(approvedListing);
+    }
+    updateAgentListingAfterReview(approvedListing, "Live", {
+      adminApproved: true,
+      approvalStatus: "approved",
+      liveStatus: "approved_live",
+      verificationSource: "admin_approved",
+      approvedAt: approvedListing.approvedAt
+    });
+    addAudit("listing_approved", "listing", id, `${listing.title} pushed to live feed.`);
+    addNotification("Listing approved", `${listing.title} is live.`);
+    persistAll();
+    renderAll();
+    showToast("Listing approved");
+  } catch (error) {
+    showToast(error.message || "Unable to approve this listing.");
   }
-  if (listing.backendTable !== "agent_property_listings") {
-    publishApprovedListingToBuyer(approvedListing);
-  }
-  updateAgentListingAfterReview(approvedListing, "Live", {
-    adminApproved: true,
-    approvalStatus: "approved",
-    liveStatus: "approved_live",
-    verificationSource: "admin_approved",
-    approvedAt: approvedListing.approvedAt
-  });
-  addAudit("listing_approved", "listing", id, `${listing.title} pushed to live feed.`);
-  addNotification("Listing approved", `${listing.title} is live.`);
-  persistAll();
-  renderAll();
-  showToast("Listing approved");
 }
 
 async function rejectListing(id) {
   const listing = findListing(id);
-  if (!listing) return;
-  let remote = null;
-  try {
-    remote = await reviewRemoteAgentListing(listing, "rejected") || await reviewRemoteEnhancement(listing, "rejected");
-  } catch (error) {
-    showToast(error.message || "Unable to reject backend listing");
+  if (!listing) {
+    showToast("Could not find that listing - try refreshing the QC list.");
     return;
   }
-  const rejectedListing = { ...listing, ...(remote || {}), status: "rejected", rejectedAt: new Date().toISOString() };
-  state.listings = state.listings.map((item) => String(item.id) === String(id) ? rejectedListing : item);
-  if (remote) {
-    state.listings = state.listings.map((item) => String(item.id) === String(id) ? { ...remote, status: "rejected" } : item);
+  try {
+    const remote = await reviewRemoteAgentListing(listing, "rejected") || await reviewRemoteEnhancement(listing, "rejected");
+    const rejectedListing = { ...listing, ...(remote || {}), status: "rejected", rejectedAt: new Date().toISOString() };
+    state.listings = state.listings.map((item) => String(item.id) === String(id) ? rejectedListing : item);
+    if (remote) {
+      state.listings = state.listings.map((item) => String(item.id) === String(id) ? { ...remote, status: "rejected" } : item);
+    }
+    removeBuyerListing(rejectedListing);
+    updateAgentListingAfterReview(rejectedListing, "Rejected", {
+      adminApproved: false,
+      approvalStatus: "rejected",
+      liveStatus: "rejected",
+      verificationSource: "agent",
+      rejectedAt: rejectedListing.rejectedAt
+    });
+    addAudit("listing_rejected", "listing", id, `${listing.title} rejected with QC feedback.`);
+    addNotification("Listing rejected", `${listing.title} was rejected by QC.`);
+    persistAll();
+    renderAll();
+    showToast("Listing rejected");
+  } catch (error) {
+    showToast(error.message || "Unable to reject this listing.");
   }
-  removeBuyerListing(rejectedListing);
-  updateAgentListingAfterReview(rejectedListing, "Rejected", {
-    adminApproved: false,
-    approvalStatus: "rejected",
-    liveStatus: "rejected",
-    verificationSource: "agent",
-    rejectedAt: rejectedListing.rejectedAt
-  });
-  addAudit("listing_rejected", "listing", id, `${listing.title} rejected with QC feedback.`);
-  addNotification("Listing rejected", `${listing.title} was rejected by QC.`);
-  persistAll();
-  renderAll();
-  showToast("Listing rejected");
 }
 
 function suspendListingFromReport(reportId) {
@@ -2049,6 +2084,13 @@ function bindEvents() {
   });
 
   els.dualRoleLookupButton?.addEventListener("click", lookupDualRoleAccount);
+  els.dualRoleBrowseButton?.addEventListener("click", browseUsersByRole);
+  els.dualRoleBrowseList?.addEventListener("click", (event) => {
+    const row = event.target instanceof Element ? event.target.closest("[data-browse-email]") : null;
+    if (!row) return;
+    if (els.dualRoleEmailInput) els.dualRoleEmailInput.value = row.dataset.browseEmail;
+    lookupDualRoleAccount();
+  });
   els.dualRoleEmailInput?.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();

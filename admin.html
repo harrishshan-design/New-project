@@ -150,6 +150,15 @@
             </div>
             <button class="primary-button" id="dualRoleLookupButton" type="button">Look up</button>
           </div>
+          <div class="dual-role-browse">
+            <select class="field" id="dualRoleRoleFilter" aria-label="Browse accounts by role">
+              <option value="buyer">Buyer accounts</option>
+              <option value="agent">Agent accounts</option>
+              <option value="admin">Admin accounts</option>
+            </select>
+            <button class="ghost-button" id="dualRoleBrowseButton" type="button">Browse by role</button>
+          </div>
+          <div class="dual-role-browse-list" id="dualRoleBrowseList"></div>
           <div class="dual-role-result" id="dualRoleResult"></div>
         </div>
 

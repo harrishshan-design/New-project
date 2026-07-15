@@ -1117,6 +1117,27 @@ async function publicDualRoleLookup(payload = {}) {
     }
 }
 
+async function adminListUsersByRole(payload = {}) {
+    const rawRole = String(payload.role || '').trim().toLowerCase();
+    const role = rawRole === 'user' ? 'buyer' : rawRole;
+    if (!['buyer', 'agent', 'admin'].includes(role)) {
+        return { __status: 400, error: 'role must be buyer, agent, or admin.' };
+    }
+    const rows = await selectSupabaseRows('users', `select=*&role=eq.${role}&order=created_at.desc&limit=50`);
+    return {
+        users: (rows || []).map((row) => ({
+            id: row.id,
+            email: row.email,
+            name: row.name || row.full_name || row.email,
+            role: normalizeAuthRole(row.role),
+            status: row.status || '',
+            secondaryRole: normalizeSecondaryRole(row.secondary_role),
+            createdAt: row.created_at || null,
+            lastLoginAt: row.last_login_at || null
+        }))
+    };
+}
+
 async function adminListPendingAgents() {
     const rows = await selectSupabaseRows('users', `select=*&role=eq.agent&status=eq.pending&order=created_at.desc&limit=200`);
     return {
@@ -3311,6 +3332,12 @@ const server = http.createServer(async (req, res) => {
             const auth = requireAdminAccess(req);
             if (!auth.ok) return { __status: auth.status, error: auth.error };
             return adminSetSecondaryRole(payload);
+        }
+
+        if (url === '/api/admin/users/by-role') {
+            const auth = requireAdminAccess(req);
+            if (!auth.ok) return { __status: auth.status, error: auth.error };
+            return adminListUsersByRole(payload);
         }
 
         if (url === '/api/admin/agents/pending') {
