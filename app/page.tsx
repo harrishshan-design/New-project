@@ -280,7 +280,7 @@ export default function Home() {
             ))}
           </div>
           <div className="flex items-center gap-2">
-            <a href="/login.html" className="hidden rounded-full px-4 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-100 sm:inline-flex">
+            <a href="/login.html" className="inline-flex items-center rounded-full px-3 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-100 sm:px-4">
               Login
             </a>
             <a href="#contact" className="inline-flex min-h-11 items-center rounded-full bg-slate-950 px-5 text-sm font-black text-white shadow-xl shadow-slate-950/15">
