@@ -5300,6 +5300,102 @@ body{
   }
 }
 
+/* Browser sizing polish: keep dashboards usable at normal 100% zoom. */
+html{
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+}
+
+body{
+  width:100%;
+}
+
+img,
+video,
+canvas,
+svg{
+  max-width:100%;
+}
+
+@media (max-width:1366px){
+  .workspace{
+    grid-template-columns:248px minmax(0,1fr);
+  }
+
+  .sidebar{
+    padding:22px 16px;
+  }
+
+  .main,
+  .content,
+  .dashboard-main{
+    min-width:0;
+  }
+
+  .hero-title,
+  .landing-hero h1,
+  .agent-landing h1{
+    font-size:clamp(2.4rem,6vw,5.3rem);
+  }
+}
+
+@media (max-width:980px){
+  .workspace{
+    display:block;
+  }
+
+  .sidebar{
+    position:relative;
+    width:100%;
+    border-right:0;
+    border-bottom:1px solid var(--line);
+  }
+
+  .nav{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding-bottom:4px;
+    scrollbar-width:none;
+  }
+
+  .nav::-webkit-scrollbar{
+    display:none;
+  }
+
+  .nav-item{
+    flex:0 0 auto;
+    white-space:nowrap;
+  }
+}
+
+@media (max-width:640px){
+  .sidebar{
+    padding:16px 12px;
+  }
+
+  .brand-mark{
+    width:46px;
+    height:46px;
+  }
+
+  .brand h1{
+    font-size:1.02rem;
+  }
+
+  .hero-title,
+  .landing-hero h1,
+  .agent-landing h1{
+    font-size:clamp(2rem,11vw,3.2rem);
+    line-height:.98;
+  }
+
+  .agent-quick-dock{
+    max-width:calc(100vw - 20px);
+    overflow-x:auto;
+  }
+}
+
 /* ---------- Routine rank + listing pipeline strip ---------- */
 
 .routine-rank{
@@ -5429,4 +5525,54 @@ body{
 .purpose-pill.is-sale{
   background:rgba(35,194,107,0.16);
   color:#7fe0ab;
+}
+
+.milestone-banner{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:16px;
+  padding:16px 20px;
+  border-radius:var(--radius-md);
+  border:1px solid rgba(35,194,107,0.35);
+  background:rgba(35,194,107,0.06);
+  margin-bottom:18px;
+}
+
+.milestone-banner-text{
+  flex:1;
+  min-width:220px;
+}
+
+.milestone-banner-text strong{
+  display:block;
+  margin-top:4px;
+  font-size:14px;
+  font-weight:600;
+}
+
+.milestone-banner-progress{
+  flex:1;
+  min-width:200px;
+}
+
+.milestone-banner-progress span{
+  display:block;
+  margin-top:6px;
+  font-size:12px;
+  color:var(--text-soft,#9fb0c9);
+}
+
+.milestone-bar-track{
+  height:8px;
+  border-radius:999px;
+  background:rgba(255,255,255,0.1);
+  overflow:hidden;
+}
+
+.milestone-bar-fill{
+  height:100%;
+  border-radius:999px;
+  background:linear-gradient(90deg,#22c55e,#16a34a);
+  transition:width .4s ease;
 }

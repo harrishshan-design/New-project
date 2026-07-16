@@ -96,7 +96,10 @@ const els = {
   pulseLiveListings: document.getElementById("pulseLiveListings"),
   pulsePendingListings: document.getElementById("pulsePendingListings"),
   pulseTotalAgents: document.getElementById("pulseTotalAgents"),
-  pulseLeaderboard: document.getElementById("pulseLeaderboard")
+  pulseLeaderboard: document.getElementById("pulseLeaderboard"),
+  milestoneGmvPct: document.getElementById("milestoneGmvPct"),
+  milestoneGmvFill: document.getElementById("milestoneGmvFill"),
+  milestoneGmvTotal: document.getElementById("milestoneGmvTotal")
 };
 
 function readStore(key, fallback) {
@@ -1048,6 +1051,15 @@ function renderLeaderboard(entries) {
   `).join("");
 }
 
+function renderMilestoneGmv(gmv) {
+  if (!els.milestoneGmvFill) return;
+  const total = Number(gmv?.total || 0);
+  const pct = Number(gmv?.progressPct || 0);
+  els.milestoneGmvFill.style.width = `${Math.min(100, pct)}%`;
+  els.milestoneGmvPct.textContent = `${pct}%`;
+  els.milestoneGmvTotal.textContent = `RM${Math.round(total).toLocaleString("en-MY")}`;
+}
+
 async function loadMasterPulse() {
   const key = getMasterAdminKey();
   if (els.pulseKeyRow) els.pulseKeyRow.hidden = Boolean(key);
@@ -1069,6 +1081,7 @@ async function loadMasterPulse() {
     els.pulsePendingListings.textContent = payload.listings.pendingQc.toLocaleString("en-MY");
     els.pulseTotalAgents.textContent = payload.agents.total.toLocaleString("en-MY");
     renderLeaderboard(payload.leaderboard || []);
+    renderMilestoneGmv(payload.gmv);
   } catch (error) {
     renderPulseLocked(error.message === "401" || /admin api key/i.test(error.message)
       ? "That admin API key was rejected. Check the value and try again."

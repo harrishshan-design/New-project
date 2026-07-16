@@ -3,11 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RealityGenius | Verified Login</title>
+<meta name="description" content="Browse verified Malaysian property listings, compare neighborhoods, estimate affordability, and connect with trusted agents through RealityGenius AI.">
+<title>RealityGenius | AI Property Search Malaysia</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="modulepreload" href="./js/vendor/three.core.min.js">
+<link rel="modulepreload" href="./js/vendor/three.module.min.js">
 <style>
 :root{
 --ink:#111827;
@@ -24,7 +27,7 @@
 --soft-shadow:0 18px 45px rgba(28,32,38,.08);
 }
 *{box-sizing:border-box}
-html{min-height:100%;background:#e7e3dc}
+html{min-height:100%;background:#e7e3dc;scroll-behavior:smooth}
 body{
 margin:0;
 min-height:100vh;
@@ -39,10 +42,26 @@ overflow-x:hidden;
 }
 button,input{font:inherit}
 button{cursor:pointer}
-:where(button,input):focus-visible{
+:where(a,button,input):focus-visible{
 outline:2px solid transparent;
 box-shadow:0 0 0 4px rgba(15,118,110,.22);
 }
+.skip-link{
+position:fixed;
+left:18px;
+top:18px;
+z-index:1000;
+padding:10px 14px;
+border-radius:999px;
+background:#f6d27a;
+color:#111827;
+font-weight:900;
+text-decoration:none;
+transform:translateY(-160%);
+transition:transform .2s ease;
+box-shadow:0 18px 44px rgba(0,0,0,.18);
+}
+.skip-link:focus{transform:translateY(0)}
 .login-page{
 width:min(1760px,100%);
 min-height:calc(100vh - 72px);
@@ -376,9 +395,326 @@ text-align:center;
 line-height:1.45;
 }
 .hidden{display:none!important}
+
+.landing-page{
+width:min(1480px,100%);
+margin:0 auto;
+display:grid;
+gap:24px;
+}
+.landing-shell{
+position:relative;
+overflow:hidden;
+border:1px solid rgba(255,255,255,.76);
+border-radius:38px;
+background:
+linear-gradient(115deg,rgba(255,255,255,.9),rgba(241,245,240,.82)),
+url("https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1800&q=84") center/cover;
+box-shadow:var(--shadow);
+}
+.landing-shell::before{
+content:"";
+position:absolute;
+inset:0;
+background:linear-gradient(90deg,rgba(251,250,247,.98) 0%,rgba(251,250,247,.86) 48%,rgba(251,250,247,.34) 100%);
+pointer-events:none;
+}
+.landing-nav{
+position:relative;
+z-index:2;
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:16px;
+padding:22px 28px;
+}
+.landing-nav-links{
+display:flex;
+align-items:center;
+gap:8px;
+padding:7px;
+border:1px solid var(--line);
+border-radius:999px;
+background:rgba(255,255,255,.68);
+}
+.landing-nav-links a,
+.login-link{
+display:inline-flex;
+align-items:center;
+justify-content:center;
+min-height:40px;
+padding:0 14px;
+border-radius:999px;
+color:#40523b;
+font-weight:900;
+text-decoration:none;
+}
+.login-link{
+background:#101827;
+color:#fff;
+}
+.landing-hero{
+position:relative;
+z-index:1;
+display:grid;
+grid-template-columns:minmax(0,1.08fr) minmax(390px,.62fr);
+gap:28px;
+align-items:center;
+padding:24px 48px 44px;
+}
+.hero-content{
+display:grid;
+gap:18px;
+max-width:900px;
+}
+.hero-content .eyebrow{
+margin:0;
+}
+.hero-content h1{
+margin:0;
+font-size:clamp(2.85rem,5vw,5.15rem);
+line-height:.96;
+letter-spacing:-.06em;
+}
+.hero-content p{
+max-width:760px;
+margin:0;
+color:#4d5d74;
+font-size:1rem;
+font-weight:800;
+line-height:1.55;
+}
+.hero-actions{
+display:flex;
+gap:12px;
+flex-wrap:wrap;
+}
+.browse-button,
+.secondary-button{
+display:inline-flex;
+align-items:center;
+justify-content:center;
+gap:10px;
+min-height:58px;
+padding:0 22px;
+border-radius:999px;
+font-weight:900;
+text-decoration:none;
+}
+.browse-button{
+background:#101827;
+color:#fff;
+box-shadow:0 18px 38px rgba(17,24,39,.18);
+}
+.secondary-button{
+background:rgba(255,255,255,.76);
+border:1px solid var(--line);
+color:#1f2a37;
+}
+.proof-grid{
+display:grid;
+grid-template-columns:repeat(4,minmax(0,1fr));
+gap:12px;
+}
+.proof-card{
+padding:18px;
+border:1px solid rgba(17,24,39,.09);
+border-radius:22px;
+background:rgba(255,255,255,.82);
+box-shadow:var(--soft-shadow);
+}
+.proof-card strong{
+display:block;
+font-size:1.55rem;
+letter-spacing:-.03em;
+}
+.proof-card span{
+display:block;
+margin-top:5px;
+color:#64748b;
+font-size:.9rem;
+font-weight:900;
+line-height:1.35;
+}
+.hero-live-card{
+display:grid;
+gap:14px;
+padding:20px;
+border:1px solid rgba(255,255,255,.72);
+border-radius:30px;
+background:rgba(255,255,255,.84);
+box-shadow:var(--shadow);
+backdrop-filter:blur(18px);
+}
+.hero-live-card img{
+width:100%;
+aspect-ratio:4/3;
+object-fit:cover;
+border-radius:22px;
+}
+.live-chip-row{
+display:flex;
+gap:8px;
+flex-wrap:wrap;
+}
+.live-chip-row span{
+padding:8px 10px;
+border-radius:999px;
+background:rgba(15,118,110,.1);
+color:#0f766e;
+font-size:.78rem;
+font-weight:900;
+}
+.home-card-title{
+display:flex;
+justify-content:space-between;
+gap:12px;
+align-items:flex-start;
+}
+.home-card-title h3{
+margin:0;
+font-size:1.25rem;
+}
+.home-card-title strong{
+white-space:nowrap;
+color:#0f766e;
+}
+.landing-section{
+padding:34px;
+border:1px solid rgba(255,255,255,.76);
+border-radius:34px;
+background:rgba(255,255,255,.78);
+box-shadow:var(--soft-shadow);
+}
+.section-title{
+display:flex;
+justify-content:space-between;
+gap:18px;
+align-items:flex-end;
+margin-bottom:20px;
+}
+.section-title h2{
+max-width:760px;
+margin:0;
+font-size:clamp(2rem,4vw,4.6rem);
+line-height:.96;
+letter-spacing:-.04em;
+}
+.section-title p{
+max-width:520px;
+margin:0;
+color:#64748b;
+font-weight:800;
+line-height:1.55;
+}
+.feature-grid,
+.listing-grid,
+.ecosystem-grid{
+display:grid;
+grid-template-columns:repeat(3,minmax(0,1fr));
+gap:14px;
+}
+.feature-card,
+.listing-preview-card,
+.ecosystem-card{
+padding:20px;
+border:1px solid var(--line);
+border-radius:24px;
+background:#fff;
+}
+.feature-card i,
+.ecosystem-card i{
+width:46px;
+height:46px;
+display:grid;
+place-items:center;
+border-radius:16px;
+background:rgba(15,118,110,.1);
+color:#0f766e;
+font-size:1.1rem;
+}
+.feature-card h3,
+.ecosystem-card h3{
+margin:16px 0 8px;
+}
+.feature-card p,
+.ecosystem-card p,
+.listing-preview-card p{
+margin:0;
+color:#64748b;
+font-weight:800;
+line-height:1.55;
+}
+.listing-preview-card{
+display:grid;
+gap:12px;
+}
+.listing-preview-card img{
+width:100%;
+aspect-ratio:16/10;
+object-fit:cover;
+border-radius:18px;
+}
+.urgency-row{
+display:flex;
+gap:8px;
+flex-wrap:wrap;
+}
+.urgency-row span{
+padding:8px 10px;
+border-radius:999px;
+background:#fff7ed;
+color:#9a3412;
+font-size:.78rem;
+font-weight:900;
+}
+.trust-band-home{
+display:grid;
+grid-template-columns:repeat(5,minmax(0,1fr));
+gap:12px;
+}
+.trust-band-home span{
+display:flex;
+align-items:center;
+justify-content:center;
+gap:8px;
+min-height:64px;
+padding:12px;
+border:1px solid var(--line);
+border-radius:18px;
+background:#fff;
+color:#334155;
+font-weight:900;
+text-align:center;
+}
+.auth-section{
+display:grid;
+grid-template-columns:minmax(0,.85fr) minmax(420px,.55fr);
+gap:24px;
+align-items:center;
+}
+.auth-section .auth-panel{
+min-height:auto;
+}
+.vision-copy h2{
+margin:0;
+font-size:clamp(2.4rem,4.8vw,5.6rem);
+line-height:.94;
+letter-spacing:-.05em;
+}
+.vision-copy p{
+max-width:780px;
+color:#4d5d74;
+font-size:1.15rem;
+font-weight:800;
+line-height:1.65;
+}
 @media (max-width:1180px){
 body{padding:18px}
 .login-page{grid-template-columns:1fr;min-height:auto}
+.landing-hero,.auth-section{grid-template-columns:1fr}
+.proof-grid,.feature-grid,.listing-grid,.ecosystem-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.trust-band-home{grid-template-columns:repeat(2,minmax(0,1fr))}
 .story-panel{min-height:auto;padding:42px}
 .story-copy h1{font-size:clamp(3.2rem,10vw,5.8rem)}
 .story-copy p{font-size:1.18rem}
@@ -387,6 +723,19 @@ body{padding:18px}
 @media (max-width:700px){
 body{padding:10px;background:#f3f0ea}
 .login-page{gap:12px}
+.landing-nav{align-items:flex-start;flex-direction:column;padding:18px}
+.landing-nav-links{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible;justify-content:stretch}
+.landing-nav-links a{justify-content:center;padding:0 10px;font-size:.9rem}
+.login-link{width:100%;justify-content:center}
+.landing-hero{padding:20px 18px 28px;gap:22px}
+.hero-content{gap:16px}
+.hero-content h1{font-size:2.7rem;letter-spacing:-.055em}
+.hero-content p{font-size:1rem;line-height:1.55}
+.hero-actions{display:grid;grid-template-columns:1fr;gap:10px}
+.proof-grid,.feature-grid,.listing-grid,.ecosystem-grid,.trust-band-home{grid-template-columns:1fr}
+.landing-section{padding:22px;border-radius:28px}
+.section-title{display:grid;align-items:start}
+.auth-section{gap:12px}
 .story-panel,.auth-panel{border-radius:28px}
 .story-panel{padding:24px;gap:24px}
 .brand-row{align-items:flex-start}
@@ -411,85 +760,1569 @@ body{padding:10px;background:#f3f0ea}
 .primary-button{min-height:64px;border-radius:20px}
 .login-meta{grid-template-columns:1fr}
 }
+
+body.gallery-login{
+padding:0;
+background:#070707;
+color:#f8f5ec;
+}
+.gallery-entry{
+position:relative;
+min-height:100vh;
+overflow:hidden;
+display:grid;
+}
+.gallery-entry::before{
+content:"";
+position:absolute;
+inset:0;
+background:
+linear-gradient(90deg,rgba(0,0,0,.78) 0%,rgba(0,0,0,.42) 42%,rgba(0,0,0,.78) 100%),
+linear-gradient(180deg,rgba(0,0,0,.62),rgba(0,0,0,.14) 45%,rgba(0,0,0,.8)),
+url("https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=2200&q=88") center/cover;
+transform:scale(1.02);
+}
+.gallery-entry::after{
+content:"";
+position:absolute;
+inset:0;
+background:radial-gradient(circle at 50% 46%,transparent 0 24%,rgba(0,0,0,.42) 58%,rgba(0,0,0,.78) 100%);
+pointer-events:none;
+}
+.gallery-nav{
+position:relative;
+z-index:3;
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:20px;
+padding:28px 38px;
+}
+.gallery-logo{
+border:0;
+background:transparent;
+color:#f8f5ec;
+font-weight:900;
+letter-spacing:.02em;
+font-size:1.05rem;
+text-transform:uppercase;
+}
+.gallery-logo sup{font-size:.48rem;margin-left:2px}
+.gallery-links{
+display:flex;
+align-items:center;
+justify-content:center;
+gap:28px;
+}
+.gallery-links a{
+color:rgba(248,245,236,.78);
+text-decoration:none;
+font-size:.82rem;
+font-weight:900;
+letter-spacing:.18em;
+text-transform:uppercase;
+}
+.gallery-menu{
+border:1px solid rgba(248,245,236,.32);
+border-radius:999px;
+padding:12px 18px;
+color:#f8f5ec;
+font-size:.78rem;
+font-weight:900;
+letter-spacing:.2em;
+text-decoration:none;
+text-transform:uppercase;
+}
+.gallery-stage{
+position:relative;
+z-index:2;
+min-height:calc(100vh - 96px);
+display:grid;
+grid-template-columns:minmax(0,1fr) minmax(360px,430px);
+align-items:center;
+gap:44px;
+padding:18px 52px 46px;
+}
+.gallery-copy{
+align-self:end;
+display:grid;
+gap:26px;
+max-width:980px;
+padding-bottom:34px;
+}
+.gallery-kicker{
+margin:0;
+color:rgba(248,245,236,.7);
+font-size:.86rem;
+font-weight:900;
+letter-spacing:.32em;
+text-transform:uppercase;
+}
+.gallery-copy h1{
+margin:0;
+max-width:900px;
+font-size:clamp(4.4rem,10vw,10.5rem);
+line-height:.82;
+letter-spacing:-.08em;
+font-weight:900;
+text-transform:uppercase;
+}
+.gallery-copy p{
+max-width:620px;
+margin:0;
+color:rgba(248,245,236,.74);
+font-size:1rem;
+font-weight:800;
+line-height:1.65;
+}
+.gallery-floor-list{
+display:grid;
+grid-template-columns:repeat(3,minmax(0,1fr));
+max-width:760px;
+border-top:1px solid rgba(248,245,236,.28);
+border-bottom:1px solid rgba(248,245,236,.28);
+}
+.gallery-floor-list a,
+.gallery-floor-list button{
+min-height:74px;
+border:0;
+border-right:1px solid rgba(248,245,236,.22);
+background:rgba(255,255,255,.02);
+color:#f8f5ec;
+display:flex;
+align-items:center;
+justify-content:center;
+gap:10px;
+font-size:.8rem;
+font-weight:900;
+letter-spacing:.16em;
+text-decoration:none;
+text-transform:uppercase;
+transition:background .18s ease,color .18s ease;
+}
+.gallery-floor-list a:last-child,
+.gallery-floor-list button:last-child{border-right:0}
+.gallery-floor-list a:hover,
+.gallery-floor-list button:hover,
+.gallery-floor-list button.active{
+background:#f8f5ec;
+color:#111;
+}
+.gallery-login-panel{
+align-self:center;
+padding:24px;
+border:1px solid rgba(248,245,236,.24);
+background:rgba(8,8,8,.52);
+box-shadow:0 40px 100px rgba(0,0,0,.42);
+backdrop-filter:blur(18px);
+}
+.gallery-login-panel .auth-card{
+width:100%;
+gap:18px;
+}
+.gallery-login-panel .auth-head{text-align:left}
+.gallery-login-panel .auth-head h2{
+font-size:clamp(2rem,4vw,3.35rem);
+line-height:.9;
+color:#f8f5ec;
+}
+.gallery-login-panel .auth-head p{
+margin-top:12px;
+color:rgba(248,245,236,.68);
+font-size:.86rem;
+letter-spacing:.22em;
+text-transform:uppercase;
+}
+.gallery-login-panel .trust-row{
+justify-content:flex-start;
+gap:8px;
+}
+.gallery-login-panel .trust-chip{
+min-height:38px;
+border-color:rgba(248,245,236,.18);
+background:rgba(248,245,236,.08);
+color:rgba(248,245,236,.78);
+font-size:.72rem;
+}
+.gallery-login-panel .auth-form{
+padding:0;
+border:0;
+border-radius:0;
+background:transparent;
+box-shadow:none;
+}
+.gallery-login-panel .field span{color:rgba(248,245,236,.72)}
+.gallery-login-panel .input-shell{
+min-height:58px;
+border-radius:0;
+border-color:rgba(248,245,236,.24);
+background:rgba(255,255,255,.08);
+color:#f8f5ec;
+}
+.gallery-login-panel .input-shell i{color:rgba(248,245,236,.62)}
+.gallery-login-panel input{color:#fff}
+.gallery-login-panel input::placeholder{color:rgba(248,245,236,.44)}
+.gallery-login-panel .primary-button{
+border-radius:0;
+background:#f8f5ec;
+color:#111;
+box-shadow:none;
+}
+.gallery-login-panel .login-meta{
+display:flex;
+gap:8px;
+}
+.gallery-login-panel .login-meta span{
+border-radius:0;
+background:rgba(248,245,236,.08);
+color:rgba(248,245,236,.72);
+}
+.gallery-login-panel .role-note{
+border-radius:0;
+background:rgba(15,118,110,.18);
+color:rgba(248,245,236,.78);
+}
+.gallery-login-panel .status.ok{color:#7dd3c7}
+.gallery-login-panel .security-text{
+color:rgba(248,245,236,.55);
+text-align:left;
+}
+.gallery-side-label{
+position:absolute;
+z-index:3;
+left:38px;
+bottom:28px;
+display:flex;
+align-items:center;
+gap:14px;
+color:rgba(248,245,236,.66);
+font-size:.78rem;
+font-weight:900;
+letter-spacing:.22em;
+text-transform:uppercase;
+}
+.gallery-side-label::before{
+content:"";
+width:54px;
+height:1px;
+background:rgba(248,245,236,.44);
+}
+@media (max-width:980px){
+.gallery-nav{padding:22px;align-items:flex-start}
+.gallery-links{display:none}
+.gallery-stage{grid-template-columns:1fr;gap:22px;padding:8px 22px 82px}
+.gallery-copy{align-self:auto;padding-bottom:0}
+.gallery-copy h1{font-size:clamp(3.7rem,18vw,7rem)}
+.gallery-floor-list{grid-template-columns:1fr;max-width:none}
+.gallery-floor-list a,.gallery-floor-list button{border-right:0;border-bottom:1px solid rgba(248,245,236,.2)}
+.gallery-floor-list a:last-child,.gallery-floor-list button:last-child{border-bottom:0}
+.gallery-login-panel{align-self:auto}
+.gallery-side-label{left:22px;bottom:22px}
+}
+@media (max-width:560px){
+.gallery-nav{gap:12px;padding:18px}
+.gallery-logo{font-size:.9rem}
+.gallery-menu{padding:10px 13px;font-size:.68rem}
+.gallery-stage{gap:14px;padding:0 14px 58px}
+.gallery-copy{gap:12px}
+.gallery-kicker{font-size:.72rem;letter-spacing:.24em}
+.gallery-copy h1{font-size:2.75rem}
+.gallery-copy p{display:none}
+.gallery-floor-list{grid-template-columns:1fr}
+.gallery-floor-list a,.gallery-floor-list button{min-height:46px;font-size:.68rem;letter-spacing:.12em}
+.gallery-login-panel{padding:14px}
+.gallery-login-panel .auth-card{gap:12px}
+.gallery-login-panel .trust-row{display:none}
+.gallery-login-panel .auth-head h2{font-size:2rem}
+.gallery-login-panel .auth-head p{font-size:.72rem;margin-top:8px}
+.gallery-login-panel .auth-form{gap:12px}
+.gallery-login-panel .input-shell{min-height:52px}
+.gallery-login-panel .primary-button{min-height:56px}
+.gallery-login-panel .role-note,.gallery-login-panel .security-text{display:none}
+}
+</style>
+<style>
+body.cinematic-home{
+padding:0;
+background:#050505;
+color:#f6f1e6;
+}
+.cinematic-home button,.cinematic-home input{font:inherit}
+.cinematic-shell{
+background:#050505;
+min-height:100vh;
+overflow:hidden;
+}
+.cinematic-footer{
+position:relative;
+z-index:2;
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:16px;
+flex-wrap:wrap;
+padding:22px clamp(18px,4vw,42px);
+border-top:1px solid rgba(246,241,230,.12);
+background:#070707;
+color:rgba(246,241,230,.58);
+font-weight:800;
+}
+.cinematic-footer nav{
+display:flex;
+gap:14px;
+flex-wrap:wrap;
+}
+.cinematic-footer a{
+color:rgba(246,241,230,.78);
+text-decoration:none;
+}
+.cinematic-footer a:hover{color:#f6d27a}
+.cinematic-shell::before{
+content:"";
+position:fixed;
+inset:0;
+z-index:0;
+pointer-events:none;
+background:
+radial-gradient(circle at 18% 22%,rgba(246,210,122,.13),transparent 22%),
+radial-gradient(circle at 76% 12%,rgba(34,211,238,.1),transparent 24%),
+linear-gradient(transparent 0 96%,rgba(246,241,230,.045) 97% 100%),
+linear-gradient(90deg,transparent 0 96%,rgba(246,241,230,.035) 97% 100%);
+background-size:auto,auto,100% 24px,24px 100%;
+mask-image:linear-gradient(180deg,rgba(0,0,0,.8),rgba(0,0,0,.2));
+opacity:.72;
+}
+.cinematic-shell::after{
+content:"";
+position:fixed;
+inset:0;
+z-index:1;
+pointer-events:none;
+background-image:
+radial-gradient(circle,rgba(246,241,230,.48) 0 1px,transparent 1.5px),
+radial-gradient(circle,rgba(34,211,238,.32) 0 1px,transparent 1.5px);
+background-size:120px 120px,180px 180px;
+background-position:0 0,42px 70px;
+opacity:.22;
+animation:particleDrift 18s linear infinite;
+}
+@keyframes particleDrift{to{background-position:120px 160px,222px 250px}}
+.cinematic-nav{
+position:fixed;
+z-index:30;
+top:0;
+left:0;
+right:0;
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:24px;
+padding:26px 38px;
+color:#f8f3e8;
+mix-blend-mode:difference;
+}
+.cinematic-brand{
+border:0;
+background:transparent;
+color:inherit;
+font-size:.95rem;
+font-weight:900;
+letter-spacing:.08em;
+text-transform:uppercase;
+display:inline-flex;
+align-items:center;
+gap:11px;
+min-height:44px;
+}
+.cinematic-brand sup{font-size:.48rem}
+.cinematic-logo-mark{
+width:34px;
+height:34px;
+display:block;
+border-radius:11px;
+object-fit:contain;
+background:rgba(246,241,230,.92);
+padding:4px;
+box-shadow:0 12px 30px rgba(0,0,0,.22),0 0 24px rgba(246,210,122,.18);
+}
+.cinematic-brand span{
+display:inline-flex;
+align-items:baseline;
+gap:2px;
+}
+.cinematic-nav-links{
+display:flex;
+align-items:center;
+gap:28px;
+}
+.cinematic-nav-links a,.cinematic-menu{
+color:inherit;
+text-decoration:none;
+font-size:.74rem;
+font-weight:900;
+letter-spacing:.2em;
+text-transform:uppercase;
+}
+.cinematic-menu{
+border:1px solid currentColor;
+border-radius:999px;
+padding:14px 24px;
+background:#f6f1e6;
+color:#111;
+mix-blend-mode:normal;
+box-shadow:0 18px 44px rgba(246,241,230,.18);
+font-size:.82rem;
+letter-spacing:.16em;
+}
+.quick-login{
+position:fixed;
+z-index:28;
+right:32px;
+bottom:28px;
+display:inline-flex;
+align-items:center;
+justify-content:center;
+gap:10px;
+min-height:58px;
+padding:0 24px;
+border-radius:999px;
+background:#f6f1e6;
+color:#111;
+font-weight:900;
+text-decoration:none;
+box-shadow:0 24px 60px rgba(0,0,0,.38);
+will-change:transform;
+}
+.cinematic-section > *{position:relative;z-index:2}
+.cinematic-section{
+position:relative;
+min-height:100vh;
+display:grid;
+align-items:center;
+overflow:hidden;
+isolation:isolate;
+--parallax-y:0px;
+}
+.cinematic-section::before{
+content:"";
+position:absolute;
+inset:0;
+z-index:-2;
+background:var(--scene-bg,linear-gradient(135deg,#101010,#050505));
+transform:translate3d(0,var(--parallax-y),0) scale(1.12);
+transition:transform .12s linear;
+will-change:transform;
+}
+.cinematic-section::after{
+content:"";
+position:absolute;
+inset:0;
+z-index:-1;
+background:
+linear-gradient(90deg,rgba(0,0,0,.86),rgba(0,0,0,.22) 48%,rgba(0,0,0,.76)),
+radial-gradient(circle at 50% 52%,transparent 0 19%,rgba(0,0,0,.52) 72%),
+linear-gradient(180deg,rgba(0,0,0,.12),rgba(0,0,0,.48));
+pointer-events:none;
+}
+.scene-inner{
+box-sizing:border-box;
+width:100%;
+max-width:1440px;
+margin:0 auto;
+padding:118px 52px 58px;
+display:grid;
+grid-template-columns:minmax(0,1fr) minmax(340px,480px);
+gap:48px;
+align-items:center;
+min-width:0;
+}
+.scene-copy{
+display:grid;
+gap:24px;
+max-width:920px;
+min-width:0;
+}
+.scene-kicker{
+margin:0;
+color:rgba(246,210,122,.86);
+font-size:.82rem;
+font-weight:900;
+letter-spacing:.32em;
+text-transform:uppercase;
+}
+.scene-copy h1,.scene-copy h2{
+margin:0;
+font-size:clamp(4.4rem,9vw,10.8rem);
+line-height:.82;
+letter-spacing:-.085em;
+text-transform:uppercase;
+}
+.scene-copy h2{font-size:clamp(3.6rem,7.2vw,8.2rem)}
+.scene-copy p{
+max-width:680px;
+margin:0;
+color:rgba(246,241,230,.76);
+font-size:1.05rem;
+font-weight:800;
+line-height:1.7;
+}
+.scene-actions{
+display:flex;
+gap:12px;
+flex-wrap:wrap;
+}
+.hero-search-widget{
+width:min(780px,100%);
+box-sizing:border-box;
+display:grid;
+gap:14px;
+margin-top:4px;
+padding:14px;
+border:1px solid rgba(246,210,122,.28);
+border-radius:28px;
+background:linear-gradient(135deg,rgba(246,241,230,.13),rgba(34,211,238,.06));
+backdrop-filter:blur(18px);
+box-shadow:0 24px 70px rgba(0,0,0,.24),0 0 54px rgba(246,210,122,.16);
+position:relative;
+overflow:hidden;
+animation:searchFloat 5.4s ease-in-out infinite;
+}
+.hero-search-widget::before{
+content:"";
+position:absolute;
+inset:-1px;
+border-radius:inherit;
+padding:1px;
+background:linear-gradient(115deg,rgba(246,210,122,.62),transparent 35%,rgba(34,211,238,.46));
+mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+mask-composite:exclude;
+pointer-events:none;
+}
+@keyframes searchFloat{50%{transform:translateY(-8px)}}
+.hero-search-row{
+display:grid;
+grid-template-columns:minmax(0,1fr) auto;
+gap:10px;
+min-width:0;
+}
+.hero-search-field{
+min-width:0;
+min-height:56px;
+display:flex;
+align-items:center;
+gap:12px;
+padding:0 16px;
+border:1px solid rgba(246,241,230,.16);
+border-radius:999px;
+background:rgba(0,0,0,.28);
+color:#f6f1e6;
+font-weight:850;
+}
+.hero-search-field i{
+color:#f6d27a;
+}
+.hero-search-field span{
+overflow:hidden;
+text-overflow:ellipsis;
+white-space:nowrap;
+color:rgba(246,241,230,.72);
+}
+.hero-search-submit{
+min-height:56px;
+display:inline-flex;
+align-items:center;
+justify-content:center;
+gap:10px;
+padding:0 18px;
+border:0;
+border-radius:999px;
+background:#f6f1e6;
+color:#111;
+font-weight:950;
+text-decoration:none;
+white-space:nowrap;
+}
+.hero-search-submit:hover,.scene-button:hover,.scene-ghost:hover,.property-tile:hover{
+transform:translateY(-3px);
+}
+.hero-search-submit,.scene-button,.scene-ghost,.property-tile{
+transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease;
+}
+.hero-proof-row{
+display:flex;
+gap:8px;
+flex-wrap:wrap;
+}
+.hero-proof-row span{
+display:inline-flex;
+align-items:center;
+gap:7px;
+min-height:34px;
+padding:0 11px;
+border:1px solid rgba(246,241,230,.16);
+border-radius:999px;
+background:rgba(255,255,255,.07);
+color:rgba(246,241,230,.72);
+font-size:.78rem;
+font-weight:900;
+}
+.hero-proof-row i{
+color:#f6d27a;
+}
+.scene-button,.scene-ghost{
+display:inline-flex;
+align-items:center;
+justify-content:center;
+gap:10px;
+min-height:54px;
+padding:0 20px;
+border-radius:999px;
+font-weight:900;
+text-decoration:none;
+}
+.scene-button{
+background:#f6f1e6;
+color:#111;
+box-shadow:0 18px 45px rgba(246,241,230,.18);
+}
+.scene-ghost{
+border:1px solid rgba(246,241,230,.34);
+color:#f6f1e6;
+background:rgba(255,255,255,.04);
+}
+.house-stage{
+position:relative;
+min-height:520px;
+display:grid;
+place-items:center;
+perspective:1100px;
+will-change:transform;
+min-width:0;
+}
+.house-stage::before{
+content:"";
+position:absolute;
+inset:8% -8% 0;
+background:radial-gradient(ellipse at 50% 72%,rgba(34,211,238,.2),transparent 44%),radial-gradient(ellipse at 50% 76%,rgba(246,210,122,.22),transparent 36%);
+filter:blur(20px);
+pointer-events:none;
+}
+.house-stage::after{
+content:"";
+position:absolute;
+left:8%;
+right:8%;
+bottom:8%;
+height:1px;
+background:linear-gradient(90deg,transparent,rgba(246,210,122,.55),rgba(34,211,238,.38),transparent);
+box-shadow:0 0 38px rgba(246,210,122,.25);
+}
+.landing-showcase-card{
+box-sizing:border-box;
+position:absolute;
+z-index:4;
+right:0;
+bottom:34px;
+width:min(360px,86vw);
+display:grid;
+gap:12px;
+padding:14px;
+border:1px solid rgba(246,241,230,.18);
+border-radius:30px;
+background:rgba(6,8,12,.58);
+box-shadow:0 34px 90px rgba(0,0,0,.46);
+backdrop-filter:blur(20px);
+animation:showcaseFloat 5.8s ease-in-out infinite;
+}
+.landing-showcase-media{
+min-height:170px;
+border-radius:22px;
+background:
+linear-gradient(180deg,transparent,rgba(0,0,0,.66)),
+url("https://images.unsplash.com/photo-1600566752355-35792bedcfea?auto=format&fit=crop&w=900&q=86") center/cover;
+position:relative;
+overflow:hidden;
+}
+.landing-showcase-media::after{
+content:"AI match 94%";
+position:absolute;
+left:12px;
+bottom:12px;
+padding:8px 10px;
+border-radius:999px;
+background:#f6f1e6;
+color:#111;
+font-size:.78rem;
+font-weight:950;
+}
+.landing-showcase-copy{
+display:grid;
+gap:8px;
+}
+.landing-showcase-copy span{
+color:#f6d27a;
+font-size:.76rem;
+font-weight:950;
+text-transform:uppercase;
+letter-spacing:.14em;
+}
+.landing-showcase-copy strong{
+color:#f6f1e6;
+font-size:1.25rem;
+line-height:1.1;
+}
+.landing-showcase-copy p{
+margin:0;
+color:rgba(246,241,230,.64);
+font-size:.86rem;
+font-weight:800;
+line-height:1.45;
+}
+.landing-showcase-stats{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:8px;
+}
+.landing-showcase-stats b{
+display:grid;
+gap:2px;
+padding:10px;
+border:1px solid rgba(246,241,230,.12);
+border-radius:16px;
+background:rgba(255,255,255,.06);
+color:#f6f1e6;
+font-size:.88rem;
+}
+.landing-showcase-stats small{
+color:rgba(246,241,230,.52);
+font-size:.68rem;
+font-weight:900;
+text-transform:uppercase;
+}
+.orbit-chip{
+position:absolute;
+z-index:3;
+display:inline-flex;
+align-items:center;
+gap:8px;
+min-height:42px;
+padding:0 13px;
+border:1px solid rgba(246,241,230,.18);
+border-radius:999px;
+background:rgba(0,0,0,.38);
+color:#f6f1e6;
+font-size:.8rem;
+font-weight:950;
+box-shadow:0 18px 44px rgba(0,0,0,.32);
+backdrop-filter:blur(16px);
+animation:showcaseFloat 6.5s ease-in-out infinite;
+}
+.orbit-chip i{
+color:#f6d27a;
+}
+.orbit-chip-one{left:0;top:96px}
+.orbit-chip-two{right:12px;top:160px;animation-delay:1.2s}
+@keyframes showcaseFloat{
+50%{transform:translateY(-14px)}
+}
+.house-scene{
+position:relative;
+width:min(480px,80vw);
+aspect-ratio:1.18;
+transform-style:preserve-3d;
+filter:drop-shadow(0 40px 70px rgba(0,0,0,.58));
+will-change:transform;
+}
+.house-three{
+position:absolute;
+inset:-8% -8% -12%;
+width:116%;
+height:120%;
+z-index:2;
+opacity:0;
+pointer-events:none;
+transition:opacity .9s ease;
+}
+.house-scene.three-ready .house-three,
+.three-hero-ready .house-scene .house-three{opacity:1 !important}
+.house-scene.three-ready .house-roof,
+.house-scene.three-ready .house-base,
+.house-scene.three-ready .house-glass{
+opacity:0;
+}
+.house-base{
+position:absolute;
+left:8%;
+right:8%;
+bottom:14%;
+height:48%;
+background:linear-gradient(135deg,rgba(255,255,255,.84),rgba(111,116,115,.42));
+border:1px solid rgba(255,255,255,.28);
+clip-path:polygon(0 14%,100% 0,100% 100%,0 86%);
+transform:rotateY(-18deg) rotateX(6deg);
+}
+.house-roof{
+position:absolute;
+left:2%;
+right:2%;
+top:21%;
+height:30%;
+background:linear-gradient(135deg,#f4d381,#7d6944);
+clip-path:polygon(0 62%,48% 0,100% 48%,88% 64%,49% 26%,10% 78%);
+transform:translateZ(50px) rotateY(-18deg);
+}
+.house-glass{
+position:absolute;
+left:27%;
+top:48%;
+width:22%;
+height:27%;
+background:linear-gradient(180deg,rgba(125,211,252,.74),rgba(15,23,42,.48));
+border:1px solid rgba(255,255,255,.3);
+transform:translateZ(64px) rotateY(-18deg);
+}
+.house-light{
+position:absolute;
+inset:11%;
+z-index:1;
+border-radius:50%;
+background:radial-gradient(circle,rgba(246,210,122,.32),transparent 60%);
+animation:housePulse 4.2s ease-in-out infinite;
+}
+@keyframes housePulse{50%{transform:scale(1.1);opacity:.55}}
+.glass-stack{
+display:grid;
+gap:14px;
+}
+.float-card{
+border:1px solid rgba(246,241,230,.18);
+background:rgba(255,255,255,.08);
+backdrop-filter:blur(18px);
+padding:20px;
+color:#f6f1e6;
+box-shadow:0 30px 80px rgba(0,0,0,.32);
+will-change:transform;
+}
+.float-card strong{
+display:block;
+font-size:1.6rem;
+letter-spacing:-.04em;
+}
+.float-card span,.float-card p{
+display:block;
+margin:7px 0 0;
+color:rgba(246,241,230,.68);
+font-size:.9rem;
+font-weight:800;
+line-height:1.45;
+}
+.gallery-strip{
+display:grid;
+grid-template-columns:repeat(3,minmax(0,1fr));
+gap:18px;
+perspective:1200px;
+}
+.property-tile{
+min-height:420px;
+display:flex;
+align-items:flex-end;
+padding:18px;
+background:linear-gradient(180deg,transparent,rgba(0,0,0,.84)),var(--tile-img) center/cover;
+border:1px solid rgba(246,241,230,.16);
+border-radius:28px;
+box-shadow:0 35px 90px rgba(0,0,0,.36);
+transform-style:preserve-3d;
+will-change:transform;
+overflow:hidden;
+position:relative;
+}
+.property-tile::before{
+content:"";
+position:absolute;
+inset:0;
+background:linear-gradient(120deg,transparent 20%,rgba(246,241,230,.18),transparent 48%);
+transform:translateX(-120%);
+transition:transform .7s ease;
+}
+.property-tile:hover::before{transform:translateX(120%)}
+.property-tile:nth-child(1){transform:rotateY(7deg) translateY(18px)}
+.property-tile:nth-child(2){transform:translateZ(40px)}
+.property-tile:nth-child(3){transform:rotateY(-7deg) translateY(34px)}
+.property-tile h3{
+margin:0 0 6px;
+font-size:1.55rem;
+letter-spacing:-.04em;
+}
+.property-tile p{
+margin:0;
+color:rgba(246,241,230,.72);
+font-weight:800;
+line-height:1.45;
+}
+.auction-board{
+border:1px solid rgba(34,211,238,.28);
+background:linear-gradient(135deg,rgba(5,12,18,.72),rgba(0,0,0,.42));
+backdrop-filter:blur(18px);
+padding:24px;
+display:grid;
+gap:18px;
+box-shadow:0 34px 90px rgba(0,0,0,.44),0 0 54px rgba(34,211,238,.13);
+position:relative;
+overflow:hidden;
+}
+.auction-board::before{
+content:"";
+position:absolute;
+inset:0;
+background:repeating-linear-gradient(180deg,rgba(34,211,238,.08) 0 1px,transparent 1px 10px);
+opacity:.45;
+pointer-events:none;
+animation:holoScan 5s linear infinite;
+}
+@keyframes holoScan{to{transform:translateY(30px)}}
+.countdown-row{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:10px;
+}
+.countdown-row span{
+min-height:72px;
+display:grid;
+place-items:center;
+background:rgba(34,211,238,.08);
+border:1px solid rgba(34,211,238,.24);
+box-shadow:inset 0 0 24px rgba(34,211,238,.1);
+font-weight:900;
+color:#f7e7bd;
+}
+.bid-row{
+display:flex;
+justify-content:space-between;
+gap:14px;
+align-items:center;
+padding:18px;
+border:1px solid rgba(34,211,238,.16);
+background:rgba(255,255,255,.045);
+}
+.bid-row small{
+display:block;
+color:rgba(246,241,230,.56);
+font-weight:900;
+letter-spacing:.12em;
+text-transform:uppercase;
+}
+.workspace-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:14px;
+}
+.workspace-grid .float-card{min-height:150px}
+.control-panel{
+border:1px solid rgba(34,211,238,.24);
+background:linear-gradient(145deg,rgba(4,11,18,.78),rgba(255,255,255,.055));
+box-shadow:0 34px 90px rgba(0,0,0,.45),inset 0 0 40px rgba(34,211,238,.05);
+padding:20px;
+display:grid;
+gap:14px;
+}
+.control-panel-head{
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:12px;
+color:#f6f1e6;
+font-weight:950;
+letter-spacing:.12em;
+text-transform:uppercase;
+font-size:.8rem;
+}
+.control-pulse{
+width:10px;
+height:10px;
+border-radius:50%;
+background:#22d3ee;
+box-shadow:0 0 22px #22d3ee;
+animation:controlPulse 1.8s ease-in-out infinite;
+}
+@keyframes controlPulse{50%{opacity:.35;transform:scale(1.6)}}
+.control-row{
+display:grid;
+grid-template-columns:1fr auto;
+gap:10px;
+align-items:center;
+padding:14px;
+border:1px solid rgba(246,241,230,.12);
+background:rgba(255,255,255,.045);
+color:#f6f1e6;
+}
+.control-row span{color:rgba(246,241,230,.58);font-size:.78rem;font-weight:900;text-transform:uppercase;letter-spacing:.1em}
+.control-row strong{font-size:1.15rem}
+.control-meter{
+height:8px;
+border-radius:999px;
+background:rgba(255,255,255,.08);
+overflow:hidden;
+}
+.control-meter i{
+display:block;
+height:100%;
+width:var(--meter,70%);
+background:linear-gradient(90deg,#f6d27a,#22d3ee);
+box-shadow:0 0 18px rgba(34,211,238,.34);
+}
+.cinematic-login{
+border:1px solid rgba(246,241,230,.22);
+background:rgba(0,0,0,.55);
+backdrop-filter:blur(20px);
+padding:24px;
+}
+.cinematic-login .auth-head{text-align:left}
+.cinematic-login .auth-head h2{font-size:clamp(2.3rem,4vw,3.8rem);color:#f6f1e6}
+.cinematic-login .auth-head p{color:rgba(246,241,230,.68);font-size:.8rem;letter-spacing:.22em;text-transform:uppercase}
+.cinematic-login .trust-chip{background:rgba(246,241,230,.08);border-color:rgba(246,241,230,.16);color:rgba(246,241,230,.74)}
+.cinematic-login .auth-form{padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+.cinematic-login .role-card{
+width:auto;
+min-height:52px;
+padding:0 18px;
+border-color:rgba(246,241,230,.34);
+background:transparent;
+box-shadow:none;
+text-align:center;
+transform:none;
+}
+.cinematic-login .role-card:hover,
+.cinematic-login .role-card.active{
+background:#f6f1e6;
+color:#111;
+border-color:#f6f1e6;
+transform:none;
+}
+.cinematic-login .field span{color:rgba(246,241,230,.75)}
+.cinematic-login .input-shell{border-radius:0;background:rgba(255,255,255,.08);border-color:rgba(246,241,230,.22);color:#fff}
+.cinematic-login input{color:#fff}
+.cinematic-login input::placeholder{color:rgba(246,241,230,.42)}
+.cinematic-login .primary-button{border-radius:0;background:#f6f1e6;color:#111;box-shadow:none}
+.cinematic-login .login-meta span{border-radius:0;background:rgba(246,241,230,.08);color:rgba(246,241,230,.74)}
+.cinematic-login .role-note{border-radius:0;background:rgba(246,210,122,.12);color:rgba(246,241,230,.74)}
+.cinematic-login .security-text{color:rgba(246,241,230,.55);text-align:left}
+@media (max-width:980px){
+.cinematic-nav{padding:20px}
+.cinematic-nav-links{display:none}
+.scene-inner{grid-template-columns:minmax(0,1fr);padding:100px 22px 44px;gap:24px}
+.scene-copy h1{font-size:clamp(3.4rem,16vw,7rem)}
+.scene-copy h2{font-size:clamp(3rem,13vw,5.8rem)}
+.gallery-strip,.workspace-grid{grid-template-columns:1fr}
+.house-stage{min-height:360px;overflow:hidden}
+.house-three{inset:-4% -6% -8%;width:112%;height:112%}
+.landing-showcase-card{position:relative;right:auto;bottom:auto;width:100%;margin-top:-40px}
+.orbit-chip{display:none}
+.property-tile{min-height:300px}
+.property-tile:nth-child(1),
+.property-tile:nth-child(2),
+.property-tile:nth-child(3){transform:none}
+.cinematic-shell::after{opacity:.14}
+}
+@media (max-width:560px){
+.cinematic-menu{padding:10px 12px;font-size:.66rem}
+.quick-login{left:14px;right:14px;bottom:14px}
+.cinematic-brand{font-size:.78rem}
+.cinematic-logo-mark{width:30px;height:30px;border-radius:9px}
+.scene-inner{width:100%;padding:86px 14px 32px}
+.scene-copy{gap:16px}
+.scene-copy p{font-size:.92rem}
+.scene-actions{display:grid}
+.hero-search-row{grid-template-columns:1fr}
+.hero-search-widget{border-radius:22px;padding:10px}
+.hero-search-submit{width:100%}
+.countdown-row{grid-template-columns:repeat(2,1fr)}
+.cinematic-login{padding:16px}
+.cinematic-login .trust-row{display:none}
+.cinematic-login .auth-head h2{font-size:2.15rem}
+}
 </style>
 </head>
-<body>
-<main class="login-page">
-<section class="story-panel" aria-label="RealityGenius platform story">
-<header class="brand-row">
-<button class="brand-mark" id="masterTrigger" type="button" aria-label="RealityGenius internal access unlock">RealityGenius<sup>TM</sup></button>
-<div class="brand-motto">Build Beyond Reality</div>
-</header>
-
-<div class="story-copy">
-<p class="eyebrow">Malaysia AI Property OS</p>
-<h1>Enter a verified property ecosystem, not a normal login page.</h1>
-<p>Buyers and agents move through real accounts, role-aware dashboards, and safer deal workflows from the first click.</p>
+<body class="cinematic-home">
+<a class="skip-link" href="#mainContent">Skip to RealityGenius overview</a>
+<main class="cinematic-shell" id="mainContent">
+<nav class="cinematic-nav" aria-label="RealityGenius cinematic navigation">
+<button class="cinematic-brand" id="masterTrigger" type="button" aria-label="RealityGenius internal access unlock">
+<img class="cinematic-logo-mark" src="./favicon-48x48.png" alt="" aria-hidden="true">
+<span>RealityGenius<sup>TM</sup></span>
+</button>
+<div class="cinematic-nav-links">
+<a href="#gallery">Gallery</a>
+<a href="#auction">Auction</a>
+<a href="#workspace">Agents</a>
+<a href="#contact">Join</a>
 </div>
+<a class="cinematic-menu" href="./login.html">Login</a>
+</nav>
+<a class="quick-login" href="./login.html"><i class="fa-solid fa-arrow-right-to-bracket"></i> Login</a>
 
-<div class="role-stack" aria-label="Account roles are detected after login">
-<button class="role-card active" id="optionUser" data-role="user" type="button" tabindex="-1" aria-disabled="true">
-<span class="role-icon"><i class="fa-solid fa-house-user"></i></span>
-<span><strong>Buyer</strong><span>Verified search, saved homes, DSR, escrow</span></span>
-</button>
-<button class="role-card" id="optionAgent" data-role="agent" type="button" tabindex="-1" aria-disabled="true">
-<span class="role-icon"><i class="fa-solid fa-user-tie"></i></span>
-<span><strong>Agent</strong><span>Live listings, leads, AI tools, approvals</span></span>
-</button>
+<section class="cinematic-section hero-cinema" style="--scene-bg:url('https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=2400&q=88') center/cover" aria-label="RealityGenius hero">
+<div class="scene-inner">
+<div class="scene-copy reveal">
+<p class="scene-kicker">Malaysia's Next AI Property Ecosystem</p>
+<h1>Build Beyond Reality.</h1>
+<p>Search, compare, shortlist and act inside a cinematic AI property showroom built for Malaysian buyers, agents and serious investors.</p>
+<div class="hero-search-widget reveal" aria-label="RealityGenius AI property search preview">
+<div class="hero-search-row">
+<div class="hero-search-field">
+<i class="fa-solid fa-magnifying-glass"></i>
+<span>AI search: RM500k, 3 bedrooms, Shah Alam, near schools</span>
+</div>
+<a class="hero-search-submit" href="./user.html#aiBuyerTools"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Match</a>
+</div>
+<div class="hero-proof-row">
+<span><i class="fa-solid fa-circle-check"></i> QC-approved listings</span>
+<span><i class="fa-solid fa-user-check"></i> Trusted agents</span>
+<span><i class="fa-solid fa-calendar-check"></i> Book viewings</span>
+<span><i class="fa-solid fa-chart-line"></i> Investment signals</span>
+</div>
+</div>
+<div class="scene-actions">
+<a class="scene-button" href="./login.html"><i class="fa-solid fa-arrow-right-to-bracket"></i> Login</a>
+<a class="scene-ghost" href="./user.html"><i class="fa-solid fa-magnifying-glass"></i> Browse first</a>
+</div>
+</div>
+<div class="house-stage house-pin" aria-hidden="true">
+<div class="orbit-chip orbit-chip-one"><i class="fa-solid fa-shield-halved"></i> Trusted Agent Layer</div>
+<div class="orbit-chip orbit-chip-two"><i class="fa-solid fa-bolt"></i> Live Buyer Signals</div>
+<div class="house-scene" data-three-house>
+<canvas class="house-three"></canvas>
+<div class="house-light"></div>
+<div class="house-roof"></div>
+<div class="house-base"></div>
+<div class="house-glass"></div>
+</div>
+<article class="landing-showcase-card">
+<div class="landing-showcase-media"></div>
+<div class="landing-showcase-copy">
+<span>AI showroom pick</span>
+<strong>Luxury shortlist engine</strong>
+<p>Gallery, score, agent identity, affordability and viewing action in one trusted flow.</p>
+</div>
+<div class="landing-showcase-stats">
+<b>RM 780k<small>Guide</small></b>
+<b>4.2%<small>Yield</small></b>
+<b>2 min<small>Reply</small></b>
+</div>
+</article>
+</div>
 </div>
 </section>
 
-<section class="auth-panel" aria-label="RealityGenius account login">
-<div class="auth-card">
-<div class="auth-head">
-<h2>RealityGenius<sup>TM</sup></h2>
-<p>Build Beyond Reality</p>
+<section class="cinematic-section" id="gallery" style="--scene-bg:url('https://images.unsplash.com/photo-1600566752355-35792bedcfea?auto=format&fit=crop&w=2400&q=88') center/cover" aria-label="AI property gallery">
+<div class="scene-inner">
+<div class="scene-copy reveal">
+<p class="scene-kicker">3D Property Gallery</p>
+<h2>Float through homes before you commit.</h2>
+<p>Premium property cards move like a digital showroom: AI match, price intelligence, lifestyle fit and agent trust stay visible as you scroll.</p>
 </div>
+<div class="gallery-strip">
+<article class="property-tile reveal" style="--tile-img:url('https://images.unsplash.com/photo-1600607687644-c7171b42498f?auto=format&fit=crop&w=900&q=84')"><div><h3>Mont Kiara</h3><p>AI match 94%. Family comfort with investor-grade demand.</p></div></article>
+<article class="property-tile reveal" style="--tile-img:url('https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=900&q=84')"><div><h3>Bangsar</h3><p>Trusted agent ready. Lifestyle score and viewing path unlocked.</p></div></article>
+<article class="property-tile reveal" style="--tile-img:url('https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=84')"><div><h3>KLCC</h3><p>Price trend signal, mortgage check and premium gallery context.</p></div></article>
+</div>
+</div>
+</section>
 
-<div class="trust-row" aria-label="Login trust signals">
-<span class="trust-chip"><i class="fa-solid fa-circle-check"></i> Real account</span>
-<span class="trust-chip"><i class="fa-solid fa-lock"></i> Strong password</span>
-<span class="trust-chip"><i class="fa-solid fa-envelope-circle-check"></i> Real email login</span>
+<section class="cinematic-section" id="auction" style="--scene-bg:url('https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=2400&q=88') center/cover" aria-label="Friday Auction Night">
+<div class="scene-inner">
+<div class="scene-copy reveal">
+<p class="scene-kicker">Friday Auction Night</p>
+<h2>Two homes. One holographic bidding night.</h2>
+<p>Every Friday, selected homes become a live offer event. Winning a bid means the buyer submitted the highest offer. Final purchase remains subject to owner approval, booking fee, loan eligibility, agreement terms and legal documentation.</p>
 </div>
+<div class="auction-board reveal">
+<div class="countdown-row" aria-label="Auction countdown">
+<span>08<br>Days</span><span>12<br>Hours</span><span>30<br>Min</span><span>00<br>Sec</span>
+</div>
+<div class="bid-row"><div><small>House 1</small><strong>Live bidding 9:00 PM</strong></div><strong>RM 780k</strong></div>
+<div class="bid-row"><div><small>House 2</small><strong>Live bidding 9:30 PM</strong></div><strong>RM 1.2m</strong></div>
+<a class="scene-button" href="./user.html#auction-night"><i class="fa-solid fa-gavel"></i> View auction</a>
+</div>
+</div>
+</section>
 
-<form class="auth-form" id="loginForm" method="post">
-<label class="field">
-<span id="loginIdLabel">Email</span>
-<div class="input-shell">
-<i class="fa-solid fa-envelope"></i>
-<input id="loginId" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" required>
+<section class="cinematic-section" id="workspace" style="--scene-bg:url('https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=2400&q=88') center/cover" aria-label="Agent AI workspace">
+<div class="scene-inner">
+<div class="scene-copy reveal">
+<p class="scene-kicker">Agent Workspace Preview</p>
+<h2>A futuristic control panel for serious agents.</h2>
+<p>Agents control listings, AI content, Telegram imports, auction submissions, buyer signals and admin QC from a premium workspace built for speed.</p>
+<div class="scene-actions">
+<a class="scene-button" href="./agent.html"><i class="fa-solid fa-user-tie"></i> Open agent side</a>
+<a class="scene-ghost" href="./agents.html">See agent platform</a>
 </div>
-</label>
-<label class="field">
-<span>Password</span>
-<div class="input-shell">
-<i class="fa-solid fa-key"></i>
-<input id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter password" required>
 </div>
-</label>
-<button class="primary-button" id="loginButton" type="submit">
-<i class="fa-solid fa-arrow-right-to-bracket"></i>
-Continue securely
-</button>
-<div class="login-meta" id="loginMeta">
-<span>Buyer</span>
-<span>Agent</span>
+<div class="control-panel reveal" aria-label="RealityGenius agent workspace control panel">
+<div class="control-panel-head"><span>RealityGenius Agent OS</span><i class="control-pulse"></i></div>
+<div class="control-row"><div><span>Listing QC</span><strong>Telegram import linked to agent profile</strong></div><b>Live</b></div>
+<div class="control-meter"><i style="--meter:82%"></i></div>
+<div class="workspace-grid">
+<article class="float-card"><strong>AI Content</strong><span>Descriptions, captions, WhatsApp copy and listing polish.</span></article>
+<article class="float-card"><strong>Buyer Heat</strong><span>Views, saves, contacts and serious viewing intent.</span></article>
+<article class="float-card"><strong>Auction Slot</strong><span>Submit premium homes for Friday Auction Night.</span></article>
+<article class="float-card"><strong>Admin QC</strong><span>Only approved listings reach the public buyer side.</span></article>
 </div>
-<div class="role-note" id="roleNote">
-<i class="fa-solid fa-shield-heart"></i>
-<span>Use one real email and password. RealityGenius detects your role automatically.</span>
 </div>
-<div class="status" id="sharedStatus" role="status"></div>
-</form>
-<p class="security-text">Your account is protected. RealityGenius routes each role to its own dashboard.</p>
+</div>
+</section>
+
+<section class="cinematic-section" id="first-million" style="--scene-bg:url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=2400&q=88') center/cover" aria-label="First RM1M Challenge">
+<div class="scene-inner">
+<div class="scene-copy reveal">
+<p class="scene-kicker">First RM1M Challenge</p>
+<h2>Help us hit RM1,000,000 in verified homes.</h2>
+<p>Every live, admin-approved listing counts toward our first million in verified property value. List your property today and put your agency's name on the board.</p>
+<div class="scene-actions">
+<a class="scene-button" href="./agent.html"><i class="fa-solid fa-plus"></i> List your property</a>
+<a class="scene-ghost" href="./agent.html#agentPricing">See agent plans</a>
+</div>
+</div>
+<div class="control-panel reveal" aria-label="First RM1M progress">
+<div class="control-panel-head"><span>Verified Listing Value</span><i class="control-pulse"></i></div>
+<div class="control-row"><div><span>Progress</span><strong id="firstMillionTotal">RM0</strong></div><b id="firstMillionPct">0%</b></div>
+<div class="control-meter"><i id="firstMillionMeter" style="--meter:0%"></i></div>
+<div class="workspace-grid">
+<article class="float-card"><strong>Target</strong><span>RM1,000,000 in live, agent-uploaded listings.</span></article>
+<article class="float-card"><strong>How to help</strong><span>Every approved listing you add moves the needle.</span></article>
+</div>
+</div>
+</div>
+</section>
+
+<section class="cinematic-section" id="contact" style="--scene-bg:url('https://images.unsplash.com/photo-1600607688969-a5bfcd646154?auto=format&fit=crop&w=2400&q=88') center/cover" aria-label="Join RealityGenius">
+<div class="scene-inner">
+<div class="scene-copy reveal">
+<p class="scene-kicker">Call To Action</p>
+<h2>Enter Malaysia's AI property ecosystem.</h2>
+<p>Start as a buyer, upload as an agent, or use the workspace to move listings from Telegram to admin QC to public discovery.</p>
+<div class="glass-stack">
+<article class="float-card"><strong>QC</strong><span>trusted listings after admin approval</span></article>
+<article class="float-card"><strong>AI</strong><span>search, content, bidding and agent workflow</span></article>
+</div>
+</div>
+<div class="auction-board reveal">
+<p class="scene-kicker">Balanced Performance</p>
+<h3 style="margin:0;font-size:clamp(2rem,4vw,3.8rem);line-height:.9;letter-spacing:-.06em;text-transform:uppercase">Premium outside. Fast inside.</h3>
+<p style="margin:0;color:rgba(246,241,230,.72);font-weight:800;line-height:1.6">The public entrance feels cinematic. Buyer, agent and admin pages stay practical so real workflows remain smooth on normal laptops and phones.</p>
+<div class="scene-actions">
+<a class="scene-button" href="./login.html"><i class="fa-solid fa-arrow-right-to-bracket"></i> Login</a>
+<a class="scene-ghost" href="./user.html"><i class="fa-solid fa-house"></i> Browse first</a>
+</div>
 </div>
 </section>
 </main>
+<footer class="cinematic-footer" aria-label="RealityGenius footer">
+<span>RealityGenius connects buyers, agents, and admin-approved listings in one AI property ecosystem.</span>
+<nav>
+<a href="./privacy.html">Privacy</a>
+<a href="./terms.html">Terms</a>
+<a href="./login.html">Login</a>
+</nav>
+</footer>
 
+<script src="./js/vendor/gsap.min.js"></script>
+<script src="./js/vendor/ScrollTrigger.min.js"></script>
+<script src="./js/vendor/lenis.min.js"></script>
+<script>
+(function(){
+  document.documentElement.classList.add("cinema-js-booted");
+  if (!window.gsap || !window.ScrollTrigger) return;
+  document.documentElement.classList.add("cinema-gsap-ready");
+  gsap.registerPlugin(ScrollTrigger);
+  var lenis = window.Lenis ? new Lenis({ anchors: true, duration: 1.15, smoothWheel: true, wheelMultiplier: .9 }) : null;
+  if (lenis) {
+    window.__rgLenis = lenis;
+    lenis.on("scroll", ScrollTrigger.update);
+    gsap.ticker.add(function(time){ lenis.raf(time * 1000); });
+    gsap.ticker.lagSmoothing(0);
+  }
+  gsap.to(".house-scene", {
+    scale: 2.15,
+    rotateY: -18,
+    y: -80,
+    scrollTrigger: {
+      trigger: ".hero-cinema",
+      start: "top top",
+      end: "bottom top",
+      scrub: true,
+      pin: window.innerWidth > 760
+    }
+  });
 
-<script src="./rg-config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./auth.js"></script>
-<script src="./login.js"></script>
+  gsap.utils.toArray(".cinematic-section").forEach(function(section, index){
+    gsap.fromTo(section,
+      { "--parallax-y": index === 0 ? "-18px" : "-46px" },
+      {
+        "--parallax-y": index === 0 ? "28px" : "54px",
+        ease: "none",
+        scrollTrigger: {
+          trigger: section,
+          start: "top bottom",
+          end: "bottom top",
+          scrub: 1.25
+        }
+      }
+    );
+  });
+
+  gsap.to(".quick-login", {
+    y: -18,
+    ease: "none",
+    scrollTrigger: {
+      trigger: ".cinematic-shell",
+      start: "top top",
+      end: "bottom bottom",
+      scrub: 1.2
+    }
+  });
+
+  gsap.utils.toArray(".property-tile").forEach(function(tile, index){
+    gsap.fromTo(tile,
+      { y: index % 2 ? 44 : -24, rotateY: index === 0 ? 7 : index === 2 ? -7 : 0 },
+      {
+        y: index % 2 ? -36 : 32,
+        rotateY: index === 0 ? -4 : index === 2 ? 4 : 0,
+        ease: "none",
+        scrollTrigger: {
+          trigger: tile,
+          start: "top bottom",
+          end: "bottom top",
+          scrub: 1.1
+        }
+      }
+    );
+  });
+
+  gsap.utils.toArray(".float-card").forEach(function(card, index){
+    gsap.fromTo(card,
+      { y: 18 + index * 8 },
+      {
+        y: -22 - index * 6,
+        ease: "none",
+        scrollTrigger: {
+          trigger: card,
+          start: "top bottom",
+          end: "bottom top",
+          scrub: 1
+        }
+      }
+    );
+  });
+  gsap.fromTo(".control-panel",
+    { y: 60, rotateX: 8, opacity: .72 },
+    {
+      y: -22,
+      rotateX: 0,
+      opacity: 1,
+      ease: "none",
+      scrollTrigger: {
+        trigger: ".control-panel",
+        start: "top bottom",
+        end: "bottom top",
+        scrub: 1.1
+      }
+    }
+  );
+
+  gsap.utils.toArray(".reveal").forEach(function(item){
+    gsap.fromTo(item, { y: 80, opacity: 0 }, {
+      y: 0,
+      opacity: 1,
+      duration: 1,
+      ease: "power3.out",
+      scrollTrigger: { trigger: item, start: "top 82%", toggleActions: "play none none reverse" }
+    });
+  });
+  gsap.utils.toArray(".cinematic-section").forEach(function(section){
+    gsap.to(section, {
+      backgroundPosition: "50% 38%",
+      scrollTrigger: { trigger: section, start: "top bottom", end: "bottom top", scrub: true }
+    });
+  });
+})();
+</script>
+<script src="./rg-smooth-scroll.js"></script>
+<script type="module">
+import * as THREE from "./js/vendor/three.module.min.js";
+
+(function(){
+  var mount = document.querySelector("[data-three-house]");
+  var canvas = mount ? mount.querySelector(".house-three") : null;
+  if (!mount || !canvas || !window.WebGLRenderingContext) return;
+
+  try {
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+    camera.position.set(0.2, 2.2, 8.3);
+
+    var renderer = new THREE.WebGLRenderer({
+      canvas: canvas,
+      alpha: true,
+      antialias: true,
+      powerPreference: "high-performance",
+      preserveDrawingBuffer: true
+    });
+    renderer.setClearColor(0x000000, 0);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
+
+    var house = new THREE.Group();
+    house.position.y = -0.42;
+    house.rotation.set(-0.06, -0.32, 0.02);
+    scene.add(house);
+
+    var graphite = new THREE.MeshStandardMaterial({ color: 0x151719, roughness: 0.48, metalness: 0.18 });
+    var stone = new THREE.MeshStandardMaterial({ color: 0xd8d1c5, roughness: 0.42, metalness: 0.08 });
+    var roof = new THREE.MeshStandardMaterial({ color: 0x08090b, roughness: 0.32, metalness: 0.42 });
+    var warm = new THREE.MeshStandardMaterial({ color: 0xffc66f, emissive: 0xf6a84d, emissiveIntensity: 1.75, roughness: 0.18 });
+    var glass = new THREE.MeshPhysicalMaterial({
+      color: 0x9ecbff,
+      transparent: true,
+      opacity: 0.34,
+      roughness: 0.04,
+      metalness: 0.04,
+      transmission: 0.24,
+      clearcoat: 0.85,
+      clearcoatRoughness: 0.06
+    });
+    var water = new THREE.MeshPhysicalMaterial({
+      color: 0x183342,
+      transparent: true,
+      opacity: 0.44,
+      roughness: 0.05,
+      metalness: 0.16
+    });
+
+    function box(width, height, depth, x, y, z, material) {
+      var mesh = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), material);
+      mesh.position.set(x, y, z);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      house.add(mesh);
+      return mesh;
+    }
+
+    box(4.9, 0.12, 2.8, 0, 0, 0.12, graphite);
+    box(3.9, 1.18, 1.62, -0.22, 0.62, 0, stone);
+    box(2.8, 1.08, 1.48, 0.52, 1.8, -0.12, stone);
+    box(4.45, 0.14, 1.95, -0.2, 1.25, 0, roof);
+    box(3.25, 0.14, 1.78, 0.5, 2.38, -0.12, roof);
+    box(2.8, 0.64, 0.05, -0.24, 0.68, 0.84, warm);
+    box(2.95, 0.82, 0.08, -0.24, 0.72, 0.9, glass);
+    box(2.05, 0.58, 0.05, 0.52, 1.84, 0.68, warm);
+    box(2.18, 0.76, 0.08, 0.52, 1.88, 0.74, glass);
+    box(0.08, 1.12, 0.08, -1.92, 0.66, 0.9, roof);
+    box(0.08, 1.12, 0.08, 1.52, 0.66, 0.9, roof);
+    box(0.07, 1.03, 0.07, -0.52, 1.8, 0.74, roof);
+    box(0.07, 1.03, 0.07, 1.54, 1.8, 0.74, roof);
+
+    var pool = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 1.25), water);
+    pool.rotation.x = -Math.PI / 2;
+    pool.position.set(0.08, -0.08, 1.42);
+    pool.receiveShadow = true;
+    house.add(pool);
+
+    scene.add(new THREE.AmbientLight(0x9badc2, 0.68));
+    var moon = new THREE.DirectionalLight(0xdce9ff, 1.65);
+    moon.position.set(-3.6, 5.2, 4.3);
+    moon.castShadow = true;
+    scene.add(moon);
+    var windowGlow = new THREE.PointLight(0xffc878, 4.2, 7);
+    windowGlow.position.set(-0.45, 1.18, 1.55);
+    scene.add(windowGlow);
+    var gardenGlow = new THREE.PointLight(0xf5d48c, 1.2, 5);
+    gardenGlow.position.set(2.2, 0.35, 2.3);
+    scene.add(gardenGlow);
+
+    var starPositions = [];
+    for (var i = 0; i < 90; i += 1) {
+      starPositions.push((Math.random() - 0.5) * 11, Math.random() * 4.8 + 1.5, -Math.random() * 4 - 2);
+    }
+    var stars = new THREE.BufferGeometry();
+    stars.setAttribute("position", new THREE.Float32BufferAttribute(starPositions, 3));
+    var starMesh = new THREE.Points(stars, new THREE.PointsMaterial({
+      color: 0xf7e7bd,
+      size: 0.028,
+      transparent: true,
+      opacity: 0.62
+    }));
+    scene.add(starMesh);
+
+    function resize() {
+      var width = Math.max(1, mount.clientWidth);
+      var height = Math.max(1, mount.clientHeight);
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    }
+
+    var reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var resizeObserver = window.ResizeObserver ? new ResizeObserver(resize) : null;
+    if (resizeObserver) resizeObserver.observe(mount);
+    window.addEventListener("resize", resize, { passive: true });
+    resize();
+
+    mount.classList.add("three-ready");
+    document.documentElement.classList.add("three-hero-ready");
+
+    var startTime = performance.now();
+    var frameCount = 0;
+    window.__realityGeniusThreeHero = {
+      frame: 0,
+      rotationY: house.rotation.y,
+      cameraZ: camera.position.z
+    };
+
+    function animate() {
+      frameCount += 1;
+      var elapsed = (performance.now() - startTime) / 1000;
+      var scrollProgress = Math.min(1, window.scrollY / Math.max(1, window.innerHeight));
+      var idle = reducedMotion ? 0 : Math.sin(elapsed * 0.55) * THREE.MathUtils.degToRad(3.5);
+      house.rotation.y = -0.32 + idle - scrollProgress * 0.08;
+      house.rotation.x = -0.06 + (reducedMotion ? 0 : Math.sin(elapsed * 0.4) * 0.012);
+      starMesh.rotation.y = reducedMotion ? 0 : elapsed * 0.018;
+      camera.position.z = THREE.MathUtils.lerp(8.3, 6.65, scrollProgress);
+      camera.position.y = THREE.MathUtils.lerp(2.2, 1.75, scrollProgress);
+      camera.lookAt(0.08, 1.0, 0);
+      renderer.render(scene, camera);
+      window.__realityGeniusThreeHero.frame = frameCount;
+      window.__realityGeniusThreeHero.rotationY = house.rotation.y;
+      window.__realityGeniusThreeHero.cameraZ = camera.position.z;
+      requestAnimationFrame(animate);
+    }
+    animate();
+  } catch (error) {
+    console.warn("RealityGenius Three.js hero fallback is active.", error && error.message ? error.message : error);
+  }
+})();
+</script>
+<script>
+(function(){
+  var apiBase = (window.REALTYGENIUS_CONFIG && window.REALTYGENIUS_CONFIG.API_BASE) || "https://hh-empire.onrender.com/api";
+  fetch(apiBase + "/public/milestone-gmv")
+    .then(function(response){ return response.ok ? response.json() : null; })
+    .then(function(data){
+      if (!data) return;
+      var pct = Math.min(100, Number(data.progressPct || 0));
+      var total = Math.round(Number(data.total || 0));
+      var meter = document.getElementById("firstMillionMeter");
+      var pctLabel = document.getElementById("firstMillionPct");
+      var totalLabel = document.getElementById("firstMillionTotal");
+      if (meter) meter.style.setProperty("--meter", pct + "%");
+      if (pctLabel) pctLabel.textContent = pct + "%";
+      if (totalLabel) totalLabel.textContent = "RM" + total.toLocaleString("en-MY");
+    })
+    .catch(function(){ /* Widget stays at its 0% default if the backend is unreachable. */ });
+})();
+</script>
 </body>
 </html>

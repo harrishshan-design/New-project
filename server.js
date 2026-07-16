@@ -3143,13 +3143,41 @@ async function reviewAgentListing(payload = {}) {
 // frontline leaderboard. Gated behind the same admin API key admin.html
 // already uses (both are owner-only surfaces).
 // ---------------------------------------------------------
+const FIRST_MILLION_TARGET = 1000000;
+
+async function getPlatformGmvTotal() {
+    const rows = await selectSupabaseRows(
+        'agent_property_listings',
+        "select=price,status&status=in.(live,approved)&limit=5000"
+    ).catch(() => []);
+    const total = (Array.isArray(rows) ? rows : []).reduce((sum, row) => sum + (Number(row.price) || 0), 0);
+    return {
+        total,
+        target: FIRST_MILLION_TARGET,
+        progressPct: Math.min(100, Math.round((total / FIRST_MILLION_TARGET) * 1000) / 10)
+    };
+}
+
+// Public (no admin key) - homepage "First RM1M" widget needs this before
+// the visitor is authenticated. Only ever reveals an aggregate total, never
+// individual listing/agent data.
+async function publicMilestoneGmv() {
+    if (!hasSupabaseConfig()) return { total: 0, target: FIRST_MILLION_TARGET, progressPct: 0 };
+    try {
+        return await getPlatformGmvTotal();
+    } catch {
+        return { total: 0, target: FIRST_MILLION_TARGET, progressPct: 0 };
+    }
+}
+
 async function getMasterPulse() {
     if (!hasSupabaseConfig()) return { __status: 500, error: "Supabase is not configured." };
 
-    const [agentUsers, listingRows, engagementRows] = await Promise.all([
+    const [agentUsers, listingRows, engagementRows, gmv] = await Promise.all([
         selectSupabaseRows('users', "select=subscription_plan,subscription_status,features_unlocked&role=eq.agent&limit=5000").catch(() => []),
         selectSupabaseRows('agent_property_listings', "select=status&limit=5000").catch(() => []),
-        selectSupabaseRows('agent_engagement', "select=agent_id,points,streak_days,listings_submitted&order=points.desc&limit=5").catch(() => [])
+        selectSupabaseRows('agent_engagement', "select=agent_id,points,streak_days,listings_submitted&order=points.desc&limit=5").catch(() => []),
+        getPlatformGmvTotal().catch(() => ({ total: 0, target: FIRST_MILLION_TARGET, progressPct: 0 }))
     ]);
 
     const agents = Array.isArray(agentUsers) ? agentUsers : [];
@@ -3182,6 +3210,7 @@ async function getMasterPulse() {
         agents: { total: agents.length, paying: paying.length, byPlan },
         listings: listingCounts,
         leaderboard,
+        gmv,
         generatedAt: new Date().toISOString()
     };
 }
@@ -3320,6 +3349,10 @@ const server = http.createServer(async (req, res) => {
 
         if (url === '/api/auth/dual-role') {
             return publicDualRoleLookup(payload);
+        }
+
+        if (url === '/api/public/milestone-gmv') {
+            return publicMilestoneGmv();
         }
 
         if (url === '/api/admin/users/lookup') {

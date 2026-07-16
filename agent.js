@@ -2290,6 +2290,23 @@ function billingStatusLabel() {
   return "Free";
 }
 
+async function loadFirstMillionMilestone() {
+  const fill = document.getElementById("agentMilestoneFill");
+  const label = document.getElementById("agentMilestoneLabel");
+  if (!fill || !label) return;
+  try {
+    const response = await fetch(`${agentApiBaseUrl()}/public/milestone-gmv`);
+    if (!response.ok) return;
+    const data = await response.json().catch(() => ({}));
+    const pct = Math.min(100, Number(data.progressPct || 0));
+    const total = Math.round(Number(data.total || 0));
+    fill.style.width = `${pct}%`;
+    label.textContent = `RM${total.toLocaleString("en-MY")} of RM1,000,000`;
+  } catch {
+    // Banner stays at its 0% default if the backend is unreachable.
+  }
+}
+
 function agentApiBaseUrl() {
   if (window.REALTYGENIUS_API_BASE) return window.REALTYGENIUS_API_BASE.replace(/\/+$/, "");
   if (window.REALTYGENIUS_CONFIG?.API_BASE) return window.REALTYGENIUS_CONFIG.API_BASE.replace(/\/+$/, "");
@@ -5850,6 +5867,8 @@ function bindEvents() {
 
   els.listingPurposeSale?.addEventListener("click", () => setListingPurpose("sale"));
   els.listingPurposeRent?.addEventListener("click", () => setListingPurpose("rent"));
+
+  loadFirstMillionMilestone();
 
   els.leadForm.addEventListener("submit", addLead);
   els.listingForm.addEventListener("submit", addListing);
