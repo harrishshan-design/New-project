@@ -340,6 +340,105 @@
     }, password);
   }
 
+  async function updateCurrentProfile({ currentPassword = "", newPassword = "", profile = {} } = {}) {
+    const session = JSON.parse(localStorage.getItem("rg_session") || "null");
+    const email = String(profile.email || session?.email || "").trim().toLowerCase();
+    const cleanCurrentPassword = String(currentPassword || "");
+    const cleanNewPassword = String(newPassword || "");
+    const nextProfile = {
+      name: String(profile.name || session?.name || "").trim(),
+      phone: String(profile.phone || session?.phone || "").trim(),
+      photo: profile.photo || "",
+      agencyName: String(profile.agencyName || session?.agencyName || "").trim(),
+      renNumber: String(profile.renNumber || session?.renNumber || "").trim()
+    };
+
+    if (!email) throw new Error("Login first before editing your profile.");
+    if (cleanNewPassword && cleanNewPassword.length < 6) throw new Error("New password must be at least 6 characters.");
+
+    const accounts = readLocalAccounts();
+    const localAccount = accounts[email];
+    let passwordUpdated = false;
+    if (cleanNewPassword && localAccount) {
+      if (!cleanCurrentPassword || localAccount.password !== cleanCurrentPassword) {
+        throw new Error("Current password is incorrect.");
+      }
+      accounts[email] = {
+        ...localAccount,
+        password: cleanNewPassword,
+        ...nextProfile,
+        profileJson: {
+          ...(localAccount.profileJson || {}),
+          profilePhoto: nextProfile.photo || localAccount.profileJson?.profilePhoto || "",
+          updatedAt: new Date().toISOString()
+        }
+      };
+      writeLocalAccounts(accounts);
+      passwordUpdated = true;
+    }
+
+    const client = getClient();
+    const { data } = await client.auth.getSession().catch(() => ({ data: {} }));
+    const supabaseSession = data?.session || null;
+    if (cleanNewPassword && supabaseSession?.access_token) {
+      if (!cleanCurrentPassword) throw new Error("Enter your current password before changing it.");
+      const { error: signInError } = await client.auth.signInWithPassword({ email, password: cleanCurrentPassword });
+      if (signInError) throw new Error("Current password is incorrect.");
+      const { error: updateError } = await client.auth.updateUser({ password: cleanNewPassword });
+      if (updateError) throw updateError;
+      passwordUpdated = true;
+    }
+    if (cleanNewPassword && !passwordUpdated) {
+      throw new Error("Login again before changing your password.");
+    }
+
+    const profileJson = {
+      profilePhoto: nextProfile.photo,
+      updatedAt: new Date().toISOString()
+    };
+    if (supabaseSession?.access_token) {
+      const row = {
+        name: nextProfile.name || undefined,
+        full_name: nextProfile.name || undefined,
+        phone: nextProfile.phone || undefined,
+        agency_name: nextProfile.agencyName || undefined,
+        ren_id: nextProfile.renNumber || undefined,
+        profile_json: profileJson,
+        updated_at: new Date().toISOString()
+      };
+      await client.from("users").update(row).eq("email", email).catch(() => null);
+      await client.from("profiles").update(row).eq("email", email).catch(() => null);
+    }
+
+    const updatedSession = {
+      ...(session || {}),
+      email,
+      name: nextProfile.name || session?.name || nameFromEmail(email),
+      phone: nextProfile.phone || session?.phone || "",
+      agencyName: nextProfile.agencyName || session?.agencyName || "",
+      renNumber: nextProfile.renNumber || session?.renNumber || "",
+      profilePhoto: nextProfile.photo || session?.profilePhoto || ""
+    };
+    localStorage.setItem("rg_session", JSON.stringify(updatedSession));
+    window.RealtyGeniusSession = updatedSession;
+
+    if (updatedSession.role === "agent") {
+      const storedAgent = JSON.parse(localStorage.getItem("rg_live_agent_profile") || "{}");
+      localStorage.setItem("rg_live_agent_profile", JSON.stringify({
+        ...storedAgent,
+        name: updatedSession.name,
+        email,
+        phone: updatedSession.phone,
+        agencyName: updatedSession.agencyName || storedAgent.agencyName || "RealityGenius Agent Desk",
+        renNumber: updatedSession.renNumber || storedAgent.renNumber || "REN-PENDING",
+        photo: updatedSession.profilePhoto || storedAgent.photo || "",
+        updatedAt: new Date().toISOString()
+      }));
+    }
+
+    return { profile: updatedSession };
+  }
+
   // Admin-controlled dual role access (set via admin.html, no code deploy
   // needed): looks up whether this email has a secondary role granted, so
   // login.html's role tabs both work for that one account. Returns null on
@@ -598,12 +697,12 @@
         role: normalizedRole,
         status
       }, null);
-      if (direct.needsApproval || (normalizedRole === "agent" && !agentFullAccess)) {
+      if (direct.needsApproval) {
         await signOut();
         return { session: null, profile: directProfile, needsApproval: true, confirmationRequired: false };
       }
       const signedIn = await signIn(normalizedEmail, password);
-      return { ...signedIn, needsApproval: false, confirmationRequired: false };
+      return { ...signedIn, needsApproval: false, confirmationRequired: false, founderPromo: Boolean(direct.founderPromo), founderListingsRequired: direct.founderListingsRequired || null };
     } catch (directError) {
       if (directError.status === 409) throw directError;
       if (["user", "agent"].includes(normalizedRole)) {
@@ -765,6 +864,7 @@
     signIn,
     signInWithAgentProductKey,
     resetPublicPassword,
+    updateCurrentProfile,
     signUp,
     signOut,
     getSession,

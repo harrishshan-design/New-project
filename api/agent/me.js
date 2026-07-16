@@ -5,12 +5,29 @@ const {
   normalizePlan
 } = require("../_subscription");
 
-function publicAgentProfile(row = {}, authUser = {}) {
+async function founderListingsSubmitted(agentId) {
+  const restUrl = String(process.env.SUPABASE_URL || "").trim().replace(/\/+$/, "");
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || "";
+  if (!restUrl || !key || !agentId) return 0;
+  const base = restUrl.endsWith("/rest/v1") ? restUrl : `${restUrl}/rest/v1`;
+  try {
+    const response = await fetch(`${base}/agent_engagement?select=listings_submitted&agent_id=eq.${encodeURIComponent(agentId)}&limit=1`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json" }
+    });
+    const rows = await response.json().catch(() => []);
+    return response.ok && Array.isArray(rows) ? Number(rows[0]?.listings_submitted || 0) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+async function publicAgentProfile(row = {}, authUser = {}) {
   const subscriptionPlan = normalizePlan(row.subscription_plan || row.profile_json?.subscription?.subscriptionPlan || row.plan) || "free";
   const status = String(row.subscription_status || row.profile_json?.subscription?.status || "inactive").toLowerCase();
   const active = status === "active" || status === "trialing";
   const effectivePlan = active ? subscriptionPlan : "free";
   const permissions = PLAN_FEATURES[effectivePlan] || PLAN_FEATURES.free;
+  const founderPromo = Boolean(row.profile_json?.founderPromo);
 
   return {
     id: row.id || authUser.id || "",
@@ -24,7 +41,10 @@ function publicAgentProfile(row = {}, authUser = {}) {
     stripe_subscription_id: row.stripe_subscription_id || "",
     auction_slots_monthly: Number(row.auction_slots_monthly ?? permissions.auction_slots ?? 0),
     permissions,
-    features_unlocked: active && effectivePlan !== "free"
+    features_unlocked: active && effectivePlan !== "free",
+    founder_promo: founderPromo,
+    founder_listings_required: founderPromo ? (row.profile_json?.founderListingsRequired || 10) : 0,
+    founder_listings_submitted: founderPromo ? await founderListingsSubmitted(row.id) : 0
   };
 }
 
@@ -44,7 +64,7 @@ module.exports = async function handler(req, res) {
   const row = await findUser({ email: authUser.email });
   if (!row?.id) return res.status(404).json({ error: "Agent profile not found." });
 
-  const profile = publicAgentProfile(row, authUser);
+  const profile = await publicAgentProfile(row, authUser);
   if (String(profile.role || "").toLowerCase() !== "agent") {
     return res.status(403).json({ error: "Agent account required." });
   }

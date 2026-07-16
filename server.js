@@ -587,8 +587,31 @@ const PLAN_FEATURES = {
         auction_slots: 4,
         referral_autopilot: true,
         team_setup: true
+    },
+    // First 10 agent signups: full features unlocked for free, contingent on
+    // submitting FOUNDER_LISTINGS_REQUIRED listings. See createDirectSignup().
+    founder_free: {
+        ai_content_creator: true,
+        whatsapp_followups: true,
+        ar_builder_demo: true,
+        ar_builder_saved: true,
+        document_vault: true,
+        dsr_calculator: true,
+        viewing_itinerary: true,
+        co_broke_matchmaker: true,
+        auction_slots: 4,
+        referral_autopilot: true,
+        team_setup: true
     }
 };
+
+const FOUNDER_AGENT_SLOT_LIMIT = 10;
+const FOUNDER_LISTINGS_REQUIRED = 10;
+
+async function countExistingAgentSignups() {
+    const rows = await selectSupabaseRows('users', 'select=id&role=eq.agent&limit=1000').catch(() => []);
+    return Array.isArray(rows) ? rows.length : 0;
+}
 
 function stripePriceMap() {
     return {
@@ -615,6 +638,7 @@ function normalizeStripePlan(plan = '') {
     if (['pro', 'pro_agent'].includes(normalized)) return 'pro_agent';
     if (['elite', 'premium', 'elite_agent'].includes(normalized)) return 'elite_agent';
     if (['best', 'best_closers'].includes(normalized)) return 'best_closers';
+    if (normalized === 'founder_free') return 'founder_free';
     if (normalized === 'free') return 'free';
     return '';
 }
@@ -623,18 +647,26 @@ function legacyStripePlan(plan = '') {
     const normalized = normalizeStripePlan(plan);
     if (normalized === 'starter_rg') return 'starter';
     if (normalized === 'pro_agent') return 'pro';
-    if (normalized === 'elite_agent' || normalized === 'best_closers') return 'elite';
+    if (normalized === 'elite_agent' || normalized === 'best_closers' || normalized === 'founder_free') return 'elite';
     return 'free';
 }
 
 async function findUserByEmail(email = '') {
     const cleanEmail = String(email || '').trim().toLowerCase();
     if (!cleanEmail) return null;
-    const rows = await selectSupabaseRows(
+    const userRows = await selectSupabaseRows(
         'users',
         `select=*&email=${supabaseEq(cleanEmail)}&limit=1`
-    );
-    return Array.isArray(rows) ? rows[0] || null : null;
+    ).catch(() => []);
+    const user = Array.isArray(userRows) ? userRows[0] || null : null;
+    if (user?.id) return user;
+
+    const profileRows = await selectSupabaseRows(
+        'profiles',
+        `select=*&email=${supabaseEq(cleanEmail)}&limit=1`
+    ).catch(() => []);
+    const profile = Array.isArray(profileRows) ? profileRows[0] || null : null;
+    return profile ? { ...profile, _sourceTable: 'profiles' } : null;
 }
 
 async function updateAgentStripePlan({ email, userId, plan, status, customerId, subscriptionId, checkoutSessionId }) {
@@ -918,9 +950,15 @@ async function createDirectSignup(payload = {}) {
     const phone = cleanPhone(payload.phone || payload.whatsapp || payload.mobile || '');
     const productKey = String(payload.productKey || '');
     const agentFullAccess = role === 'agent' && hasAgentFullAccessKey(productKey);
-    const status = role === 'agent' && !agentFullAccess ? 'pending' : 'active';
-    const subscriptionPlan = agentFullAccess ? 'elite_agent' : 'free';
-    const subscriptionStatus = agentFullAccess ? 'active' : 'inactive';
+    let isFounderAgent = false;
+    if (role === 'agent' && !agentFullAccess) {
+        const existingAgents = await countExistingAgentSignups().catch(() => FOUNDER_AGENT_SLOT_LIMIT);
+        isFounderAgent = existingAgents < FOUNDER_AGENT_SLOT_LIMIT;
+    }
+    const grantsFullAccess = agentFullAccess || isFounderAgent;
+    const status = role === 'agent' && !grantsFullAccess ? 'pending' : 'active';
+    const subscriptionPlan = agentFullAccess ? 'elite_agent' : (isFounderAgent ? 'founder_free' : 'free');
+    const subscriptionStatus = grantsFullAccess ? 'active' : 'inactive';
 
     if (!['user', 'agent'].includes(role)) return { __status: 403, error: 'Only buyer and agent public signup is allowed.' };
     if (!isValidEmailAddress(email)) return { __status: 400, error: 'Enter a valid email address.' };
@@ -936,12 +974,17 @@ async function createDirectSignup(payload = {}) {
         status,
         subscriptionPlan,
         subscriptionStatus,
-        featuresUnlocked: agentFullAccess,
+        featuresUnlocked: grantsFullAccess,
         emailConfirmedByBackend: true,
+        founderPromo: isFounderAgent,
+        founderListingsRequired: isFounderAgent ? FOUNDER_LISTINGS_REQUIRED : null,
         launchAccess: agentFullAccess ? {
             productKey: normalizeProductKey(productKey),
             grantedAt: new Date().toISOString(),
             source: 'agent_signup_product_key'
+        } : isFounderAgent ? {
+            grantedAt: new Date().toISOString(),
+            source: 'founder_agent_promo'
         } : null
     };
 
@@ -963,10 +1006,10 @@ async function createDirectSignup(payload = {}) {
         phone,
         role,
         status,
-        plan: agentFullAccess ? 'elite' : 'free',
+        plan: grantsFullAccess ? 'elite' : 'free',
         subscription_plan: subscriptionPlan,
         subscription_status: subscriptionStatus,
-        features_unlocked: agentFullAccess,
+        features_unlocked: grantsFullAccess,
         profile_json: metadata,
         updated_at: new Date().toISOString()
     };
@@ -981,7 +1024,9 @@ async function createDirectSignup(payload = {}) {
     return {
         ok: true,
         confirmationRequired: false,
-        needsApproval: role === 'agent' && !agentFullAccess,
+        needsApproval: role === 'agent' && !grantsFullAccess,
+        founderPromo: isFounderAgent,
+        founderListingsRequired: isFounderAgent ? FOUNDER_LISTINGS_REQUIRED : null,
         profile: profileRow || userRow || profilePayload
     };
 }
@@ -1022,6 +1067,13 @@ async function getAgentMe(req) {
     const effectivePlan = active ? subscriptionPlan : 'free';
     const permissions = PLAN_FEATURES[effectivePlan] || PLAN_FEATURES.free;
 
+    const founderPromo = Boolean(row.profile_json?.founderPromo);
+    let founderListingsSubmitted = 0;
+    if (founderPromo) {
+        const engagementRows = await selectSupabaseRows('agent_engagement', `select=listings_submitted&agent_id=${supabaseEq(row.id)}&limit=1`).catch(() => []);
+        founderListingsSubmitted = Number(engagementRows?.[0]?.listings_submitted || 0);
+    }
+
     return {
         agent: {
             id: row.id,
@@ -1035,7 +1087,10 @@ async function getAgentMe(req) {
             stripe_subscription_id: row.stripe_subscription_id || '',
             auction_slots_monthly: Number(row.auction_slots_monthly ?? permissions.auction_slots ?? 0),
             permissions,
-            features_unlocked: active && effectivePlan !== 'free'
+            features_unlocked: active && effectivePlan !== 'free',
+            founder_promo: founderPromo,
+            founder_listings_required: founderPromo ? (row.profile_json?.founderListingsRequired || FOUNDER_LISTINGS_REQUIRED) : 0,
+            founder_listings_submitted: founderListingsSubmitted
         }
     };
 }
@@ -1083,10 +1138,16 @@ async function adminSetSecondaryRole(payload = {}) {
         return { __status: 400, error: `This account's primary role is already ${primaryRole}.` };
     }
 
-    const row = await patchSupabaseRow('users', user.id, {
+    const table = user._sourceTable === 'profiles' ? 'profiles' : 'users';
+    const row = await patchSupabaseRow(table, user.id, {
         secondary_role: secondaryRole || null,
         updated_at: new Date().toISOString()
     });
+    const mirrorTable = table === 'profiles' ? 'users' : 'profiles';
+    await patchSupabaseRow(mirrorTable, user.id, {
+        secondary_role: secondaryRole || null,
+        updated_at: new Date().toISOString()
+    }).catch(() => null);
     await createAdminNotification(
         secondaryRole ? 'Dual role granted' : 'Dual role removed',
         secondaryRole

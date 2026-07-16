@@ -446,6 +446,13 @@ button:disabled{
   align-content:start;
 }
 
+.profile-editor-note{
+  margin:0;
+  color:var(--muted);
+  font-size:.84rem;
+  line-height:1.45;
+}
+
 .shortcut-rail{
   display:flex;
   gap:10px;
@@ -5525,6 +5532,42 @@ svg{
 .purpose-pill.is-sale{
   background:rgba(35,194,107,0.16);
   color:#7fe0ab;
+}
+
+.founder-promo-banner{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:16px;
+  padding:16px 20px;
+  border-radius:var(--radius-md);
+  border:1px solid rgba(245,158,11,0.5);
+  background:rgba(245,158,11,0.1);
+  margin-bottom:18px;
+}
+
+.founder-promo-text{
+  flex:1;
+  min-width:220px;
+}
+
+.founder-promo-text strong{
+  display:block;
+  margin-top:4px;
+  font-size:14px;
+  font-weight:600;
+}
+
+.founder-promo-progress{
+  flex:1;
+  min-width:200px;
+}
+
+.founder-promo-progress span{
+  display:block;
+  margin-top:6px;
+  font-size:12px;
+  color:var(--text-soft,#9fb0c9);
 }
 
 .milestone-banner{

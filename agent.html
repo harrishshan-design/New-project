@@ -93,8 +93,26 @@
             <i class="fa-solid fa-plus"></i>
             <span>New Lead</span>
           </button>
+          <button class="top-action" id="agentProfileShortcutButton" type="button">
+            <i class="fa-solid fa-user-gear"></i>
+            <span>Profile</span>
+          </button>
         </div>
       </header>
+
+      <section class="founder-promo-banner" id="founderPromoBanner" hidden aria-label="Free founder features promo">
+        <div class="founder-promo-text">
+          <div class="eyebrow">Free Full Features - Founder Agent</div>
+          <strong>All AgentOS features are unlocked for you, free. Add <span id="founderPromoRequired">10</span> listings to keep it.</strong>
+        </div>
+        <div class="founder-promo-progress">
+          <div class="milestone-bar-track">
+            <div class="milestone-bar-fill" id="founderPromoFill" style="width:0%"></div>
+          </div>
+          <span id="founderPromoLabel">0/10 listings</span>
+        </div>
+        <a class="primary-button" href="#listingCreator">Add a listing</a>
+      </section>
 
       <section class="milestone-banner" id="firstMillionBanner" aria-label="First RM1M Challenge">
         <div class="milestone-banner-text">
@@ -215,6 +233,15 @@
               <i class="fa-solid fa-image"></i>
               <input id="agentProfilePhotoInput" type="file" accept="image/*">
             </label>
+            <label class="input-shell">
+              <i class="fa-solid fa-lock"></i>
+              <input id="agentCurrentPasswordInput" type="password" autocomplete="current-password" placeholder="Current password">
+            </label>
+            <label class="input-shell">
+              <i class="fa-solid fa-key"></i>
+              <input id="agentNewPasswordInput" type="password" autocomplete="new-password" placeholder="New password">
+            </label>
+            <p class="profile-editor-note">Leave password fields empty if you only want to update profile details.</p>
             <button class="primary-button" type="submit">
               Save Profile
               <i class="fa-solid fa-check"></i>

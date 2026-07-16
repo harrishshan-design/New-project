@@ -104,6 +104,20 @@ async function createConfirmedAuthUser({ email, password, metadata }) {
   return payload;
 }
 
+const FOUNDER_AGENT_SLOT_LIMIT = 10;
+const FOUNDER_LISTINGS_REQUIRED = 10;
+
+async function countExistingAgentSignups() {
+  const restUrl = supabaseRestUrl();
+  const key = serviceKey();
+  if (!restUrl || !key) return 0;
+  const response = await fetch(`${restUrl}/users?select=id&role=eq.agent&limit=1000`, {
+    headers: jsonHeaders(key)
+  });
+  const rows = await response.json().catch(() => []);
+  return response.ok && Array.isArray(rows) ? rows.length : 0;
+}
+
 async function upsertRow(table, body, conflict = "email") {
   const restUrl = supabaseRestUrl();
   const key = serviceKey();
@@ -138,9 +152,15 @@ module.exports = async function handler(req, res) {
     const name = String(body.name || body.fullName || "").trim() || nameFromEmail(email);
     const phone = cleanPhone(body.phone || body.whatsapp || body.mobile || "");
     const agentFullAccess = role === "agent" && hasAgentFullAccessKey(body.productKey);
-    const status = role === "agent" && !agentFullAccess ? "pending" : "active";
-    const subscriptionPlan = agentFullAccess ? "elite_agent" : "free";
-    const subscriptionStatus = agentFullAccess ? "active" : "inactive";
+    let isFounderAgent = false;
+    if (role === "agent" && !agentFullAccess) {
+      const existingAgents = await countExistingAgentSignups().catch(() => FOUNDER_AGENT_SLOT_LIMIT);
+      isFounderAgent = existingAgents < FOUNDER_AGENT_SLOT_LIMIT;
+    }
+    const grantsFullAccess = agentFullAccess || isFounderAgent;
+    const status = role === "agent" && !grantsFullAccess ? "pending" : "active";
+    const subscriptionPlan = agentFullAccess ? "elite_agent" : (isFounderAgent ? "founder_free" : "free");
+    const subscriptionStatus = grantsFullAccess ? "active" : "inactive";
 
     if (!isValidEmail(email)) return res.status(400).json({ error: "Enter a valid email address." });
     if (password.length < 6) return res.status(400).json({ error: "Use a password with at least 6 characters." });
@@ -155,12 +175,17 @@ module.exports = async function handler(req, res) {
       status,
       subscriptionPlan,
       subscriptionStatus,
-      featuresUnlocked: agentFullAccess,
+      featuresUnlocked: grantsFullAccess,
       emailConfirmedByBackend: true,
+      founderPromo: isFounderAgent,
+      founderListingsRequired: isFounderAgent ? FOUNDER_LISTINGS_REQUIRED : null,
       launchAccess: agentFullAccess ? {
         productKey: normalizeProductKey(body.productKey),
         grantedAt: new Date().toISOString(),
         source: "agent_signup_product_key"
+      } : isFounderAgent ? {
+        grantedAt: new Date().toISOString(),
+        source: "founder_agent_promo"
       } : null
     };
 
@@ -172,10 +197,10 @@ module.exports = async function handler(req, res) {
       phone,
       role,
       status,
-      plan: agentFullAccess ? "elite" : "free",
+      plan: grantsFullAccess ? "elite" : "free",
       subscription_plan: subscriptionPlan,
       subscription_status: subscriptionStatus,
-      features_unlocked: agentFullAccess,
+      features_unlocked: grantsFullAccess,
       profile_json: metadata,
       updated_at: new Date().toISOString()
     };
@@ -190,7 +215,9 @@ module.exports = async function handler(req, res) {
     return res.status(201).json({
       ok: true,
       confirmationRequired: false,
-      needsApproval: role === "agent" && !agentFullAccess,
+      needsApproval: role === "agent" && !grantsFullAccess,
+      founderPromo: isFounderAgent,
+      founderListingsRequired: isFounderAgent ? FOUNDER_LISTINGS_REQUIRED : null,
       profile: profileRow || userRow || profilePayload
     });
   } catch (error) {

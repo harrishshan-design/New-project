@@ -126,7 +126,8 @@ const BACKEND_PLAN_TO_AGENT_PLAN = {
   starter_rg: "starter",
   pro_agent: "pro",
   elite_agent: "elite",
-  best_closers: "elite"
+  best_closers: "elite",
+  founder_free: "elite"
 };
 
 const seedSubscription = {
@@ -414,11 +415,14 @@ const els = {
   liveAgentRen: document.getElementById("liveAgentRen"),
   liveAgentRank: document.getElementById("liveAgentRank"),
   liveAgentAvatar: document.querySelector(".live-agent-avatar"),
+  agentProfileShortcutButton: document.getElementById("agentProfileShortcutButton"),
   agentProfileForm: document.getElementById("agentProfileForm"),
   agentProfileNameInput: document.getElementById("agentProfileNameInput"),
   agentProfileAgencyInput: document.getElementById("agentProfileAgencyInput"),
   agentProfileRenInput: document.getElementById("agentProfileRenInput"),
   agentProfilePhotoInput: document.getElementById("agentProfilePhotoInput"),
+  agentCurrentPasswordInput: document.getElementById("agentCurrentPasswordInput"),
+  agentNewPasswordInput: document.getElementById("agentNewPasswordInput"),
   agentProfilePhotoPreview: document.getElementById("agentProfilePhotoPreview"),
   agentProfilePreviewName: document.getElementById("agentProfilePreviewName"),
   agentProfilePreviewAgency: document.getElementById("agentProfilePreviewAgency"),
@@ -1680,7 +1684,7 @@ function renderLiveAgentProfile() {
   if (els.agentRankReason) els.agentRankReason.textContent = rank.reason;
 }
 
-function saveAgentProfileEdits(event) {
+async function saveAgentProfileEdits(event) {
   event?.preventDefault();
   const current = readLiveAgentProfile();
   const next = {
@@ -1690,18 +1694,42 @@ function saveAgentProfileEdits(event) {
     renNumber: els.agentProfileRenInput?.value.trim() || current.renNumber || "REN-PENDING",
     updatedAt: new Date().toISOString()
   };
-  writeStore("rg_live_agent_profile", next);
-  const session = readStore("rg_session", null);
-  if (session?.role === "agent") {
-    writeStore("rg_session", {
-      ...session,
-      name: next.name,
-      agencyName: next.agencyName
+  try {
+    const result = await window.RealityGeniusAuth?.updateCurrentProfile?.({
+      currentPassword: els.agentCurrentPasswordInput?.value || "",
+      newPassword: els.agentNewPasswordInput?.value || "",
+      profile: {
+        name: next.name,
+        email: next.email,
+        phone: next.phone,
+        photo: next.photo,
+        agencyName: next.agencyName,
+        renNumber: next.renNumber
+      }
     });
-    window.RealtyGeniusSession = { ...session, name: next.name, agencyName: next.agencyName };
+    const saved = {
+      ...next,
+      photo: result?.profile?.profilePhoto || next.photo || ""
+    };
+    writeStore("rg_live_agent_profile", saved);
+    const session = readStore("rg_session", null);
+    if (session?.role === "agent") {
+      writeStore("rg_session", {
+        ...session,
+        name: saved.name,
+        agencyName: saved.agencyName,
+        renNumber: saved.renNumber,
+        profilePhoto: saved.photo
+      });
+      window.RealtyGeniusSession = { ...session, name: saved.name, agencyName: saved.agencyName, renNumber: saved.renNumber, profilePhoto: saved.photo };
+    }
+    if (els.agentCurrentPasswordInput) els.agentCurrentPasswordInput.value = "";
+    if (els.agentNewPasswordInput) els.agentNewPasswordInput.value = "";
+    renderLiveAgentProfile();
+    showToast("Agent profile updated");
+  } catch (error) {
+    showToast(error.message || "Could not update profile");
   }
-  renderLiveAgentProfile();
-  showToast("Agent profile updated");
 }
 
 function handleAgentProfilePhoto(event) {
@@ -2290,6 +2318,26 @@ function billingStatusLabel() {
   return "Free";
 }
 
+function renderFounderPromoBanner() {
+  const banner = document.getElementById("founderPromoBanner");
+  if (!banner) return;
+  const promo = state.founderPromo;
+  if (!promo?.active) {
+    banner.hidden = true;
+    return;
+  }
+  banner.hidden = false;
+  const required = promo.listingsRequired || 10;
+  const submitted = Math.min(required, promo.listingsSubmitted || 0);
+  const pct = required ? Math.round((submitted / required) * 100) : 0;
+  const requiredEl = document.getElementById("founderPromoRequired");
+  const fillEl = document.getElementById("founderPromoFill");
+  const labelEl = document.getElementById("founderPromoLabel");
+  if (requiredEl) requiredEl.textContent = String(required);
+  if (fillEl) fillEl.style.width = `${pct}%`;
+  if (labelEl) labelEl.textContent = `${submitted}/${required} listings`;
+}
+
 async function loadFirstMillionMilestone() {
   const fill = document.getElementById("agentMilestoneFill");
   const label = document.getElementById("agentMilestoneLabel");
@@ -2387,8 +2435,14 @@ async function refreshAgentSubscription({ silent = false } = {}) {
     }
     state.subscription.permissions = agent.permissions || {};
     state.subscription.auctionSlotsMonthly = Number(agent.auction_slots_monthly || 0);
+    state.founderPromo = {
+      active: Boolean(agent.founder_promo),
+      listingsRequired: Number(agent.founder_listings_required || 0),
+      listingsSubmitted: Number(agent.founder_listings_submitted || 0)
+    };
     persistAll();
     renderWorkspace();
+    renderFounderPromoBanner();
     return agent;
   } catch (error) {
     if (!silent) showToast(error.message || "Subscription refresh failed");
@@ -5806,6 +5860,11 @@ function bindEvents() {
     else showToast("Push notifications are unavailable here");
   });
   els.quickLeadButton.addEventListener("click", () => openModal("leadModal"));
+  els.agentProfileShortcutButton?.addEventListener("click", () => {
+    state.section = "overview";
+    syncSectionVisibility();
+    document.getElementById("agentProfileEditor")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
   els.agentProfileForm?.addEventListener("submit", saveAgentProfileEdits);
   els.agentProfilePhotoInput?.addEventListener("change", handleAgentProfilePhoto);
   els.openListingComposer.addEventListener("click", () => openModal("listingModal"));
@@ -6072,7 +6131,20 @@ function applyBillingReturn() {
   window.history.replaceState({}, document.title, cleanUrl);
 }
 
+function applyFounderPromoRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("founderPromo") !== "1") return;
+  params.delete("founderPromo");
+  const cleanUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}#listingCreator`;
+  window.history.replaceState({}, document.title, cleanUrl);
+  showToast("Free full features unlocked! Add your first listing to get started.");
+  setTimeout(() => {
+    document.getElementById("listingCreator")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 400);
+}
+
 applyBillingReturn();
+applyFounderPromoRedirect();
 removeAgentDemoRows();
 bindEvents();
 renderListingDevicePhotoPreview();

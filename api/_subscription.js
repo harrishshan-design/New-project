@@ -67,6 +67,21 @@ const PLAN_FEATURES = {
     auction_slots: 4,
     referral_autopilot: true,
     team_setup: true
+  },
+  // First 10 agent signups: full features free, contingent on submitting
+  // 10 listings. See createDirectSignup() in server.js.
+  founder_free: {
+    ai_content_creator: true,
+    whatsapp_followups: true,
+    ar_builder_demo: true,
+    ar_builder_saved: true,
+    document_vault: true,
+    dsr_calculator: true,
+    viewing_itinerary: true,
+    co_broke_matchmaker: true,
+    auction_slots: 4,
+    referral_autopilot: true,
+    team_setup: true
   }
 };
 
@@ -91,7 +106,8 @@ function normalizePlan(plan = "") {
     elite_agent: "elite_agent",
     premium: "elite_agent",
     best: "best_closers",
-    best_closers: "best_closers"
+    best_closers: "best_closers",
+    founder_free: "founder_free"
   };
   return aliases[normalized] || (normalized === "free" ? "free" : "");
 }
@@ -106,6 +122,7 @@ function legacyPlan(plan = "") {
   if (normalized === "pro_agent") return "pro";
   if (normalized === "elite_agent") return "elite";
   if (normalized === "best_closers") return "elite";
+  if (normalized === "founder_free") return "elite";
   return "free";
 }
 
