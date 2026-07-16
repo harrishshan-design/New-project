@@ -102,6 +102,66 @@ function formatPrice(value?: number) {
   return amount ? `RM ${Math.round(amount).toLocaleString("en-MY")}` : "Price on request";
 }
 
+type MilestoneGmv = { total: number; target: number; progressPct: number };
+
+function FirstMillionChallenge() {
+  const [gmv, setGmv] = useState<MilestoneGmv>({ total: 0, target: 1000000, progressPct: 0 });
+
+  useEffect(() => {
+    const base =
+      (typeof window !== "undefined" && (window as { REALTYGENIUS_CONFIG?: { API_BASE?: string } }).REALTYGENIUS_CONFIG?.API_BASE) ||
+      "https://hh-empire.onrender.com/api";
+    fetch(`${base}/public/milestone-gmv`, { headers: { Accept: "application/json" } })
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+      .then((payload) => setGmv({
+        total: Number(payload.total || 0),
+        target: Number(payload.target || 1000000),
+        progressPct: Math.min(100, Number(payload.progressPct || 0))
+      }))
+      .catch(() => {});
+  }, []);
+
+  return (
+    <section className="px-4 py-16">
+      <div className="mx-auto max-w-6xl rounded-[2.4rem] border border-emerald-200 bg-emerald-50 p-8 shadow-xl shadow-emerald-950/[0.04] md:p-12">
+        <div className="grid gap-8 md:grid-cols-[1.1fr_.9fr] md:items-center">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.28em] text-emerald-700">First RM1M Challenge</p>
+            <h2 className="mt-3 text-3xl font-black tracking-[-0.03em] text-slate-900 md:text-4xl">
+              Help us hit RM1,000,000 in verified homes.
+            </h2>
+            <p className="mt-4 leading-7 text-slate-600">
+              Every live, admin-approved listing counts toward our first million in verified property value. List your property today and put your agency&apos;s name on the board.
+            </p>
+            <a
+              href="/agent.html"
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-950/20 transition hover:bg-emerald-800"
+            >
+              List your property <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
+          <div className="rounded-[1.8rem] border border-emerald-200 bg-white p-6">
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Verified listing value</span>
+              <strong className="text-lg font-black text-emerald-700">{gmv.progressPct}%</strong>
+            </div>
+            <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-700 transition-all duration-500"
+                style={{ width: `${gmv.progressPct}%` }}
+              />
+            </div>
+            <div className="mt-3 flex justify-between text-sm text-slate-500">
+              <span>RM{Math.round(gmv.total).toLocaleString("en-MY")}</span>
+              <span>of RM1,000,000 target</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function FeaturedListings() {
   const [listings, setListings] = useState<PublicProperty[]>([]);
 
@@ -362,6 +422,8 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      <FirstMillionChallenge />
 
       <section id="about" className="bg-slate-950 px-4 py-24 text-white">
         <SectionIntro light eyebrow="How it works" title="From messy listing to smarter discovery." body="RealityGenius turns unstructured property submissions into buyer-ready, admin-approved, AI-enhanced discovery." />
