@@ -20,7 +20,7 @@
     "express-rate-limit": "^7.5.0",
     "jsonwebtoken": "^9.0.2",
     "node-cron": "^4.2.1",
-    "nodemailer": "^8.0.7",
+    "nodemailer": "^9.0.1",
     "openai": "^4.104.0",
     "pg": "^8.16.0",
     "tesseract.js": "^6.0.1",
