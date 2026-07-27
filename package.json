@@ -25,7 +25,7 @@
     "lucide-react": "^1.18.0",
     "next": "^16.2.9",
     "openai": "^4.28.0",
-    "postcss": "^8.5.15",
+    "postcss": "^8.5.18",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "stripe": "^22.2.1",
