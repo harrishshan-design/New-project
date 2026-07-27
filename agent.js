@@ -3580,12 +3580,21 @@ async function addListing(event) {
   }
 
   state.listings = [savedListing, ...state.listings.filter((item) => String(item.id) !== String(savedListing.id))];
-  const reviewCount = submitListingsForAdminReview([savedListing], "manual upload");
+
+  // savedListing.status already reflects the real backend row (mergeBackendListingRow) -
+  // if QC bypass is on server-side, it comes back "Live" already, so don't force it
+  // back to "Pending QC" locally.
+  const alreadyLive = savedListing.status === "Live" && isAdminApprovedListing(savedListing);
+  const reviewCount = alreadyLive
+    ? publishListingsLive([savedListing], "manual upload")
+    : submitListingsForAdminReview([savedListing], "manual upload");
   state.notifications = [
     {
       id: Date.now() + 1,
-      title: "Listing submitted for QC",
-      message: `${savedListing.title} is saved in Supabase and waiting for admin verification before buyer visibility.`,
+      title: alreadyLive ? "Listing live for buyers" : "Listing submitted for QC",
+      message: alreadyLive
+        ? `${savedListing.title} is saved in Supabase and already visible to buyers - admin QC is temporarily bypassed.`
+        : `${savedListing.title} is saved in Supabase and waiting for admin verification before buyer visibility.`,
       createdAt: new Date().toISOString()
     },
     ...state.notifications
@@ -3605,7 +3614,7 @@ async function addListing(event) {
     writeStore(ENGAGEMENT_STORE_KEY, agentEngagement);
   }
   renderWorkspace();
-  showToast(reviewCount ? "Saved. +50 points - waiting for admin QC" : "Listing saved. +50 points");
+  showToast(alreadyLive ? "Saved. +50 points - live for buyers now" : (reviewCount ? "Saved. +50 points - waiting for admin QC" : "Listing saved. +50 points"));
 }
 
 function autofillListingPhotoLinks() {
@@ -3756,12 +3765,15 @@ async function importListingsFromExcel(event) {
       ...savedListings,
       ...state.listings.filter((existing) => !savedListings.some((listing) => String(listing.id) === String(existing.id)))
     ];
-    const reviewCount = submitListingsForAdminReview(savedListings, "Excel import");
+    const liveListings = savedListings.filter((listing) => listing.status === "Live" && isAdminApprovedListing(listing));
+    const pendingListings = savedListings.filter((listing) => !(listing.status === "Live" && isAdminApprovedListing(listing)));
+    const liveCount = liveListings.length ? publishListingsLive(liveListings, "Excel import") : 0;
+    const reviewCount = pendingListings.length ? submitListingsForAdminReview(pendingListings, "Excel import") : 0;
     state.notifications = [
       {
         id: Date.now() + 1,
-        title: "Excel listings sent to QC",
-        message: `${savedListings.length} listings saved to Supabase with at least ${LISTING_MIN_PHOTO_COUNT} photos. ${reviewCount} waiting for admin approval${rowErrors.length ? `; ${rowErrors.length} row issue(s) skipped.` : "."}`,
+        title: liveCount ? "Excel listings live for buyers" : "Excel listings sent to QC",
+        message: `${savedListings.length} listings saved to Supabase with at least ${LISTING_MIN_PHOTO_COUNT} photos. ${liveCount ? `${liveCount} live for buyers now (QC bypass).` : ""}${reviewCount ? ` ${reviewCount} waiting for admin approval.` : ""}${rowErrors.length ? ` ${rowErrors.length} row issue(s) skipped.` : ""}`,
         createdAt: new Date().toISOString()
       },
       ...state.notifications

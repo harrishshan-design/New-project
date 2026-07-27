@@ -608,6 +608,13 @@ const PLAN_FEATURES = {
 const FOUNDER_AGENT_SLOT_LIMIT = 10;
 const FOUNDER_LISTINGS_REQUIRED = 10;
 
+// TEMPORARY: skip admin QC entirely so new agent listings go straight to
+// live/buyer-visible on submission, no manual review wait. Flip this back
+// to false (and redeploy) to restore the normal pending_qc -> admin review
+// -> live pipeline - nothing else needs to change, since every listing
+// write already funnels through pickAgentListingPayload().
+const LISTING_QC_BYPASS = true;
+
 async function countExistingAgentSignups() {
     const rows = await selectSupabaseRows('users', 'select=id&role=eq.agent&limit=1000').catch(() => []);
     return Array.isArray(rows) ? rows.length : 0;
@@ -1986,7 +1993,7 @@ async function pickAgentListingPayload(payload = {}) {
         // Omitted when empty so inserts keep working before the pano_urls migration runs.
         ...(panoramas.length ? { pano_urls: panoramas } : {}),
         ar_link: String(payload.ar_link || payload.arLink || payload.modelUrl || '').trim(),
-        status: "pending_qc",
+        status: LISTING_QC_BYPASS ? "live" : "pending_qc",
         updated_at: new Date().toISOString()
     };
 }
@@ -3080,8 +3087,12 @@ async function createAgentListing(payload = {}) {
         : await insertSupabaseRow("agent_property_listings", listing);
     if (!existingId) await awardAgentListingPoints(listing.agent_id);
     await createAdminNotification(
-        existingId ? "Updated agent listing needs QC" : "Agent listing needs QC",
-        `${row?.title || "Agent listing"} was ${existingId ? "updated" : "submitted"} and is waiting for admin approval.`,
+        LISTING_QC_BYPASS
+            ? (existingId ? "Agent listing updated (QC bypass active)" : "Agent listing live (QC bypass active)")
+            : (existingId ? "Updated agent listing needs QC" : "Agent listing needs QC"),
+        LISTING_QC_BYPASS
+            ? `${row?.title || "Agent listing"} was ${existingId ? "updated" : "submitted"} and went straight to buyers - QC bypass is on.`
+            : `${row?.title || "Agent listing"} was ${existingId ? "updated" : "submitted"} and is waiting for admin approval.`,
         { listingId: row?.id || existingId, category: "agent_listing_qc", action: existingId ? "updated" : "created" }
     );
     return { item: row };
