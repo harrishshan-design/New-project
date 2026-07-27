@@ -1,0 +1,180 @@
+{
+  "typography": [
+    {
+      "role": "heading",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": "70.4px",
+      "fontWeight": "800",
+      "lineHeight": "66.88px",
+      "letterSpacing": "-4.224px",
+      "color": "#102033",
+      "sampleText": "Operate property growth through a clean command center."
+    },
+    {
+      "role": "heading-3",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": "17.6px",
+      "fontWeight": "800",
+      "lineHeight": "normal",
+      "letterSpacing": "-0.528px",
+      "color": "#102033",
+      "sampleText": "Performance Snapshot"
+    },
+    {
+      "role": "display",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": "16.8px",
+      "fontWeight": "800",
+      "lineHeight": "normal",
+      "letterSpacing": "normal",
+      "color": "#102033",
+      "sampleText": "Klang Valley AI"
+    },
+    {
+      "role": "body",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "lineHeight": "normal",
+      "letterSpacing": "normal",
+      "color": "#64748B",
+      "sampleText": "Modern SaaS Dashboard Preview"
+    },
+    {
+      "role": "link",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": "14.72px",
+      "fontWeight": "400",
+      "lineHeight": "normal",
+      "letterSpacing": "normal",
+      "color": "#64748B",
+      "sampleText": "Overview"
+    },
+    {
+      "role": "label",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": "12.8px",
+      "fontWeight": "800",
+      "lineHeight": "normal",
+      "letterSpacing": "normal",
+      "color": "#0F766E",
+      "sampleText": "High Match"
+    }
+  ],
+  "spacing": {
+    "observed": [
+      8,
+      10,
+      12,
+      13,
+      14,
+      16,
+      18,
+      20,
+      22,
+      28
+    ],
+    "baseUnit": 4
+  },
+  "radius": [
+    "12px",
+    "14px",
+    "20px",
+    "24px",
+    "999px"
+  ],
+  "shadows": [
+    {
+      "value": "rgba(15, 23, 42, 0.08) 0px 18px 40px 0px",
+      "count": 7
+    }
+  ],
+  "buttons": [
+    {
+      "label": "Open Workspace",
+      "background": "#000000",
+      "color": "#FFFFFF",
+      "padding": "13px 18px",
+      "borderRadius": "14px",
+      "border": "0px none rgb(255, 255, 255)",
+      "boxShadow": "none",
+      "fontSize": "13.3333px",
+      "fontWeight": "700",
+      "height": "43px"
+    },
+    {
+      "label": "View Reporting",
+      "background": "#FFFFFF",
+      "color": "#102033",
+      "padding": "13px 18px",
+      "borderRadius": "14px",
+      "border": "1px solid rgb(219, 229, 240)",
+      "boxShadow": "none",
+      "fontSize": "13.3333px",
+      "fontWeight": "700",
+      "height": "43px"
+    },
+    {
+      "label": "Import Listings",
+      "background": "#FFFFFF",
+      "color": "#000000",
+      "padding": "10px 14px",
+      "borderRadius": "12px",
+      "border": "1px solid rgb(219, 229, 240)",
+      "boxShadow": "none",
+      "fontSize": "13.3333px",
+      "fontWeight": "700",
+      "height": "37px"
+    }
+  ],
+  "cards": [
+    {
+      "label": "card",
+      "background": "#FFFFFF",
+      "color": "#102033",
+      "padding": "28px",
+      "borderRadius": "28px",
+      "border": "1px solid rgba(219, 229, 240, 0.9)",
+      "boxShadow": "rgba(15, 23, 42, 0.08) 0px 18px 40px 0px",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "height": "813.641px"
+    },
+    {
+      "label": "card",
+      "background": "#FFFFFF",
+      "color": "#102033",
+      "padding": "22px",
+      "borderRadius": "26px",
+      "border": "1px solid rgba(219, 229, 240, 0.9)",
+      "boxShadow": "rgba(15, 23, 42, 0.08) 0px 18px 40px 0px",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "height": "295px"
+    },
+    {
+      "label": "card",
+      "background": "#FFFFFF",
+      "color": "#102033",
+      "padding": "20px",
+      "borderRadius": "24px",
+      "border": "1px solid rgba(219, 229, 240, 0.9)",
+      "boxShadow": "rgba(15, 23, 42, 0.08) 0px 18px 40px 0px",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "height": "502.641px"
+    }
+  ],
+  "nav": {
+    "label": "navigation",
+    "background": "#FFFFFF",
+    "color": "#102033",
+    "padding": "16px 22px",
+    "borderRadius": "22px",
+    "border": "1px solid rgba(219, 229, 240, 0.9)",
+    "boxShadow": "rgba(15, 23, 42, 0.08) 0px 18px 40px 0px",
+    "fontSize": "16px",
+    "fontWeight": "400",
+    "height": "78px"
+  }
+}

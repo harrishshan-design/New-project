@@ -1,0 +1,42 @@
+[h1] Klang Valley AI
+[p] Modern SaaS Dashboard Preview
+[a] Overview
+[a] Listings
+[button] Create Listing
+[div] SaaS Direction Preview
+[h2] Operate property growth through a
+[span] clean command center
+[p] This direction makes the platform feel more like a modern software product. It emphasizes clarity, metrics, structured decision-making, and an efficient workflow for users, agents, and master operations.
+[button] Open Workspace
+[button] View Reporting
+[strong] 124
+[span] Active listings tracked
+[span] Verified agents online
+[strong] 32%
+[span] Lead-to-chat conversion
+[h3] Performance Snapshot
+[p] A SaaS direction leans into charts, KPIs, and product status clarity.
+[h3] Role-based Access
+[p] Users browse, agents manage leads, and master controls verification and routing in a cleaner operations model.
+[h3] Automated Flow
+[p] Property discovery, agent routing, and inbox visibility all feel like connected app workflows.
+[div] Listing Operations
+[strong] Arcoris Signature Residences
+[p] Mont Kiara • AI score 95 • Owner Verified
+[span] High Match
+[strong] Park Regent Suites
+[p] Desa ParkCity • Yield 4.2% • Owner Verified
+[span] Top Yield
+[strong] The CloutHaus KLCC
+[p] KLCC • Prestige inventory • Agent Verified
+[span] Luxury
+[button] Import Listings
+[button] Edit Records
+[button] Export Summary
+[div] Lead Pipeline
+[strong] New Leads
+[p] Users entering WhatsApp callback requests from listing details.
+[strong] Assigned Agents
+[p] Daily active agents receive leads based on rotation and verification status.
+[strong] Master Controls
+[p] Verification, activation, and tracking stay visible as operational workflow.

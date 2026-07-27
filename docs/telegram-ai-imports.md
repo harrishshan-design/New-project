@@ -31,6 +31,8 @@ Apply:
 
 ```bash
 realtygenius-saas/db/migrations/007_telegram_ai_imports.sql
+realtygenius-saas/db/migrations/011_telegram_agent_profiles.sql
+realtygenius-saas/db/migrations/012_ai_import_agent_qc_profile.sql
 ```
 
 It creates:
@@ -38,6 +40,19 @@ It creates:
 - `telegram_raw_messages`
 - `ai_imported_listings`
 - `admin_notifications`
+- `telegram_agent_profiles`
+
+New Telegram users are onboarded once before listing upload:
+
+1. Full name
+2. Email address
+3. Phone number
+4. REN ID, optional. User can type `skip`.
+5. Bot prompts them to upload listing photos/details.
+
+Returning Telegram users skip onboarding and can upload listings immediately.
+
+During admin QC, the Admin > AI Imports screen shows the collected Telegram agent profile. Admin can clean the name, email, phone, REN ID, and agency before approving. Approving or approving + live creates/updates the agent profile, links it to the imported listing, and only then can the listing appear in the buyer feed.
 
 Statuses:
 

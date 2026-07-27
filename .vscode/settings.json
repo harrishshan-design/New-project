@@ -1,0 +1,36 @@
+{
+  "editor.formatOnSave": true,
+  "editor.tabSize": 2,
+  "editor.wordWrap": "on",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "files.eol": "\n",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.exclude": {
+    "**/.next": true,
+    "**/dist": true,
+    "**/out": true,
+    "**/node_modules": true,
+    "**/test-results": true
+  },
+  "search.exclude": {
+    "**/.next": true,
+    "**/dist": true,
+    "**/out": true,
+    "**/node_modules": true,
+    "**/test-results": true
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "javascript.preferences.importModuleSpecifier": "relative",
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "liveServer.settings.root": "/dist",
+  "liveServer.settings.port": 4177,
+  "cSpell.words": [
+    "Langkawi",
+    "Lenis",
+    "RealityGenius",
+    "Supabase",
+    "Vercel"
+  ]
+}

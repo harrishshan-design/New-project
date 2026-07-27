@@ -126,6 +126,55 @@
     localStorage.setItem("rg_local_accounts", JSON.stringify(accounts || {}));
   }
 
+  function readJsonStorage(key, fallback = null) {
+    try {
+      const value = localStorage.getItem(key);
+      return value ? JSON.parse(value) : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  async function prepareProfilePhoto(file, { maxDimension = 512, maxBytes = 220 * 1024 } = {}) {
+    if (!file || !String(file.type || "").startsWith("image/")) {
+      throw new Error("Upload an image file for your profile picture.");
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      throw new Error("Use a profile picture under 8MB.");
+    }
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Could not read that profile picture."));
+      reader.onload = () => {
+        const image = new Image();
+        image.onerror = () => reject(new Error("Could not open that profile picture."));
+        image.onload = () => {
+          const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth || 1, image.naturalHeight || 1));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+          const context = canvas.getContext("2d");
+          if (!context) {
+            reject(new Error("Profile picture processing is unavailable in this browser."));
+            return;
+          }
+          context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+          let quality = 0.86;
+          let dataUrl = canvas.toDataURL("image/jpeg", quality);
+          while (dataUrl.length * 0.75 > maxBytes && quality > 0.46) {
+            quality -= 0.08;
+            dataUrl = canvas.toDataURL("image/jpeg", quality);
+          }
+          resolve(dataUrl);
+        };
+        image.src = String(reader.result || "");
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   function normalizeProfile(profile = {}, session = null) {
     const user = session?.user || {};
     const metadata = {
@@ -341,7 +390,7 @@
   }
 
   async function updateCurrentProfile({ currentPassword = "", newPassword = "", profile = {} } = {}) {
-    const session = JSON.parse(localStorage.getItem("rg_session") || "null");
+    const session = readJsonStorage("rg_session", null);
     const email = String(profile.email || session?.email || "").trim().toLowerCase();
     const cleanCurrentPassword = String(currentPassword || "");
     const cleanNewPassword = String(newPassword || "");
@@ -359,13 +408,13 @@
     const accounts = readLocalAccounts();
     const localAccount = accounts[email];
     let passwordUpdated = false;
-    if (cleanNewPassword && localAccount) {
-      if (!cleanCurrentPassword || localAccount.password !== cleanCurrentPassword) {
+    if (localAccount) {
+      if (cleanNewPassword && (!cleanCurrentPassword || localAccount.password !== cleanCurrentPassword)) {
         throw new Error("Current password is incorrect.");
       }
       accounts[email] = {
         ...localAccount,
-        password: cleanNewPassword,
+        password: cleanNewPassword || localAccount.password,
         ...nextProfile,
         profileJson: {
           ...(localAccount.profileJson || {}),
@@ -374,7 +423,7 @@
         }
       };
       writeLocalAccounts(accounts);
-      passwordUpdated = true;
+      passwordUpdated = Boolean(cleanNewPassword);
     }
 
     const client = getClient();
@@ -423,7 +472,7 @@
     window.RealtyGeniusSession = updatedSession;
 
     if (updatedSession.role === "agent") {
-      const storedAgent = JSON.parse(localStorage.getItem("rg_live_agent_profile") || "{}");
+      const storedAgent = readJsonStorage("rg_live_agent_profile", {});
       localStorage.setItem("rg_live_agent_profile", JSON.stringify({
         ...storedAgent,
         name: updatedSession.name,
@@ -865,6 +914,7 @@
     signInWithAgentProductKey,
     resetPublicPassword,
     updateCurrentProfile,
+    prepareProfilePhoto,
     signUp,
     signOut,
     getSession,

@@ -67,6 +67,11 @@ a {
   perspective: 1100px;
 }
 
+.deferred-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 760px;
+}
+
 .hero-property {
   background:
     radial-gradient(circle at 78% 18%, rgba(16, 185, 129, 0.2), transparent 24%),

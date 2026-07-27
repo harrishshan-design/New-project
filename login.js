@@ -54,6 +54,11 @@
     return String(params.get("role") || "").toLowerCase();
   }
 
+  function readPreferredModeFromQuery() {
+    const params = new URLSearchParams(window.location.search || "");
+    return String(params.get("mode") || "").toLowerCase();
+  }
+
   function loadScriptOnce(src, test) {
     if (test?.()) return Promise.resolve();
     return new Promise((resolve, reject) => {
@@ -130,6 +135,16 @@
 
     const heading = document.querySelector(".auth-head p");
     if (heading) heading.textContent = authMode === "reset" ? "Reset password" : authMode === "signup" ? "Sign up" : "Login";
+    const roleTitle = document.getElementById("authRoleTitle");
+    if (roleTitle) {
+      roleTitle.textContent = selectedRole === "agent"
+        ? "Agent access"
+        : selectedRole === "admin"
+        ? "Admin access"
+        : selectedRole === "master"
+        ? "Master access"
+        : "Buyer access";
+    }
 
     const note = document.getElementById("roleNote");
     if (note) {
@@ -287,6 +302,7 @@
     const label = document.getElementById("loginIdLabel");
     if (label) label.textContent = "Email";
     const preferredRole = readPreferredRoleFromQuery();
+    authMode = readPreferredModeFromQuery() === "signup" ? "signup" : "login";
     highlightRole(LOGIN_ROLES.includes(preferredRole) ? preferredRole : "user");
     document.querySelectorAll(".role-card").forEach((card) => {
       card.addEventListener("click", () => highlightRole(card.dataset.role));

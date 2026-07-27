@@ -30,7 +30,6 @@
   <link rel="stylesheet" href="./immersive-view.css">
   <link rel="stylesheet" href="./negotiation-ui.css">
   <script src="./rg-error-logger.js" data-rg-surface="user"></script>
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-100QC1J9RT"></script>
   <script>
@@ -56,7 +55,7 @@
       </div>
 
       <nav class="desktop-nav" aria-label="Buyer dashboard navigation">
-        <a href="#recommendations">For You</a>
+        <a href="#dailyMatches">For You</a>
         <a href="#explore">Listings</a>
         <a href="#auction-night">Auction Night</a>
         <a href="#savedHomes">Saved</a>
@@ -79,10 +78,58 @@
           <span>Push</span>
           <strong id="pushStatus" data-push-status>Off</strong>
         </button>
+        <button class="toolbar-button profile-icon-button" id="buyerProfileButton" type="button" aria-controls="buyerProfilePanel">
+          <span class="mini-profile-photo" id="buyerProfileMiniPhoto"><i class="fa-solid fa-user"></i></span>
+          <span>Profile</span>
+        </button>
       </div>
     </header>
 
     <main class="dashboard" id="mainContent">
+      <section class="buyer-profile-panel" id="buyerProfilePanel" hidden>
+        <div class="template-section-head">
+          <div>
+            <div class="eyebrow">Your Profile</div>
+            <h3>Edit account details</h3>
+            <p>Update your name, phone, profile picture, and password from one simple block.</p>
+          </div>
+          <button class="ghost-button" id="closeBuyerProfileButton" type="button">Close</button>
+        </div>
+        <form class="buyer-profile-form" id="buyerProfileForm">
+          <div class="buyer-profile-preview">
+            <div class="profile-photo-preview buyer-photo-preview" id="buyerProfilePhotoPreview">RG</div>
+            <label class="device-photo-upload">
+              <i class="fa-solid fa-image"></i>
+              <span>Upload profile picture</span>
+              <input id="buyerProfilePhotoInput" type="file" accept="image/*">
+            </label>
+          </div>
+          <div class="buyer-profile-fields">
+            <label class="input-shell">
+              <i class="fa-solid fa-user"></i>
+              <input id="buyerProfileNameInput" type="text" placeholder="Full name">
+            </label>
+            <label class="input-shell">
+              <i class="fa-solid fa-phone"></i>
+              <input id="buyerProfilePhoneInput" type="tel" placeholder="Phone / WhatsApp">
+            </label>
+            <label class="input-shell">
+              <i class="fa-solid fa-lock"></i>
+              <input id="buyerCurrentPasswordInput" type="password" autocomplete="current-password" placeholder="Current password">
+            </label>
+            <label class="input-shell">
+              <i class="fa-solid fa-key"></i>
+              <input id="buyerNewPasswordInput" type="password" autocomplete="new-password" placeholder="New password">
+            </label>
+            <p class="profile-editor-note">Leave password fields empty if you only want to update your details.</p>
+            <button class="primary-button" type="submit">
+              Save Profile
+              <i class="fa-solid fa-check"></i>
+            </button>
+          </div>
+        </form>
+      </section>
+
       <section class="hero-panel">
         <div class="hero-copy">
           <div class="hero-pill">Verified Malaysian property search with AI matching</div>
@@ -272,6 +319,27 @@
             <div class="badge-list" id="badgeList"></div>
           </article>
         </aside>
+      </section>
+
+      <section class="daily-match-section" id="dailyMatches">
+        <div class="daily-match-head">
+          <div>
+            <div class="eyebrow">Today's Matches</div>
+            <h3>Five homes. Two minutes. A clearer shortlist.</h3>
+            <p>Review one strong match at a time. Save the serious options and pass on the rest so your next recommendations get sharper.</p>
+          </div>
+          <div class="daily-match-progress" aria-live="polite">
+            <div>
+              <strong id="dailyMatchProgressText">0 of 5 reviewed</strong>
+              <button class="daily-match-reset" id="dailyMatchResetButton" type="button">Start again</button>
+            </div>
+            <span><i id="dailyMatchProgressBar"></i></span>
+          </div>
+        </div>
+        <div class="daily-match-layout">
+          <div class="daily-match-card" id="dailyMatchCard" aria-live="polite"></div>
+          <aside class="daily-match-summary" id="dailyMatchSummary"></aside>
+        </div>
       </section>
 
       <section class="buyer-wow-section" id="aiBuyerTools">

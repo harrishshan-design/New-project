@@ -1,8 +1,7 @@
 "use client";
 
-import { Environment, Float, MeshReflectorMaterial, PerspectiveCamera, Sparkles } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 /* Deterministic pseudo-random so the skyline renders identically every visit. */
@@ -63,17 +62,22 @@ function Tower({ spec, index }: { spec: TowerSpec; index: number }) {
 
 function HeroTower() {
   const beacon = useRef<THREE.PointLight>(null);
+  const tower = useRef<THREE.Group>(null);
 
   useFrame(({ clock }) => {
     if (beacon.current) {
       beacon.current.intensity = 2.4 + Math.sin(clock.elapsedTime * 1.6) * 1.4;
+    }
+    if (tower.current) {
+      tower.current.position.y = Math.sin(clock.elapsedTime * 0.72) * 0.08;
+      tower.current.rotation.z = Math.sin(clock.elapsedTime * 0.42) * 0.006;
     }
   });
 
   const floors = useMemo(() => Array.from({ length: 11 }, (_, row) => row), []);
 
   return (
-    <group position={[0, 0, 0.4]}>
+    <group ref={tower} position={[0, 0, 0.4]}>
       <mesh castShadow receiveShadow position={[0, 2.6, 0]}>
         <boxGeometry args={[1.7, 5.2, 1.7]} />
         <meshStandardMaterial color="#101b2c" roughness={0.24} metalness={0.68} />
@@ -100,6 +104,27 @@ function HeroTower() {
       </mesh>
       <pointLight ref={beacon} position={[0, 5.9, 0]} color="#34d399" distance={7} intensity={3} />
     </group>
+  );
+}
+
+function ParticleField({ count, color, opacity }: { count: number; color: string; opacity: number }) {
+  const positions = useMemo(() => {
+    const points = new Float32Array(count * 3);
+    for (let index = 0; index < count; index += 1) {
+      points[index * 3] = (seeded(index, 43) - 0.5) * 10;
+      points[index * 3 + 1] = seeded(index, 47) * 5.5 + 0.3;
+      points[index * 3 + 2] = (seeded(index, 53) - 0.5) * 10;
+    }
+    return points;
+  }, [count]);
+
+  return (
+    <points>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+      </bufferGeometry>
+      <pointsMaterial color={color} size={0.035} transparent opacity={opacity} sizeAttenuation depthWrite={false} />
+    </points>
   );
 }
 
@@ -130,29 +155,18 @@ function City() {
 
   return (
     <group ref={group}>
-      <Float speed={1.1} rotationIntensity={0.06} floatIntensity={0.18}>
-        <HeroTower />
-      </Float>
+      <HeroTower />
       {towers.map((spec, index) => (
         <Tower key={index} spec={spec} index={index} />
       ))}
 
       <mesh position={[0, -0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <circleGeometry args={[8.5, 48]} />
-        <MeshReflectorMaterial
-          blur={[420, 110]}
-          resolution={512}
-          mixBlur={0.9}
-          mixStrength={1.6}
-          roughness={0.72}
-          depthScale={0.4}
-          color="#050a12"
-          metalness={0.4}
-        />
+        <meshStandardMaterial color="#050a12" roughness={0.68} metalness={0.45} />
       </mesh>
 
-      <Sparkles count={110} scale={[10, 5.5, 10]} position={[0, 2.6, 0]} size={2.2} speed={0.32} color="#e7cf9a" opacity={0.55} />
-      <Sparkles count={60} scale={[7, 4, 7]} position={[0, 1.8, 0]} size={1.6} speed={0.22} color="#5eead4" opacity={0.4} />
+      <ParticleField count={72} color="#e7cf9a" opacity={0.5} />
+      <ParticleField count={36} color="#5eead4" opacity={0.34} />
 
       <pointLight position={[-3.4, 1.4, 3.2]} color="#e7cf9a" intensity={2.4} distance={9} />
       <pointLight position={[3.6, 2.2, 2.6]} color="#34d399" intensity={2} distance={9} />
@@ -171,16 +185,31 @@ function CameraRig() {
 }
 
 export default function HeroSkyline() {
+  const wrapper = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(true);
+
+  useEffect(() => {
+    const node = wrapper.current;
+    if (!node || !("IntersectionObserver" in window)) return;
+    const observer = new IntersectionObserver(([entry]) => setActive(entry.isIntersecting), { rootMargin: "240px" });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="h-full w-full" aria-hidden>
-      <Canvas shadows dpr={[1, 1.75]} gl={{ antialias: true, alpha: true }}>
-        <PerspectiveCamera makeDefault position={[0, 3.4, 9.6]} fov={38} />
+    <div ref={wrapper} className="h-full w-full" aria-hidden>
+      <Canvas
+        frameloop={active ? "always" : "never"}
+        dpr={[1, 1.35]}
+        camera={{ position: [0, 3.4, 9.6], fov: 38 }}
+        gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+      >
         <ambientLight intensity={0.5} />
-        <directionalLight position={[5, 9, 6]} intensity={1.6} castShadow />
+        <hemisphereLight args={["#c4e7ff", "#06110d", 0.7]} />
+        <directionalLight position={[5, 9, 6]} intensity={1.35} />
         <fog attach="fog" args={["#020617", 11, 20]} />
         <City />
         <CameraRig />
-        <Environment preset="night" />
       </Canvas>
     </div>
   );

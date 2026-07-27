@@ -196,6 +196,10 @@ button:disabled{
   font-size:.9rem;
 }
 
+.nav-link{
+  text-decoration:none;
+}
+
 .nav-item.active,
 .nav-item:hover{
   color:#fff7d6;

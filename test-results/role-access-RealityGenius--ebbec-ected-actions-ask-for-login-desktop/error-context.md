@@ -1,0 +1,876 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: role-access.spec.js >> RealityGenius role access >> buyer page is browseable before login but protected actions ask for login
+- Location: tests\e2e\role-access.spec.js:18:3
+
+# Error details
+
+```
+Test timeout of 30000ms exceeded.
+```
+
+```
+Error: page.goto: Test timeout of 30000ms exceeded.
+Call log:
+  - navigating to "https://realitygenius.company/user.html", waiting until "load"
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to property search" [ref=e2] [cursor=pointer]:
+    - /url: "#mainContent"
+  - generic [ref=e5]:
+    - banner [ref=e6]:
+      - generic [ref=e7]:
+        - generic [ref=e8]: 
+        - generic [ref=e9]:
+          - generic [ref=e10]: AI-Powered Property Decision Intelligence System for Malaysia
+          - heading "RealityGenius" [level=1] [ref=e11]
+      - navigation "Buyer dashboard navigation" [ref=e12]:
+        - link "For You" [ref=e13] [cursor=pointer]:
+          - /url: "#recommendations"
+        - link "Listings" [ref=e14] [cursor=pointer]:
+          - /url: "#explore"
+        - link "Auction Night" [ref=e15] [cursor=pointer]:
+          - /url: "#auction-night"
+        - link "Saved" [ref=e16] [cursor=pointer]:
+          - /url: "#savedHomes"
+        - link "How It Works" [ref=e17] [cursor=pointer]:
+          - /url: "#buyerJourney"
+      - generic [ref=e18]:
+        - button "Saved 0" [ref=e19] [cursor=pointer]:
+          - generic [ref=e20]: 
+          - generic [ref=e21]: Saved
+          - strong [ref=e22]: "0"
+        - button "Alerts 1" [ref=e23] [cursor=pointer]:
+          - generic [ref=e24]: 
+          - generic [ref=e25]: Alerts
+          - strong [ref=e26]: "1"
+        - button "Browser push notifications Blocked" [ref=e27] [cursor=pointer]:
+          - generic [ref=e28]: 
+          - generic [ref=e29]: Push
+          - strong [ref=e30]: Blocked
+    - main [ref=e31]:
+      - generic [ref=e32]:
+        - generic [ref=e33]:
+          - generic [ref=e34]: Verified Malaysian property search with AI matching
+          - heading "Search homes like a marketplace. Decide with AI." [level=2] [ref=e35]
+          - paragraph [ref=e36]: Browse sale, rent, auction, and new project listings fast. RealityGenius adds verified agents, admin-QC listings, AI match reasons, and direct viewing requests so buyers can move with confidence.
+          - generic [ref=e37]:
+            - generic "Property search intent" [ref=e38]:
+              - link "For Sale" [ref=e39] [cursor=pointer]:
+                - /url: "#explore"
+              - link "For Rent" [ref=e40] [cursor=pointer]:
+                - /url: "#explore"
+              - link "New Projects" [ref=e41] [cursor=pointer]:
+                - /url: "#explore"
+              - link "Auction" [ref=e42] [cursor=pointer]:
+                - /url: "#auction-night"
+            - generic [ref=e43]:
+              - generic [ref=e44]:
+                - generic [ref=e45]: 
+                - textbox "Search KLCC, Shah Alam, condo, terrace, under RM500k" [ref=e46]
+              - generic [ref=e47]:
+                - generic [ref=e48]: 
+                - combobox [ref=e49]:
+                  - option "AI Match" [selected]
+                  - option "Price Low to High"
+                  - option "Price High to Low"
+                  - option "Rental Yield"
+                  - option "Growth Potential"
+              - button "Save Alert" [ref=e50] [cursor=pointer]:
+                - generic [ref=e51]: 
+                - generic [ref=e52]: Save Alert
+            - generic [ref=e53]:
+              - button "All Picks" [ref=e54] [cursor=pointer]
+              - button "City Condo" [ref=e55] [cursor=pointer]
+              - button "Family" [ref=e56] [cursor=pointer]
+              - button "Investment" [ref=e57] [cursor=pointer]
+              - button "Luxury" [ref=e58] [cursor=pointer]
+            - generic "Popular property searches" [ref=e59]:
+              - link "Below RM500k" [ref=e60] [cursor=pointer]:
+                - /url: "#explore"
+              - link "RM500k-750k" [ref=e61] [cursor=pointer]:
+                - /url: "#explore"
+              - link "Terrace Houses" [ref=e62] [cursor=pointer]:
+                - /url: "#explore"
+              - link "Condos / Apartments" [ref=e63] [cursor=pointer]:
+                - /url: "#explore"
+              - link "Shah Alam" [ref=e64] [cursor=pointer]:
+                - /url: "#explore"
+              - link "Mont Kiara" [ref=e65] [cursor=pointer]:
+                - /url: "#explore"
+              - link "KLCC" [ref=e66] [cursor=pointer]:
+                - /url: "#explore"
+              - link "Near MRT" [ref=e67] [cursor=pointer]:
+                - /url: "#explore"
+            - generic [ref=e69]:
+              - generic [ref=e70]: 
+              - text: Save a search to get return-visit alerts when matching homes appear.
+          - generic "Fast property actions" [ref=e71]:
+            - link "Verified Listings QC checked before buyer trust" [ref=e72] [cursor=pointer]:
+              - /url: "#explore"
+              - strong [ref=e74]: Verified Listings
+              - generic [ref=e75]: QC checked before buyer trust
+            - link "Ask AI Tell us budget, rooms, lifestyle" [ref=e76] [cursor=pointer]:
+              - /url: "#aiBuyerTools"
+              - generic [ref=e77]: 
+              - strong [ref=e78]: Ask AI
+              - generic [ref=e79]: Tell us budget, rooms, lifestyle
+            - link "Friday Auction 2 selected homes every week" [ref=e80] [cursor=pointer]:
+              - /url: "#auction-night"
+              - generic [ref=e81]: 
+              - strong [ref=e82]: Friday Auction
+              - generic [ref=e83]: 2 selected homes every week
+            - link "Near Me Start with nearby areas" [ref=e84] [cursor=pointer]:
+              - /url: "#explore"
+              - generic [ref=e85]: 
+              - strong [ref=e86]: Near Me
+              - generic [ref=e87]: Start with nearby areas
+          - generic [ref=e88]:
+            - article [ref=e89]:
+              - generic [ref=e90]: Live feed
+              - strong [ref=e91]: "4"
+              - paragraph [ref=e92]: Relevant properties in your current view
+            - article [ref=e93]:
+              - generic [ref=e94]: Saved
+              - strong [ref=e95]: "0"
+              - paragraph [ref=e96]: Homes worth revisiting later tonight
+            - article [ref=e97]:
+              - generic [ref=e98]: Bookings
+              - strong [ref=e99]: "0"
+              - paragraph [ref=e100]: Requests you have already moved on
+          - generic "RealityGenius live trust proof" [ref=e101]:
+            - generic [ref=e102]:
+              - generic [ref=e103]: 
+              - text: New listings after admin QC
+            - generic [ref=e104]:
+              - generic [ref=e105]: 
+              - text: Verified agent badges
+            - generic [ref=e106]:
+              - generic [ref=e107]: 
+              - text: Book viewings directly
+            - generic [ref=e108]:
+              - generic [ref=e109]: 
+              - text: Privacy-first buyer flow
+          - generic "RealityGenius buyer focus" [ref=e110]:
+            - article [ref=e111]:
+              - strong [ref=e112]: 1. Find
+              - generic [ref=e113]: Search by area, budget, lifestyle, or AI match.
+            - article [ref=e114]:
+              - strong [ref=e115]: 2. Contact
+              - generic [ref=e116]: Message a verified agent from the listing.
+            - article [ref=e117]:
+              - strong [ref=e118]: 3. Book
+              - generic [ref=e119]: Send a viewing request in one clear step.
+            - article [ref=e120]:
+              - strong [ref=e121]: 4. Decide
+              - generic [ref=e122]: Use AI reasons, mortgage check, and saved homes.
+        - complementary [ref=e123]:
+          - article "RealityGenius featured property preview" [ref=e124]:
+            - img "Modern residential interior preview" [ref=e125]
+            - generic [ref=e126]:
+              - generic [ref=e127]: Verified Listing Preview
+              - strong [ref=e128]: Large photos, match score, agent trust, viewing request
+          - article [ref=e129]:
+            - generic [ref=e130]:
+              - generic [ref=e131]: Smart Recommendations
+              - generic [ref=e132]: Analyzing your preferences
+            - heading "Waiting for your first signal" [level=3] [ref=e133]
+            - paragraph [ref=e134]: Open, save, and revisit properties so the shortlist brain can start building a sharper recommendation trail.
+            - generic [ref=e136]:
+              - generic [ref=e137]: "Signal strength: 0%"
+              - generic [ref=e138]: Hidden gem locked
+            - generic [ref=e140]: "*🏠 Double Storey House for Sale – Taman Kim Chuan, Port Klang* - 7.4% projected blended ROI - Suggested offer RM 693K"
+          - article [ref=e141]:
+            - generic [ref=e143]: Momentum Loop
+            - generic [ref=e145]:
+              - article [ref=e146]:
+                - strong [ref=e147]: 0 homes saved
+                - paragraph [ref=e148]: Start by saving 2 or 3 homes you would genuinely revisit.
+              - article [ref=e149]:
+                - strong [ref=e150]: 0 feed interactions
+                - paragraph [ref=e151]: Open a few listings and the recommendation engine will start adapting.
+              - article [ref=e152]:
+                - strong [ref=e153]: "Top momentum: *🏠 Double Storey House for Sale – Taman Kim Chuan, Port Klang*"
+                - paragraph [ref=e154]: undefined is showing stronger buyer interest, so it is worth comparing real options there tonight.
+              - article [ref=e155]:
+                - strong [ref=e156]: Unlock after 3 saves
+                - paragraph [ref=e157]: Keep exploring and saving to unlock a hidden premium recommendation.
+          - article [ref=e158]:
+            - generic [ref=e159]:
+              - generic [ref=e160]: Buyer Quest
+              - generic [ref=e161]: Level 1
+            - generic [ref=e162]:
+              - generic [ref=e163]:
+                - generic [ref=e164]: XP earned
+                - strong [ref=e165]: 0 XP
+              - generic [ref=e166]:
+                - generic [ref=e167]: Streak
+                - strong [ref=e168]: 0 days
+            - generic [ref=e170]:
+              - article [ref=e171]:
+                - generic [ref=e172]: 
+                - generic [ref=e173]:
+                  - strong [ref=e174]: View 3 homes
+                  - paragraph [ref=e175]: 0/3 complete
+              - article [ref=e176]:
+                - generic [ref=e177]: 
+                - generic [ref=e178]:
+                  - strong [ref=e179]: Save 2 serious picks
+                  - paragraph [ref=e180]: 0/2 complete
+              - article [ref=e181]:
+                - generic [ref=e182]: 
+                - generic [ref=e183]:
+                  - strong [ref=e184]: Play price instinct
+                  - paragraph [ref=e185]: 0/1 complete
+              - article [ref=e186]:
+                - generic [ref=e187]: 
+                - generic [ref=e188]:
+                  - strong [ref=e189]: Book a real viewing
+                  - paragraph [ref=e190]: 0/1 complete
+            - generic [ref=e192]:
+              - generic [ref=e193]: 
+              - text: Badges unlock as you explore
+      - generic [ref=e194]:
+        - generic [ref=e196]:
+          - generic [ref=e197]: AI Buyer Tools
+          - heading "Tell RealityGenius what you need." [level=3] [ref=e198]
+          - paragraph [ref=e199]: "Try: I have RM500k and need a 3-bedroom house in Shah Alam."
+        - generic [ref=e200]:
+          - article [ref=e201]:
+            - generic [ref=e202]:
+              - generic [ref=e203]: 
+              - generic [ref=e204]:
+                - strong [ref=e205]: AI Property Match
+                - generic [ref=e206]: Budget, rooms, area, and lifestyle intent
+            - generic [ref=e207]:
+              - textbox "I have RM500k and need a 3-bedroom house in Shah Alam near schools." [ref=e208]
+              - button "Find Matches" [ref=e209] [cursor=pointer]
+          - article [ref=e210]:
+            - generic [ref=e211]:
+              - generic [ref=e212]: 
+              - generic [ref=e213]:
+                - strong [ref=e214]: Map + Nearby Signals
+                - generic [ref=e215]: Schools, hospitals, malls, transport
+            - generic [ref=e217]:
+              - generic [ref=e218]: Interactive map preview
+              - strong [ref=e219]: "*🏠 Double Storey House for Sale – Taman Kim Chuan, Port Klang*"
+              - link "Open Google Maps" [ref=e220] [cursor=pointer]:
+                - /url: https://www.google.com/maps/search/?api=1&query=*%F0%9F%8F%A0%20Double%20Storey%20House%20for%20Sale%20%E2%80%93%20Taman%20Kim%20Chuan%2C%20Port%20Klang*%2C%20Malaysia
+            - generic [ref=e221]:
+              - generic [ref=e222]:
+                - generic [ref=e223]: 
+                - text: "Schools: check nearby options"
+              - generic [ref=e224]:
+                - generic [ref=e225]: 
+                - text: "Hospitals: compare medical access"
+              - generic [ref=e226]:
+                - generic [ref=e227]: 
+                - text: "Malls: review lifestyle anchors"
+              - generic [ref=e228]:
+                - generic [ref=e229]: 
+                - text: "Transport: confirm commute route"
+          - article [ref=e230]:
+            - generic [ref=e231]:
+              - generic [ref=e232]: 
+              - generic [ref=e233]:
+                - strong [ref=e234]: Mortgage Quick Check
+                - generic [ref=e235]: Simple estimate before contacting agent
+            - generic [ref=e236]:
+              - generic [ref=e237]:
+                - generic [ref=e238]: Property price
+                - spinbutton "Property price" [ref=e239]: "500000"
+              - generic [ref=e240]:
+                - generic [ref=e241]: Down payment %
+                - spinbutton "Down payment %" [ref=e242]: "10"
+              - generic [ref=e243]:
+                - generic [ref=e244]: Interest %
+                - spinbutton "Interest %" [ref=e245]: "4.2"
+              - generic [ref=e246]:
+                - generic [ref=e247]: Years
+                - spinbutton "Years" [ref=e248]: "35"
+            - generic [ref=e249]:
+              - text: Estimated monthly instalment
+              - strong [ref=e250]: RM 2K
+              - paragraph [ref=e251]: Loan amount RM 450K. Estimate only; final approval depends on bank, DSR, documents, and legal checks.
+      - region "RealityGenius platform highlights" [ref=e252]:
+        - generic [ref=e253]:
+          - generic [ref=e254]: AI Match Score /
+          - generic [ref=e255]: QC-Approved Listings /
+          - generic [ref=e256]: WhatsApp Viewing Flow /
+          - generic [ref=e257]: AR Preview /
+          - generic [ref=e258]: Deal Room /
+          - generic [ref=e259]: Saved Shortlists /
+          - generic [ref=e260]: AI Match Score /
+          - generic [ref=e261]: QC-Approved Listings /
+          - generic [ref=e262]: WhatsApp Viewing Flow /
+          - generic [ref=e263]: AR Preview /
+          - generic [ref=e264]: Deal Room /
+          - generic [ref=e265]: Saved Shortlists /
+      - generic [ref=e266]:
+        - generic [ref=e267]:
+          - generic [ref=e268]:
+            - generic [ref=e269]: Buyer Journey
+            - heading "Three steps from scroll to serious decision" [level=3] [ref=e270]
+          - paragraph [ref=e271]: Inspired by Langard's numbered service cards, adapted for Malaysian property buyers.
+        - generic [ref=e272]:
+          - article [ref=e273]:
+            - generic [ref=e274]: "01"
+            - heading "Curated Discovery" [level=4] [ref=e276]
+            - paragraph [ref=e277]: Search by area, tower, budget, lifestyle, or yield. The feed learns from every save and revisit.
+          - article [ref=e278]:
+            - generic [ref=e279]: "02"
+            - heading "Viewing Momentum" [level=4] [ref=e281]
+            - paragraph [ref=e282]: Turn a shortlist into action with one-tap WhatsApp contact, alerts, booking requests, and AR where available.
+          - article [ref=e283]:
+            - generic [ref=e284]: "03"
+            - heading "Decision Support" [level=4] [ref=e286]
+            - paragraph [ref=e287]: Use AI reasons, offer guidance, escrow status, and document workflow before the deal gets messy.
+      - region "RealityGenius trust statistics" [ref=e288]:
+        - article [ref=e289]:
+          - strong [ref=e290]: QC
+          - generic [ref=e291]: new agent listings go live after approval
+        - article [ref=e292]:
+          - strong [ref=e293]: 32%
+          - generic [ref=e294]: lead-to-chat conversion signal
+        - article [ref=e295]:
+          - strong [ref=e296]: 24/7
+          - generic [ref=e297]: buyer memory and saved alerts
+        - article [ref=e298]:
+          - strong [ref=e299]: 1 tap
+          - generic [ref=e300]: from shortlist to viewing request
+      - generic [ref=e301]:
+        - generic [ref=e302]:
+          - generic [ref=e303]: Friday Auction Night
+          - heading "Two selected homes. One live bidding window." [level=3] [ref=e304]
+          - paragraph [ref=e305]: Every Friday, RealityGenius features 2 selected homes for live buyer bidding. Join the auction, place your best offer, and compete in real time.
+          - paragraph [ref=e306]: Winning a bid means the buyer has submitted the highest offer. Final purchase is subject to owner approval, booking fee, loan eligibility, agreement terms, and legal documentation.
+        - generic "Friday auction schedule" [ref=e307]:
+          - text: Friday Schedule
+          - list [ref=e308]:
+            - listitem [ref=e309]:
+              - strong [ref=e310]: 8:30 PM
+              - generic [ref=e311]: Auction opens
+            - listitem [ref=e312]:
+              - strong [ref=e313]: 9:00 PM
+              - generic [ref=e314]: House 1 live bidding
+            - listitem [ref=e315]:
+              - strong [ref=e316]: 9:30 PM
+              - generic [ref=e317]: House 2 live bidding
+            - listitem [ref=e318]:
+              - strong [ref=e319]: 10:00 PM
+              - generic [ref=e320]: Auction closes
+        - generic [ref=e321]:
+          - article [ref=e322]:
+            - generic [ref=e324]:
+              - text: Opens Friday
+              - heading "House 1" [level=4] [ref=e325]
+              - paragraph [ref=e326]: Live bidding starts at 9:00 PM
+            - link "View Auction" [ref=e327] [cursor=pointer]:
+              - /url: "#explore"
+          - article [ref=e328]:
+            - generic [ref=e330]:
+              - text: Second Session
+              - heading "House 2" [level=4] [ref=e331]
+              - paragraph [ref=e332]: Live bidding starts at 9:30 PM
+            - link "View Auction" [ref=e333] [cursor=pointer]:
+              - /url: "#explore"
+      - generic [ref=e334]:
+        - generic [ref=e336]:
+          - generic [ref=e337]: Shortlist Brain
+          - heading "Recommended next clicks" [level=3] [ref=e338]
+        - generic [ref=e339]:
+          - article "Explore *🏠 Double Storey House for Sale – Taman Kim Chuan, Port Klang*" [ref=e340] [cursor=pointer]:
+            - generic [ref=e341]:
+              - img "*🏠 Double Storey House for Sale – Taman Kim Chuan, Port Klang*" [ref=e342]
+              - generic [ref=e343]: Pick 1
+              - generic [ref=e344]: Low Risk
+            - generic [ref=e345]:
+              - generic [ref=e346]: RM 710K
+              - generic [ref=e347]: "*🏠 Double Storey House for Sale – Taman Kim Chuan, Port Klang*"
+              - paragraph [ref=e348]: "Why this deserves attention: estimated fair value sits near RM 728,829, so you have a cleaner anchor than the public asking price."
+              - generic [ref=e349]:
+                - generic [ref=e350]: 7.4% ROI
+                - generic [ref=e351]: Offer RM 693K
+          - article "Explore AVAILABLE ✅" [ref=e352] [cursor=pointer]:
+            - generic [ref=e353]:
+              - img "AVAILABLE ✅" [ref=e354]
+              - generic [ref=e355]: Pick 2
+              - generic [ref=e356]: Low Risk
+            - generic [ref=e357]:
+              - generic [ref=e358]: RM 320K
+              - generic [ref=e359]: AVAILABLE ✅
+              - paragraph [ref=e360]: "Why this deserves attention: estimated fair value sits near RM 328,486, so you have a cleaner anchor than the public asking price."
+              - generic [ref=e361]:
+                - generic [ref=e362]: 7.4% ROI
+                - generic [ref=e363]: Offer RM 312K
+          - article "Explore AVAILABLE ✅" [ref=e364] [cursor=pointer]:
+            - generic [ref=e365]:
+              - img "AVAILABLE ✅" [ref=e366]
+              - generic [ref=e367]: Pick 3
+              - generic [ref=e368]: Low Risk
+            - generic [ref=e369]:
+              - generic [ref=e370]: RM 180K
+              - generic [ref=e371]: AVAILABLE ✅
+              - paragraph [ref=e372]: "Why this deserves attention: estimated fair value sits near RM 184,774, so you have a cleaner anchor than the public asking price."
+              - generic [ref=e373]:
+                - generic [ref=e374]: 7.4% ROI
+                - generic [ref=e375]: Offer RM 176K
+      - generic [ref=e376]:
+        - generic [ref=e377]:
+          - generic [ref=e378]:
+            - generic [ref=e379]: Property Feed
+            - heading "Explore the market" [level=3] [ref=e380]
+          - generic [ref=e381]:
+            - generic "Feed view mode" [ref=e382]:
+              - button "Grid View" [ref=e383] [cursor=pointer]
+              - button "Video View" [ref=e384] [cursor=pointer]
+            - generic [ref=e385]:
+              - generic [ref=e386]: Save the strongest
+              - generic [ref=e387]: Contact in one tap
+              - generic [ref=e388]: AR where available
+        - generic [ref=e389]:
+          - article "Explore *🏠 Double Storey House for Sale – Taman Kim Chuan, Port Klang*" [ref=e390] [cursor=pointer]:
+            - generic [ref=e391]:
+              - img "*🏠 Double Storey House for Sale – Taman Kim Chuan, Port Klang*" [ref=e392]
+              - generic [ref=e393]: "*🏠 Double Storey House for Sale – Taman Kim Chuan, Port Klang*"
+              - generic [ref=e394]: AI 58% Match
+              - generic "Session-based buyer interest estimate, not a live viewer count" [ref=e395]:
+                - generic [ref=e396]: 
+                - text: 15 interest estimate
+              - generic [ref=e397]:
+                - generic [ref=e398]: 
+                - text: 10/10
+            - generic [ref=e399]:
+              - generic [ref=e400]:
+                - generic [ref=e401]:
+                  - generic [ref=e402]: RM 710K
+                  - generic [ref=e403]: "*🏠 Double Storey House for Sale – Taman Kim Chuan, Port Klang*"
+                - button "Save" [ref=e404]:
+                  - generic [ref=e405]: 
+                  - text: Save
+              - generic [ref=e406]:
+                - generic [ref=e407]: 
+                - text: "*🏠 Double Storey House for Sale – Taman Kim Chuan, Port Klang*"
+              - generic [ref=e408]:
+                - generic [ref=e409]:
+                  - generic [ref=e410]: 
+                  - text: 4 bed
+                - generic [ref=e411]:
+                  - generic [ref=e412]: 
+                  - text: 1500 sqft
+                - generic [ref=e413]:
+                  - generic [ref=e414]: 
+                  - text: 4.2% yield
+              - generic [ref=e415]:
+                - generic [ref=e416]:
+                  - generic [ref=e417]: 
+                  - text: 10/10 photos ready
+                - generic [ref=e418]: Main 5 complete
+              - generic "Main property photo labels" [ref=e419]:
+                - generic [ref=e420]:
+                  - img "Front View" [ref=e421]
+                  - generic [ref=e422]: Front View
+                - generic [ref=e423]:
+                  - img "Telegram Image 2" [ref=e424]
+                  - generic [ref=e425]: Telegram Image 2
+                - generic [ref=e426]:
+                  - img "Telegram Image 3" [ref=e427]
+                  - generic [ref=e428]: Telegram Image 3
+                - generic [ref=e429]:
+                  - img "Telegram Image 4" [ref=e430]
+                  - generic [ref=e431]: Telegram Image 4
+                - generic [ref=e432]:
+                  - img "Telegram Image 5" [ref=e433]
+                  - generic [ref=e434]: Telegram Image 5
+              - paragraph [ref=e435]: "*🏠 Double Storey House for Sale – Taman Kim Chuan, Port Klang* 📍 *Location:* Jalan Jerai 3, Taman Kim Chuan, Port Klang 🏡 *Type:* Fully Furnished Double Storey 📐 *Land Size:* 20' x 75' 🏢 *Built-up Area:* 1,500 sq.ft 🛏️ *4 Bedrooms* 🛁 *3 Bathrooms* 🚗 Spacious Car Porch 💰 *Selling Price:* RM710,000 (Negotiable) ✅ Move-in Condition ✅ Well-maintained ✅ Quiet and mature neighbourhood ✅ Easy access to amenities and main roads"
+              - generic [ref=e436]:
+                - generic [ref=e437]: 7.4% ROI
+                - generic [ref=e438]: Low Risk
+              - generic [ref=e439]:
+                - button "Explore" [ref=e440]
+                - link "Contact" [ref=e441]:
+                  - /url: https://wa.me/60123456789?text=Hi%2C%20I%20want%20more%20details%20about%20*%F0%9F%8F%A0%20Double%20Storey%20House%20for%20Sale%20%E2%80%93%20Taman%20Kim%20Chuan%2C%20Port%20Klang*%20in%20*%F0%9F%8F%A0%20Double%20Storey%20House%20for%20Sale%20%E2%80%93%20Taman%20Kim%20Chuan%2C%20Port%20Klang*.%20I%20found%20it%20through%20the%20feed%20view%20on%20RealityGenius.
+                  - generic [ref=e442]: 
+                  - text: Contact
+          - article "Explore AVAILABLE ✅" [ref=e443] [cursor=pointer]:
+            - generic [ref=e444]:
+              - img "AVAILABLE ✅" [ref=e445]
+              - generic [ref=e446]: Single Storey Terrace Intermediate Taman Malawati Jaya, Kuala Selangor
+              - generic [ref=e447]: AI 58% Match
+              - generic "Session-based buyer interest estimate, not a live viewer count" [ref=e448]:
+                - generic [ref=e449]: 
+                - text: 6 interest estimate
+              - generic [ref=e450]:
+                - generic [ref=e451]: 
+                - text: 10/10
+            - generic [ref=e452]:
+              - generic [ref=e453]:
+                - generic [ref=e454]:
+                  - generic [ref=e455]: RM 320K
+                  - generic [ref=e456]: AVAILABLE ✅
+                - button "Save" [ref=e457]:
+                  - generic [ref=e458]: 
+                  - text: Save
+              - generic [ref=e459]:
+                - generic [ref=e460]: 
+                - text: Single Storey Terrace Intermediate Taman Malawati Jaya, Kuala Selangor
+              - generic [ref=e461]:
+                - generic [ref=e462]:
+                  - generic [ref=e463]: 
+                  - text: 3 bed
+                - generic [ref=e464]:
+                  - generic [ref=e465]: 
+                  - text: 1300 sqft
+                - generic [ref=e466]:
+                  - generic [ref=e467]: 
+                  - text: 4.2% yield
+              - generic [ref=e468]:
+                - generic [ref=e469]:
+                  - generic [ref=e470]: 
+                  - text: 10/10 photos ready
+                - generic [ref=e471]: Main 5 complete
+              - generic "Main property photo labels" [ref=e472]:
+                - generic [ref=e473]:
+                  - img "Front View" [ref=e474]
+                  - generic [ref=e475]: Front View
+                - generic [ref=e476]:
+                  - img "Telegram Image 2" [ref=e477]
+                  - generic [ref=e478]: Telegram Image 2
+                - generic [ref=e479]:
+                  - img "Telegram Image 3" [ref=e480]
+                  - generic [ref=e481]: Telegram Image 3
+                - generic [ref=e482]:
+                  - img "Telegram Image 4" [ref=e483]
+                  - generic [ref=e484]: Telegram Image 4
+                - generic [ref=e485]:
+                  - img "Telegram Image 5" [ref=e486]
+                  - generic [ref=e487]: Telegram Image 5
+              - paragraph [ref=e488]: "AVAILABLE ✅ Single Storey Terrace Intermediate Taman Malawati Jaya, Kuala Selangor - FLEXIBLE BOOKING ‼️ ======================== Asking Price: RM320,000 ======================== DETAILS : - Leasehold Bumi Lot (balance 72tahun) - Single Storey Terrace (Intermediate) - Land Area : 20x75 (1300sqft) - Bedroom : 3 Rooms - Bathroom : 2 Rooms - Table Top, Awning front & back Amenities: - Balai Polis - Petrol Station - Lotus - SK Bandar Baru Kuala Selangor ======================== Asking Price: RM320,000 ======================== . “RUMAH BAHAGIA BERSAMA ANDA & KELUARGA” SHARE & LIkE 😄 . Berminat Beli Rumah contact sy 📲 #ahomeforbettertomorrow #rumahmurah #rumahuntukdijual #rumahbaru #rumahidaman #saudagarproperty #propertyforsale #propertyinvestment #investmentproperty #rumahku #rentalproperty #jualbelirumah #belirumah #investment #property #realestateinvesting #realestateinvestor"
+              - generic [ref=e489]:
+                - generic [ref=e490]: 7.4% ROI
+                - generic [ref=e491]: Low Risk
+              - generic [ref=e492]:
+                - button "Explore" [ref=e493]
+                - link "Contact" [ref=e494]:
+                  - /url: https://wa.me/60123456789?text=Hi%2C%20I%20want%20more%20details%20about%20AVAILABLE%20%E2%9C%85%20in%20Single%20Storey%20Terrace%20Intermediate%20Taman%20Malawati%20Jaya%2C%20Kuala%20Selangor.%20I%20found%20it%20through%20the%20feed%20view%20on%20RealityGenius.
+                  - generic [ref=e495]: 
+                  - text: Contact
+          - article "Explore AVAILABLE ✅" [ref=e496] [cursor=pointer]:
+            - generic [ref=e497]:
+              - img "AVAILABLE ✅" [ref=e498]
+              - generic [ref=e499]: Kondo Rakyat Desa Pantai, Bukit Kerinchi, Bangsar South, Kuala Lumpur
+              - generic [ref=e500]: AI 58% Match
+              - generic "Session-based buyer interest estimate, not a live viewer count" [ref=e501]:
+                - generic [ref=e502]: 
+                - text: 17 interest estimate
+              - generic [ref=e503]:
+                - generic [ref=e504]: 
+                - text: 10/10
+            - generic [ref=e505]:
+              - generic [ref=e506]:
+                - generic [ref=e507]:
+                  - generic [ref=e508]: RM 180K
+                  - generic [ref=e509]: AVAILABLE ✅
+                - button "Save" [ref=e510]:
+                  - generic [ref=e511]: 
+                  - text: Save
+              - generic [ref=e512]:
+                - generic [ref=e513]: 
+                - text: Kondo Rakyat Desa Pantai, Bukit Kerinchi, Bangsar South, Kuala Lumpur
+              - generic [ref=e514]:
+                - generic [ref=e515]:
+                  - generic [ref=e516]: 
+                  - text: 0 bed
+                - generic [ref=e517]:
+                  - generic [ref=e518]: 
+                  - text: 650 sqft
+                - generic [ref=e519]:
+                  - generic [ref=e520]: 
+                  - text: 4.2% yield
+              - generic [ref=e521]:
+                - generic [ref=e522]:
+                  - generic [ref=e523]: 
+                  - text: 10/10 photos ready
+                - generic [ref=e524]: Main 5 complete
+              - generic "Main property photo labels" [ref=e525]:
+                - generic [ref=e526]:
+                  - img "Front View" [ref=e527]
+                  - generic [ref=e528]: Front View
+                - generic [ref=e529]:
+                  - img "Telegram Image 2" [ref=e530]
+                  - generic [ref=e531]: Telegram Image 2
+                - generic [ref=e532]:
+                  - img "Telegram Image 3" [ref=e533]
+                  - generic [ref=e534]: Telegram Image 3
+                - generic [ref=e535]:
+                  - img "Telegram Image 4" [ref=e536]
+                  - generic [ref=e537]: Telegram Image 4
+                - generic [ref=e538]:
+                  - img "Telegram Image 5" [ref=e539]
+                  - generic [ref=e540]: Telegram Image 5
+              - paragraph [ref=e541]: "AVAILABLE ✅ Kondo Rakyat Desa Pantai, Bukit Kerinchi, Bangsar South, Kuala Lumpur - FLEXIBLE BOOKING ‼️ - FULL LOAN ‼️ - TERMURAH ‼️ ========================= ASKING PRICE : RM180,000 Nett ========================= PROPERTY DETAILS : - Lowcost - Leasehold Bumi - Blok 5 Level 15 - Built Up : 650 sqft - Bedrooms 3 Bathroom 1 - Ready Strata - Maintenance Fee : Rm56 - Tenanted - Open Parking FACILITIES : - Lift - 24 Hours Security - Mini Market - Playground NEARBY : - Midvalley Megamall - Pantai Medical Centre - University Malaya - Menara TM - SMK Seri Pantai - SRA Al-Khawarizmi - Ar-Rahah Mosque - KL Eco City - The Sphere Mall “RUMAH BAHAGIA BERSAMA ANDA & KELUARGA” SHARE & LIkE 😄 . Berminat Beli Rumah contact sy 📲 #ahomeforbettertomorrow #rumahmurah #rumahuntukdijual #rumahbaru #rumahidaman #saudagarproperty #propertyforsale #propertyinvestment #investmentpropert"
+              - generic [ref=e542]:
+                - generic [ref=e543]: 7.4% ROI
+                - generic [ref=e544]: Low Risk
+              - generic [ref=e545]:
+                - button "Explore" [ref=e546]
+                - link "Contact" [ref=e547]:
+                  - /url: https://wa.me/60123456789?text=Hi%2C%20I%20want%20more%20details%20about%20AVAILABLE%20%E2%9C%85%20in%20Kondo%20Rakyat%20Desa%20Pantai%2C%20Bukit%20Kerinchi%2C%20Bangsar%20South%2C%20Kuala%20Lumpur.%20I%20found%20it%20through%20the%20feed%20view%20on%20RealityGenius.
+                  - generic [ref=e548]: 
+                  - text: Contact
+          - article "Explore WTS" [ref=e549] [cursor=pointer]:
+            - generic [ref=e550]:
+              - img "WTS" [ref=e551]
+              - generic [ref=e552]: Malaysia
+              - generic [ref=e553]: AI 50% Match
+              - generic "Session-based buyer interest estimate, not a live viewer count" [ref=e554]:
+                - generic [ref=e555]: 
+                - text: 12 interest estimate
+              - generic [ref=e556]:
+                - generic [ref=e557]: 
+                - text: 10/10
+            - generic [ref=e558]:
+              - generic [ref=e559]:
+                - generic [ref=e560]:
+                  - generic [ref=e561]: RM 0K
+                  - generic [ref=e562]: WTS
+                - button "Save" [ref=e563]:
+                  - generic [ref=e564]: 
+                  - text: Save
+              - generic [ref=e565]:
+                - generic [ref=e566]: 
+                - text: Malaysia
+              - generic [ref=e567]:
+                - generic [ref=e568]:
+                  - generic [ref=e569]: 
+                  - text: 0 bed
+                - generic [ref=e570]:
+                  - generic [ref=e571]: 
+                  - text: 0 sqft
+                - generic [ref=e572]:
+                  - generic [ref=e573]: 
+                  - text: 4.2% yield
+              - generic [ref=e574]:
+                - generic [ref=e575]:
+                  - generic [ref=e576]: 
+                  - text: 10/10 photos ready
+                - generic [ref=e577]: Main 5 complete
+              - generic "Main property photo labels" [ref=e578]:
+                - generic [ref=e579]:
+                  - img "Front View" [ref=e580]
+                  - generic [ref=e581]: Front View
+                - generic [ref=e582]:
+                  - img "Telegram Image 2" [ref=e583]
+                  - generic [ref=e584]: Telegram Image 2
+                - generic [ref=e585]:
+                  - img "Telegram Image 3" [ref=e586]
+                  - generic [ref=e587]: Telegram Image 3
+                - generic [ref=e588]:
+                  - img "Telegram Image 4" [ref=e589]
+                  - generic [ref=e590]: Telegram Image 4
+                - generic [ref=e591]:
+                  - img "Telegram Image 5" [ref=e592]
+                  - generic [ref=e593]: Telegram Image 5
+              - paragraph [ref=e594]: "WTS 3 Sty Duta Villa Setia Alam 3 storey Corner with Extra Land Premium Link House About Property: -L/A: 4,061 sq feet -B/U: 4,938 sq feet -Rooms: 5+1 Baths: 6 -Basic Unit -Alarm system + Solar heater -Freehold landed strata-title -Full clubhouse facilities. ˋˏ✄┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈ 🔥🔥Selling Price | RM2.45mil🔥🔥 Nearby Amenities: -1km to Highway(NKVE, DASH) -5min to Setia City Mall, NSK, Lotus -Surrounding with Shops, Clinics, Pharmacies, Restaurants, Bank, Hospitals, Schools, Colleges etc..."
+              - generic [ref=e595]:
+                - generic [ref=e596]: 7.4% ROI
+                - generic [ref=e597]: Low Risk
+              - generic [ref=e598]:
+                - button "Explore" [ref=e599]
+                - link "Contact" [ref=e600]:
+                  - /url: https://wa.me/60123456789?text=Hi%2C%20I%20want%20more%20details%20about%20WTS%20in%20Malaysia.%20I%20found%20it%20through%20the%20feed%20view%20on%20RealityGenius.
+                  - generic [ref=e601]: 
+                  - text: Contact
+          - article [ref=e602]:
+            - generic [ref=e603]:
+              - generic [ref=e604]: Guess the Price
+              - strong [ref=e605]: WTS
+            - paragraph [ref=e606]: Could you price this from the specs alone, or would the market humble you?
+            - generic [ref=e607]:
+              - generic [ref=e608]: 0 bed
+              - generic [ref=e609]: 0 sqft
+              - generic [ref=e610]: Malaysia
+            - generic [ref=e611]:
+              - button "RM 0K" [ref=e612] [cursor=pointer]
+              - button "RM 0K" [ref=e613] [cursor=pointer]
+              - button "RM 0K" [ref=e614] [cursor=pointer]
+        - generic [ref=e615]: Loading more properties for your next scroll...
+      - generic [ref=e616]:
+        - generic [ref=e618]:
+          - generic [ref=e619]: Saved Properties
+          - heading "Your private shortlist" [level=3] [ref=e620]
+        - generic [ref=e622]: No saved properties yet. Tap save on any strong listing and it will land here.
+    - contentinfo [ref=e623]:
+      - generic [ref=e624]:
+        - generic [ref=e625]: Ready when you are
+        - heading "Build a property shortlist that actually remembers you." [level=2] [ref=e626]
+      - link "Explore Listings" [ref=e627] [cursor=pointer]:
+        - /url: "#explore"
+      - navigation "Legal links" [ref=e628]:
+        - link "Privacy" [ref=e629] [cursor=pointer]:
+          - /url: ./privacy.html
+        - link "Terms" [ref=e630] [cursor=pointer]:
+          - /url: ./terms.html
+        - link "Login" [ref=e631] [cursor=pointer]:
+          - /url: ./login.html
+  - region "RealityGenius feedback space" [ref=e632]:
+    - generic [ref=e633]:
+      - generic [ref=e634]:
+        - generic [ref=e635]:
+          - text: Feedback space
+          - heading "Tell us what would make property search better." [level=3] [ref=e636]
+          - paragraph [ref=e637]: Share what helped, what confused you, or what property insight you wanted but could not find.
+        - generic [ref=e638]:
+          - generic [ref=e639]: 
+          - generic [ref=e640]: Your feedback goes to RealityGenius support and product review.
+      - generic [ref=e641]:
+        - generic [ref=e642]:
+          - generic [ref=e643]: Rate this page
+          - generic "Rating out of 5" [ref=e644]:
+            - button "1 out of 5" [ref=e645] [cursor=pointer]: "1"
+            - button "2 out of 5" [ref=e646] [cursor=pointer]: "2"
+            - button "3 out of 5" [ref=e647] [cursor=pointer]: "3"
+            - button "4 out of 5" [ref=e648] [cursor=pointer]: "4"
+            - button "5 out of 5" [ref=e649] [cursor=pointer]: "5"
+        - generic [ref=e650]:
+          - generic [ref=e651]:
+            - generic [ref=e652]: Feedback type
+            - combobox "Feedback type" [ref=e653]:
+              - option "Choose one" [selected]
+              - option "Missing property, area, or listing"
+              - option "Page feels confusing"
+              - option "Need more proof or trust"
+              - option "Something is not working"
+              - option "Feature request"
+              - option "Good experience"
+              - option "Other"
+          - generic [ref=e654]:
+            - generic [ref=e655]: Your note
+            - textbox "Your note" [ref=e656]:
+              - /placeholder: "Example: I want more Shah Alam landed homes with verified photos."
+        - generic [ref=e657]:
+          - button "Send feedback" [ref=e658] [cursor=pointer]
+          - paragraph [ref=e659]: This helps us improve buyer, agent, admin, and owner dashboards.
+  - text:     
+  - complementary [ref=e660]:
+    - generic [ref=e661]:
+      - generic [ref=e662]:
+        - generic [ref=e663]: Saved
+        - heading [level=3] [ref=e664]: Favorites
+      - button [ref=e665] [cursor=pointer]:
+        - generic [ref=e666]: 
+    - generic [ref=e668]: Your saved properties will appear here.
+  - complementary [ref=e669]:
+    - generic [ref=e670]:
+      - generic [ref=e671]:
+        - generic [ref=e672]: Notifications
+        - heading [level=3] [ref=e673]: Buyer alerts
+      - button [ref=e674] [cursor=pointer]:
+        - generic [ref=e675]: 
+    - article [ref=e677]:
+      - strong [ref=e678]: Buyer feed activated
+      - paragraph [ref=e679]: Open a few listings, save the strongest ones, and the recommendation engine will sharpen your next moves.
+      - time [ref=e680]: 29 Jun 2026, 3:27 pm
+  - text:                
+  - navigation "Quick buyer actions" [ref=e681]:
+    - link "Search" [ref=e682] [cursor=pointer]:
+      - /url: "#explore"
+      - generic [ref=e683]: 
+      - generic [ref=e684]: Search
+    - button "Saved" [ref=e685] [cursor=pointer]:
+      - generic [ref=e686]: 
+      - generic [ref=e687]: Saved
+    - button "Alerts" [ref=e688] [cursor=pointer]:
+      - generic [ref=e689]: 
+      - generic [ref=e690]: Alerts
+    - link "Login" [ref=e691] [cursor=pointer]:
+      - /url: ./login.html?role=user&next=/user.html
+      - generic [ref=e692]: 
+      - generic [ref=e693]: Login
+  - button "Feedback form" [ref=e694] [cursor=pointer]:
+    - generic [ref=e695]: 
+    - generic [ref=e696]: Feedback form
+  - navigation "Mobile quick actions":
+    - button "Search":
+      - generic: 
+      - generic: Search
+    - button "Saved":
+      - generic: 
+      - generic: Saved
+    - button "Alerts":
+      - generic: 
+      - generic: Alerts
+```
+
+# Test source
+
+```ts
+  1  | const { test, expect } = require("@playwright/test");
+  2  | 
+  3  | const protectedRoutes = [
+  4  |   { path: "/agent.html", role: "agent" },
+  5  |   { path: "/admin.html", role: "admin" },
+  6  |   { path: "/master.html", role: "master" }
+  7  | ];
+  8  | 
+  9  | test.describe("RealityGenius role access", () => {
+  10 |   for (const route of protectedRoutes) {
+  11 |     test(`guest is redirected away from ${route.path}`, async ({ page }) => {
+  12 |       await page.goto(route.path);
+  13 |       await expect(page).toHaveURL(new RegExp(`/login\\.html\\?(.+&)?next=.*${route.path.replace("/", "%2F")}`));
+  14 |       await expect(page.locator("#loginForm")).toBeVisible();
+  15 |     });
+  16 |   }
+  17 | 
+  18 |   test("buyer page is browseable before login but protected actions ask for login", async ({ page }) => {
+> 19 |     await page.goto("/user.html");
+     |                ^ Error: page.goto: Test timeout of 30000ms exceeded.
+  20 |     await expect(page.locator("#searchInput")).toBeVisible();
+  21 |     await page.locator("#saveSearchButton").click();
+  22 |     await expect(page).toHaveURL(/\/login\.html\?/);
+  23 |     await expect(page.locator("#loginForm")).toBeVisible();
+  24 |   });
+  25 | 
+  26 |   test("invalid login fails and stays on login page", async ({ page }) => {
+  27 |     await page.goto("/login.html?role=user&next=/user.html");
+  28 |     await page.locator("#loginId").fill(`invalid-${Date.now()}@example.com`);
+  29 |     await page.locator("#loginPassword").fill("wrong-password");
+  30 |     await page.locator("#loginButton").click();
+  31 |     await expect(page.locator("#sharedStatus")).toContainText(/invalid|credentials|email|password/i);
+  32 |     await expect(page).toHaveURL(/\/login\.html/);
+  33 |   });
+  34 | });
+  35 | 
+  36 | test.describe("RealityGenius API fail-closed checks", () => {
+  37 |   test("agent subscription endpoint requires auth", async ({ request }) => {
+  38 |     const res = await request.post("/api/billing/create-checkout-session", {
+  39 |       data: { plan: "starter_rg" }
+  40 |     });
+  41 |     expect(res.status()).toBe(401);
+  42 |   });
+  43 | 
+  44 |   test("agent profile endpoint requires auth", async ({ request }) => {
+  45 |     const res = await request.get("/api/agent/me");
+  46 |     expect(res.status()).toBe(401);
+  47 |   });
+  48 | 
+  49 |   test("stripe webhook rejects unsigned payloads", async ({ request }) => {
+  50 |     const res = await request.post("/api/stripe/webhook", {
+  51 |       data: { type: "checkout.session.completed", data: { object: {} } }
+  52 |     });
+  53 |     expect(res.status()).toBe(400);
+  54 |   });
+  55 | });
+  56 | 
+```

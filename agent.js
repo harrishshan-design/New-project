@@ -201,6 +201,7 @@ const LISTING_EXCEL_OPTIONAL_COLUMNS = [
 ];
 
 const LISTING_EXCEL_HEADERS = [
+  "batch_slot",
   ...LISTING_EXCEL_REQUIRED_COLUMNS,
   ...LISTING_EXCEL_OPTIONAL_COLUMNS,
   "maintenance_fee",
@@ -1732,29 +1733,24 @@ async function saveAgentProfileEdits(event) {
   }
 }
 
-function handleAgentProfilePhoto(event) {
+async function handleAgentProfilePhoto(event) {
   const file = event.target.files?.[0];
   if (!file) return;
-  if (!file.type.startsWith("image/")) {
-    showToast("Upload an image file for your profile photo");
-    return;
-  }
-  if (file.size > 2.5 * 1024 * 1024) {
-    showToast("Use a profile photo under 2.5MB");
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = () => {
+  try {
+    const photo = await window.RealityGeniusAuth?.prepareProfilePhoto?.(file);
+    if (!photo) throw new Error("Profile picture processing is unavailable.");
     const current = readLiveAgentProfile();
     writeStore("rg_live_agent_profile", {
       ...current,
-      photo: reader.result,
+      photo,
       updatedAt: new Date().toISOString()
     });
     renderLiveAgentProfile();
     showToast("Profile photo updated");
-  };
-  reader.readAsDataURL(file);
+  } catch (error) {
+    showToast(error.message || "Could not update profile photo");
+    event.target.value = "";
+  }
 }
 
 function renderMetrics() {
@@ -3570,13 +3566,30 @@ function setImportStatus(message, tone = "neutral") {
   });
 }
 
-function getWorkbookRows(file) {
-  return new Promise((resolve, reject) => {
-    if (!window.XLSX) {
-      reject(new Error("Excel parser is still loading. Try again in a few seconds."));
-      return;
-    }
+let excelParserPromise = null;
 
+function ensureExcelParser() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  if (excelParserPromise) return excelParserPromise;
+
+  excelParserPromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+    script.async = true;
+    script.onload = () => window.XLSX ? resolve(window.XLSX) : reject(new Error("Excel parser could not start."));
+    script.onerror = () => reject(new Error("Excel support could not be loaded. Check your connection and try again."));
+    document.head.appendChild(script);
+  }).catch((error) => {
+    excelParserPromise = null;
+    throw error;
+  });
+
+  return excelParserPromise;
+}
+
+async function getWorkbookRows(file) {
+  await ensureExcelParser();
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
@@ -3645,24 +3658,22 @@ async function importListingsFromExcel(event) {
     if (!imported.length) {
       setImportStatus(`
         <strong>No listings imported</strong>
-        <p>${rowErrors.slice(0, 4).join("<br>") || "No valid listing rows found."}</p>
+        <p>${rowErrors.slice(0, 4).map(escapeHtml).join("<br>") || "No valid listing rows found."}</p>
       `, "error");
       return;
     }
 
-    const savedListings = [];
-    for (const listing of imported) {
-      try {
-        savedListings.push(await saveAgentListingToBackend(listing));
-      } catch (error) {
-        rowErrors.push(`${listing.title}: ${error.message || LIVE_LISTING_SAVE_ERROR}`);
-      }
-    }
+    setImportStatus(`
+      <strong>${imported.length} valid listing${imported.length === 1 ? "" : "s"} ready</strong>
+      <p>Saving 0 / ${imported.length}. Up to three listings are processed together for a faster batch.</p>
+      <div class="batch-import-progress"><i style="width:0%"></i></div>
+    `);
+    const savedListings = await saveImportedListingBatch(imported, rowErrors);
 
     if (!savedListings.length) {
       setImportStatus(`
         <strong>No listings saved live</strong>
-        <p>${rowErrors.slice(0, 4).join("<br>") || LIVE_LISTING_SAVE_ERROR}</p>
+        <p>${rowErrors.slice(0, 4).map(escapeHtml).join("<br>") || LIVE_LISTING_SAVE_ERROR}</p>
       `, "error");
       return;
     }
@@ -3687,7 +3698,7 @@ async function importListingsFromExcel(event) {
     setImportStatus(`
       <strong>${savedListings.length} listings saved to backend - ${reviewCount} pending admin QC</strong>
       <p>Each listing has the minimum ${LISTING_MIN_PHOTO_COUNT}-photo gallery. Google Drive pictures were converted to readable thumbnails, AR links are stored in Supabase, and buyer visibility starts only after admin approval.</p>
-      ${rowErrors.length ? `<p>${rowErrors.slice(0, 4).join("<br>")}</p>` : ""}
+      ${rowErrors.length ? `<p>${rowErrors.slice(0, 4).map(escapeHtml).join("<br>")}</p>` : ""}
     `, rowErrors.length ? "warning" : "success");
     showToast(`${reviewCount || savedListings.length} Excel listings saved to backend QC`);
   } catch (error) {
@@ -3697,31 +3708,87 @@ async function importListingsFromExcel(event) {
   }
 }
 
-function downloadListingTemplate() {
-  const rows = [LISTING_EXCEL_SAMPLE_ROW];
-  const filename = "realtygenius-listing-import-template.xlsx";
+async function saveImportedListingBatch(listings, rowErrors) {
+  const saved = [];
+  let nextIndex = 0;
+  let completed = 0;
+  const workerCount = Math.min(3, listings.length);
+
+  async function saveNext() {
+    while (nextIndex < listings.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      const listing = listings[index];
+      try {
+        saved[index] = await saveAgentListingToBackend(listing);
+      } catch (error) {
+        rowErrors.push(`${listing.title}: ${error.message || LIVE_LISTING_SAVE_ERROR}`);
+      } finally {
+        completed += 1;
+        const progress = Math.round((completed / listings.length) * 100);
+        setImportStatus(`
+          <strong>Saving listing ${completed} / ${listings.length}</strong>
+          <p>${saved.filter(Boolean).length} saved successfully${rowErrors.length ? `, ${rowErrors.length} need attention` : ""}.</p>
+          <div class="batch-import-progress"><i style="width:${progress}%"></i></div>
+        `, rowErrors.length ? "warning" : "neutral");
+      }
+    }
+  }
+
+  await Promise.all(Array.from({ length: workerCount }, () => saveNext()));
+  return saved.filter(Boolean);
+}
+
+async function downloadListingTemplate() {
+  const rows = Array.from({ length: 10 }, (_, index) => ({
+    ...Object.fromEntries(LISTING_EXCEL_HEADERS.map((header) => [header, ""])),
+    batch_slot: index + 1
+  }));
+  const filename = "realitygenius-10-listing-batch-template.xlsx";
+
+  try {
+    await ensureExcelParser();
+  } catch (error) {
+    showToast(error.message || "Excel support is unavailable. Downloading CSV instead.");
+  }
 
   if (window.XLSX) {
     const worksheet = window.XLSX.utils.json_to_sheet(rows, { header: LISTING_EXCEL_HEADERS });
     window.XLSX.utils.sheet_add_aoa(worksheet, [LISTING_EXCEL_HEADERS], { origin: "A1" });
+    worksheet["!cols"] = LISTING_EXCEL_HEADERS.map((header) => ({
+      wch: ["description", "address"].includes(header) ? 34 : Math.max(12, Math.min(24, header.length + 3))
+    }));
+
+    const exampleWorksheet = window.XLSX.utils.json_to_sheet([{ batch_slot: "Example only", ...LISTING_EXCEL_SAMPLE_ROW }], { header: LISTING_EXCEL_HEADERS });
+    exampleWorksheet["!cols"] = worksheet["!cols"];
+    const instructionRows = [
+      { step: 1, action: "Fill rows 1 to 10 in the Listings sheet. Do not rename the column headers." },
+      { step: 2, action: `Add at least ${LISTING_MIN_PHOTO_COUNT} public property photo links for every listing.` },
+      { step: 3, action: "Upload the completed workbook. Valid rows save to Pending QC; incomplete rows are skipped with a clear error." },
+      { step: 4, action: "Admin approval is still required before any property appears to buyers." }
+    ];
+    const instructionsWorksheet = window.XLSX.utils.json_to_sheet(instructionRows);
+    instructionsWorksheet["!cols"] = [{ wch: 8 }, { wch: 92 }];
     const workbook = window.XLSX.utils.book_new();
     window.XLSX.utils.book_append_sheet(workbook, worksheet, "Listings");
+    window.XLSX.utils.book_append_sheet(workbook, exampleWorksheet, "Example");
+    window.XLSX.utils.book_append_sheet(workbook, instructionsWorksheet, "Instructions");
     window.XLSX.writeFile(workbook, filename);
-    showToast("Excel template downloaded");
+    showToast("10-listing Excel template downloaded");
     return;
   }
 
   const csv = [
     LISTING_EXCEL_HEADERS.join(","),
-    LISTING_EXCEL_HEADERS.map((key) => JSON.stringify(LISTING_EXCEL_SAMPLE_ROW[key] || "")).join(",")
+    ...rows.map((row) => LISTING_EXCEL_HEADERS.map((key) => JSON.stringify(row[key] || "")).join(","))
   ].join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = "realtygenius-listing-import-template.csv";
+  link.download = "realitygenius-10-listing-batch-template.csv";
   link.click();
   URL.revokeObjectURL(link.href);
-  showToast("CSV template downloaded");
+  showToast("10-listing CSV template downloaded");
 }
 
 function openListingAsset(id, kind) {

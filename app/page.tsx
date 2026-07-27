@@ -1,54 +1,51 @@
 "use client";
 
 import { motion } from "framer-motion";
-import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
+import DeferredHeroSkyline from "./DeferredHeroSkyline";
+import DeferredStreetRide from "./DeferredStreetRide";
 import {
   ArrowRight,
   BadgeCheck,
+  Bell,
+  Calculator,
+  CalendarCheck,
   ChevronDown,
   Gavel,
+  Heart,
+  House,
   Layers3,
-  LockKeyhole,
   MapPin,
   MousePointer2,
   Search,
-  Send,
   ShieldCheck,
   Sparkles,
-  UploadCloud,
   Users,
-  WandSparkles,
-  Zap
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-const HeroSkyline = dynamic(() => import("./HeroSkyline"), {
-  ssr: false,
-  loading: () => <div className="h-full w-full animate-pulse rounded-[1.9rem] bg-white/[0.04]" />
-});
-
-const StreetRide = dynamic(() => import("./StreetRide"), {
-  ssr: false,
-  loading: () => <div className="h-screen" />
-});
-
-const navItems = ["Platform", "Products", "About", "Contact"];
+const navItems = [
+  { label: "Explore", href: "/user.html" },
+  { label: "Buyer benefits", href: "#buyer-benefits" },
+  { label: "How it works", href: "#about" },
+  { label: "Auction", href: "/user.html#auction-night" },
+  { label: "For agents", href: "/agents.html" }
+];
 
 const popularAreas = ["KLCC", "Mont Kiara", "Shah Alam", "Petaling Jaya", "Penang", "Johor Bahru"];
 
 const problems = [
   {
-    title: "Manual listing work slows agents down",
-    body: "Property details, photos, captions, WhatsApp copy, and admin review are usually scattered across chats and spreadsheets."
+    title: "Verified homes, not endless noise",
+    body: "Browse cleaner property information and see the listing, price, location and agent in one confident flow."
   },
   {
-    title: "Buyer matching feels like a directory",
-    body: "Most portals still make buyers search manually instead of understanding intent, affordability, location fit, and agent response."
+    title: "AI that understands what matters",
+    body: "Tell RealityGenius your budget, preferred area and lifestyle. It helps surface better-fit homes instead of making you start from zero."
   },
   {
-    title: "Approval workflows are too slow",
-    body: "Agents need speed, but marketplaces need trust. RealityGenius gives both with structured AI import and admin QC."
+    title: "A shorter path to a real viewing",
+    body: "Save favourites, estimate affordability and contact the listing agent directly when a property is worth seeing."
   }
 ];
 
@@ -59,25 +56,25 @@ type IconCard = {
 };
 
 const products: IconCard[] = [
-  { title: "AI Property Search", body: "Buyer search with AI match scoring, saved alerts, property details, maps, and direct agent contact.", icon: Sparkles },
-  { title: "Agent Workspace", body: "A practical AgentOS for listings, leads, content, viewing preparation, and follow-up workflows.", icon: Users },
-  { title: "Telegram AI Import", body: "Agents send listings through Telegram. AI extracts facts, photos, price, location, and missing fields.", icon: Send },
+  { title: "AI Property Search", body: "Describe the home you need in natural language and discover more relevant Malaysian listings.", icon: Sparkles },
+  { title: "Smart Shortlist", body: "Save favourites, return later and keep the homes you are seriously considering in one place.", icon: Heart },
+  { title: "Affordability Tools", body: "Estimate mortgage affordability and compare the practical fit before arranging a viewing.", icon: Calculator },
   { title: "Friday Auction Night", body: "Selected homes become weekly live offer events with safer non-binding highest-offer wording.", icon: Gavel },
-  { title: "Admin Review", body: "Admin QC approves agents, checks listings, reviews imports, and publishes verified supply to buyers.", icon: ShieldCheck },
-  { title: "AI Caption Generator", body: "Generate property titles, descriptions, SEO keywords, social captions, and WhatsApp messages.", icon: WandSparkles }
+  { title: "Verified Listing Flow", body: "Admin review and visible agent details help buyers understand who and what they are dealing with.", icon: ShieldCheck },
+  { title: "Agent Workspace", body: "Agents get listing, AI content, Telegram import and buyer-lead tools in a separate focused workspace.", icon: Users }
 ];
 
 const workflow: IconCard[] = [
-  { title: "Upload Listing", body: "Agent uploads manually, from Excel, or through Telegram.", icon: UploadCloud },
-  { title: "AI Structures Data", body: "AI extracts price, area, rooms, photos, captions, and missing fields.", icon: Layers3 },
-  { title: "Buyer Discovers Smarter", body: "Approved listings appear with AI matching, alerts, and contact workflows.", icon: BadgeCheck }
+  { title: "Tell us what you need", body: "Enter your budget, location, property type and must-haves in plain language.", icon: Search },
+  { title: "Compare better-fit homes", body: "Review verified details, AI match signals and affordability in a cleaner shortlist.", icon: BadgeCheck },
+  { title: "Save or book a viewing", body: "Create a free account to save favourites, receive alerts and contact the agent directly.", icon: CalendarCheck }
 ];
 
 const faqs = [
-  ["Is RealityGenius a property portal?", "It is more than a portal. RealityGenius connects buyers, agents, listing import, admin approval, and AI workflows in one property operating platform."],
-  ["Can agents upload from Telegram?", "Yes. The Telegram flow collects agent identity, listing photos, and property details, then sends structured imports for admin review."],
+  ["Can I explore without creating an account?", "Yes. Browse available homes first. Create a free buyer account when you want to save favourites, receive alerts or continue a viewing request."],
+  ["What does the AI match do?", "It uses your budget, preferred area, property type and lifestyle needs to help prioritise more relevant homes."],
   ["Are auction bids automatic purchases?", "No. A winning bid means the buyer submitted the highest offer. Final purchase is still subject to owner approval, booking fee, loan eligibility, agreement terms, and legal documentation."],
-  ["Is the platform ready for paid plans?", "The Stripe workflow is built for subscriptions. During launch, agent features can be opened for free while the team validates workflows."]
+  ["Does RealityGenius support agents too?", "Yes. Agents have a separate workspace for listings, AI content, Telegram import, leads and admin verification."]
 ];
 
 const fadeUp = {
@@ -102,59 +99,44 @@ function formatPrice(value?: number) {
   return amount ? `RM ${Math.round(amount).toLocaleString("en-MY")}` : "Price on request";
 }
 
-type MilestoneGmv = { total: number; target: number; progressPct: number };
-
-function FirstMillionChallenge() {
-  const [gmv, setGmv] = useState<MilestoneGmv>({ total: 0, target: 1000000, progressPct: 0 });
-
-  useEffect(() => {
-    const base =
-      (typeof window !== "undefined" && (window as { REALTYGENIUS_CONFIG?: { API_BASE?: string } }).REALTYGENIUS_CONFIG?.API_BASE) ||
-      "https://hh-empire.onrender.com/api";
-    fetch(`${base}/public/milestone-gmv`, { headers: { Accept: "application/json" } })
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
-      .then((payload) => setGmv({
-        total: Number(payload.total || 0),
-        target: Number(payload.target || 1000000),
-        progressPct: Math.min(100, Number(payload.progressPct || 0))
-      }))
-      .catch(() => {});
-  }, []);
-
+function BuyerLaunchOffer() {
   return (
-    <section className="px-4 py-16">
+    <section id="buyer-benefits" className="deferred-section px-4 py-16">
       <div className="mx-auto max-w-6xl rounded-[2.4rem] border border-emerald-200 bg-emerald-50 p-8 shadow-xl shadow-emerald-950/[0.04] md:p-12">
         <div className="grid gap-8 md:grid-cols-[1.1fr_.9fr] md:items-center">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-emerald-700">First RM1M Challenge</p>
+            <p className="text-xs font-black uppercase tracking-[0.28em] text-emerald-700">Buyer launch offer</p>
             <h2 className="mt-3 text-3xl font-black tracking-[-0.03em] text-slate-900 md:text-4xl">
-              Help us hit RM1,000,000 in verified homes.
+              Explore freely. Keep the good ones.
             </h2>
             <p className="mt-4 leading-7 text-slate-600">
-              Every live, admin-approved listing counts toward our first million in verified property value. List your property today and put your agency&apos;s name on the board.
+              Your RealityGenius buyer account is free. Use it to save favourites, receive new-property alerts, keep your search preferences and request viewings directly.
             </p>
-            <a
-              href="/agent.html"
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-950/20 transition hover:bg-emerald-800"
-            >
-              List your property <ArrowRight className="h-4 w-4" />
-            </a>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <a href="/login.html?role=user&mode=signup" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-emerald-700 px-6 text-sm font-black text-white shadow-lg shadow-emerald-950/20 transition hover:bg-emerald-800">
+                Create free account <ArrowRight className="h-4 w-4" />
+              </a>
+              <a href="/user.html" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-emerald-300 bg-white px-6 text-sm font-black text-emerald-900">
+                Explore homes
+              </a>
+            </div>
           </div>
-          <div className="rounded-[1.8rem] border border-emerald-200 bg-white p-6">
-            <div className="flex items-baseline justify-between">
-              <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Verified listing value</span>
-              <strong className="text-lg font-black text-emerald-700">{gmv.progressPct}%</strong>
-            </div>
-            <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-700 transition-all duration-500"
-                style={{ width: `${gmv.progressPct}%` }}
-              />
-            </div>
-            <div className="mt-3 flex justify-between text-sm text-slate-500">
-              <span>RM{Math.round(gmv.total).toLocaleString("en-MY")}</span>
-              <span>of RM1,000,000 target</span>
-            </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[
+              [Sparkles, "Free AI match", "Search around your budget and lifestyle."],
+              [Heart, "Saved shortlist", "Keep serious options together."],
+              [Bell, "Property alerts", "Return when a relevant home appears."],
+              [Calculator, "Affordability", "Estimate before you arrange a viewing."]
+            ].map(([Icon, title, body]) => {
+              const BenefitIcon = Icon as LucideIcon;
+              return (
+                <article key={String(title)} className="rounded-[1.4rem] border border-emerald-200 bg-white p-5">
+                  <BenefitIcon className="h-6 w-6 text-emerald-700" />
+                  <strong className="mt-4 block text-base font-black text-slate-900">{String(title)}</strong>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">{String(body)}</p>
+                </article>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -181,7 +163,7 @@ function FeaturedListings() {
   if (!listings.length) return null;
 
   return (
-    <section className="px-4 pb-6 pt-2">
+    <section className="deferred-section px-4 pb-6 pt-2">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -269,22 +251,25 @@ export default function Home() {
       <nav className="sticky top-0 z-50 border-b border-white/60 bg-white/82 px-4 py-3 backdrop-blur-2xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
           <a href="/" className="flex items-center gap-3" aria-label="RealityGenius home">
-            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-slate-950 text-sm font-black text-white shadow-xl shadow-slate-950/10">RG</span>
+            <span className="grid h-11 w-11 place-items-center overflow-hidden rounded-2xl bg-slate-950 p-1.5 shadow-xl shadow-slate-950/10">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/favicon-48x48.png" alt="" className="h-full w-full object-contain" />
+            </span>
             <span className="text-lg font-black tracking-[-0.03em]">RealityGenius</span>
           </a>
           <div className="hidden items-center gap-8 text-sm font-bold text-slate-600 lg:flex">
             {navItems.map((item) => (
-              <a key={item} href={`#${item.toLowerCase()}`} className="transition hover:text-slate-950">
-                {item}
+              <a key={item.label} href={item.href} className="transition hover:text-slate-950">
+                {item.label}
               </a>
             ))}
           </div>
           <div className="flex items-center gap-2">
-            <a href="/login.html" className="inline-flex items-center rounded-full px-3 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-100 sm:px-4">
-              Login
+            <a href="/user.html" className="hidden items-center rounded-full px-3 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-100 sm:inline-flex sm:px-4">
+              Explore
             </a>
-            <a href="#contact" className="inline-flex min-h-11 items-center rounded-full bg-slate-950 px-5 text-sm font-black text-white shadow-xl shadow-slate-950/15">
-              Book Demo
+            <a href="/login.html?role=user" className="inline-flex min-h-11 items-center rounded-full bg-slate-950 px-5 text-sm font-black text-white shadow-xl shadow-slate-950/15">
+              Login / Sign up
             </a>
           </div>
         </div>
@@ -298,22 +283,25 @@ export default function Home() {
           <motion.div initial={{ opacity: 0, y: 34 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-emerald-100 shadow-sm backdrop-blur-xl">
               <Sparkles className="h-4 w-4" />
-              Malaysia&apos;s next AI property ecosystem
+              Malaysia&apos;s smarter property search
             </div>
             <h1 className="mt-6 max-w-5xl text-[2.68rem] font-black leading-[1.02] tracking-[-0.035em] text-white sm:text-6xl md:mt-7 md:text-7xl md:leading-[0.95] md:tracking-[-0.065em] lg:text-8xl">
-              Find your next home in Malaysia
+              Find the right Malaysian home faster
             </h1>
-            <p className="mt-7 max-w-3xl text-lg leading-9 text-slate-300 md:text-xl">
+            <p className="hidden">
               Verified sale, rent, new project, and auction listings with AI match scoring, 360&deg; immersive tours, and direct agent contact — Malaysia&apos;s AI property portal.
+            </p>
+            <p className="mt-7 max-w-3xl text-lg leading-9 text-slate-300 md:text-xl">
+              Explore verified listings, get AI-powered matches, check affordability and contact the agent directly. Browse first, then create a free account when you want to save a home.
             </p>
             <div className="mt-7 max-w-2xl rounded-[1.5rem] border border-white/12 bg-white/10 p-3 shadow-2xl shadow-emerald-950/25 backdrop-blur-xl">
               <div className="flex flex-col gap-3 sm:flex-row">
                 <label className="flex min-h-14 flex-1 items-center gap-3 rounded-2xl bg-white px-4 text-slate-950">
                   <Search className="h-5 w-5 text-emerald-600" />
-                  <span className="text-sm font-black">Find condos under RM700k in KL</span>
+                  <span className="text-sm font-black">Try: 3-bedroom home under RM700k near KL</span>
                 </label>
                 <a href="/user.html" className="inline-flex min-h-14 items-center justify-center rounded-2xl bg-emerald-400 px-5 text-sm font-black text-emerald-950">
-                  AI Search
+                  Get AI Match
                 </a>
               </div>
             </div>
@@ -331,12 +319,18 @@ export default function Home() {
             </div>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a href="/user.html" className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-emerald-400 px-7 font-black text-emerald-950 shadow-2xl shadow-emerald-700/20">
-                Start Searching
+                Explore homes
                 <ArrowRight className="h-5 w-5" />
               </a>
-              <a href="/agents.html" className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full border border-white/15 bg-white/10 px-7 font-black text-white shadow-xl shadow-slate-950/5 backdrop-blur-xl">
-                I&apos;m an Agent
+              <a href="/login.html?role=user" className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full border border-white/15 bg-white/10 px-7 font-black text-white shadow-xl shadow-slate-950/5 backdrop-blur-xl">
+                Login / Sign up
               </a>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2 text-xs font-black text-emerald-50/80">
+              <span className="rounded-full border border-white/12 bg-white/[0.06] px-3 py-2">Free buyer account</span>
+              <span className="rounded-full border border-white/12 bg-white/[0.06] px-3 py-2">Save favourites</span>
+              <span className="rounded-full border border-white/12 bg-white/[0.06] px-3 py-2">Book viewings</span>
+              <a href="/agents.html" className="rounded-full px-3 py-2 text-slate-300 underline decoration-white/25 underline-offset-4">Agent platform</a>
             </div>
           </motion.div>
 
@@ -350,7 +344,7 @@ export default function Home() {
             <div className="absolute -bottom-10 left-8 h-32 w-64 rounded-full bg-emerald-400/15 blur-3xl" />
 
             <div className="absolute inset-0">
-              <HeroSkyline />
+              <DeferredHeroSkyline />
             </div>
 
             <div className="pointer-events-none absolute left-5 top-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-slate-950/60 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-amber-100 backdrop-blur-xl">
@@ -383,8 +377,8 @@ export default function Home() {
               <div className="flex items-center gap-3">
                 <span className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-400 text-emerald-950"><MousePointer2 className="h-5 w-5" /></span>
                 <div>
-                  <p className="text-[10px] font-black uppercase text-slate-400">AgentOS live</p>
-                  <p className="mt-0.5 text-sm font-black">Lead matched</p>
+                  <p className="text-[10px] font-black uppercase text-slate-400">Buyer match ready</p>
+                  <p className="mt-0.5 text-sm font-black">Shortlist updated</p>
                 </div>
               </div>
               <div className="mt-3 h-1.5 rounded-full bg-white/10"><div className="h-1.5 w-[78%] rounded-full bg-emerald-400" /></div>
@@ -395,8 +389,8 @@ export default function Home() {
 
       <FeaturedListings />
 
-      <section id="products" className="bg-white px-4 py-20">
-        <SectionIntro eyebrow="Why RealityGenius" title="The market does not need another listing directory." body="It needs a clean operating layer where property supply is structured, verified, marketed, matched, and moved faster." />
+      <section id="products" className="deferred-section bg-white px-4 py-20">
+        <SectionIntro eyebrow="Why buyers use RealityGenius" title="Less searching. More confidence." body="RealityGenius helps you understand the property, the fit and the next step without turning the experience into another endless directory." />
         <div className="mx-auto grid max-w-7xl gap-5 md:grid-cols-3">
           {problems.map((problem, index) => (
             <motion.article key={problem.title} variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} transition={{ delay: index * 0.08 }} className="rounded-[2rem] border border-slate-200 bg-slate-50 p-7">
@@ -408,8 +402,8 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="px-4 py-20">
-        <SectionIntro eyebrow="Products" title="One platform for buyers, agents, admins, and imports." body="Each product is practical enough for daily work, but connected enough to become a defensible property ecosystem." />
+      <section className="deferred-section px-4 py-20">
+        <SectionIntro eyebrow="Buyer toolkit" title="Useful AI at the moments that matter." body="Search, shortlist, compare and act with practical tools around verified Malaysian property. Agent tools remain available in their own workspace." />
         <div className="mx-auto grid max-w-7xl gap-5 md:grid-cols-2 lg:grid-cols-3">
           {products.map(({ title, body, icon: Icon }, index) => (
             <motion.article key={title} variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} transition={{ delay: index * 0.04 }} className="group rounded-[2rem] border border-slate-200 bg-white p-7 shadow-xl shadow-slate-950/[0.035] transition hover:-translate-y-1 hover:shadow-2xl">
@@ -423,10 +417,10 @@ export default function Home() {
         </div>
       </section>
 
-      <FirstMillionChallenge />
+      <BuyerLaunchOffer />
 
-      <section id="about" className="bg-slate-950 px-4 py-24 text-white">
-        <SectionIntro light eyebrow="How it works" title="From messy listing to smarter discovery." body="RealityGenius turns unstructured property submissions into buyer-ready, admin-approved, AI-enhanced discovery." />
+      <section id="about" className="deferred-section bg-slate-950 px-4 py-24 text-white">
+        <SectionIntro light eyebrow="How it works" title="From a simple request to a real viewing." body="Start with what you need, compare better-fit homes and create a free account only when you want to save or contact." />
         <div className="mx-auto grid max-w-6xl gap-5 md:grid-cols-3">
           {workflow.map(({ title, body, icon: Icon }, index) => (
             <motion.article key={title} variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="relative rounded-[2rem] border border-white/10 bg-white/[0.06] p-7">
@@ -439,10 +433,10 @@ export default function Home() {
         </div>
       </section>
 
-      <StreetRide />
+      <DeferredStreetRide />
 
-      <section className="px-4 py-20">
-        <SectionIntro eyebrow="FAQ" title="Common questions from agents and investors." body="Clear answers make the platform easier to trust, explain, and sell." />
+      <section className="deferred-section px-4 py-20">
+        <SectionIntro eyebrow="FAQ" title="What buyers usually ask first." body="Clear answers before you create an account or contact an agent." />
         <div className="mx-auto grid max-w-4xl gap-4">
           {faqs.map(([question, answer]) => (
             <details key={question} className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-950/[0.03]">
@@ -456,39 +450,28 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="contact" className="px-4 py-20">
-        <div className="mx-auto grid max-w-7xl gap-8 rounded-[2.4rem] bg-[linear-gradient(135deg,#064e3b,#0f172a)] p-6 text-white shadow-2xl shadow-emerald-950/20 lg:grid-cols-[.9fr_1.1fr] lg:p-10">
+      <section id="contact" className="deferred-section px-4 py-20">
+        <div className="mx-auto grid max-w-7xl gap-8 rounded-[2.4rem] bg-[linear-gradient(135deg,#064e3b,#0f172a)] p-7 text-white shadow-2xl shadow-emerald-950/20 lg:grid-cols-[1.2fr_.8fr] lg:p-12">
           <div className="self-center">
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-emerald-200">Book Demo</p>
-            <h2 className="mt-4 text-4xl font-black tracking-[-0.045em] md:text-6xl">Show RealityGenius to your next agent, investor, or partner.</h2>
-            <p className="mt-5 text-lg leading-8 text-emerald-50/78">Use the form to plan a platform demo for buyers, agents, admin QC, Telegram import, and SaaS pricing.</p>
-            <div className="mt-8 grid gap-3 text-sm font-bold text-emerald-50/82">
-              <span className="flex items-center gap-3"><LockKeyhole className="h-5 w-5" /> Internal admin and master roles remain protected.</span>
-              <span className="flex items-center gap-3"><Zap className="h-5 w-5" /> Fast demo-ready flow for Malaysian property teams.</span>
+            <p className="text-xs font-black uppercase tracking-[0.28em] text-emerald-200">Your next step</p>
+            <h2 className="mt-4 text-4xl font-black tracking-[-0.045em] md:text-6xl">Find a home worth saving.</h2>
+            <p className="mt-5 max-w-2xl text-lg leading-8 text-emerald-50/80">Browse freely, then log in or create a free buyer account to keep favourites, receive alerts and request a viewing.</p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <a href="/user.html" className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-emerald-300 px-7 font-black text-emerald-950">
+                <House className="h-5 w-5" /> Explore homes
+              </a>
+              <a href="/login.html?role=user" className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full border border-white/20 bg-white/10 px-7 font-black text-white backdrop-blur-xl">
+                Login / Sign up <ArrowRight className="h-5 w-5" />
+              </a>
             </div>
           </div>
-          <form className="grid gap-4 rounded-[2rem] bg-white p-5 text-slate-950 md:p-7">
-            <label className="grid gap-2 text-sm font-black">
-              Name
-              <input className="min-h-12 rounded-2xl border border-slate-200 px-4 outline-none focus:border-emerald-500" placeholder="Your name" />
-            </label>
-            <label className="grid gap-2 text-sm font-black">
-              Email
-              <input type="email" className="min-h-12 rounded-2xl border border-slate-200 px-4 outline-none focus:border-emerald-500" placeholder="you@example.com" />
-            </label>
-            <label className="grid gap-2 text-sm font-black">
-              Company / Agency
-              <input className="min-h-12 rounded-2xl border border-slate-200 px-4 outline-none focus:border-emerald-500" placeholder="Agency or company name" />
-            </label>
-            <label className="grid gap-2 text-sm font-black">
-              What do you want to see?
-              <textarea className="min-h-28 rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500" placeholder="Buyer search, AgentOS, Telegram import, admin QC, pricing..." />
-            </label>
-            <button type="button" className="inline-flex min-h-13 items-center justify-center gap-3 rounded-full bg-slate-950 px-6 font-black text-white">
-              Book Demo
-              <ArrowRight className="h-5 w-5" />
-            </button>
-          </form>
+          <aside className="self-center rounded-[2rem] border border-white/14 bg-white/[0.08] p-6 backdrop-blur-xl">
+            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white text-emerald-800"><Users className="h-6 w-6" /></div>
+            <p className="mt-5 text-xs font-black uppercase tracking-[0.22em] text-emerald-200">For property agents</p>
+            <h3 className="mt-3 text-2xl font-black">List, create content and manage leads faster.</h3>
+            <p className="mt-3 leading-7 text-emerald-50/70">Preview Agent OS first, then use the agent login when you are ready.</p>
+            <a href="/agents.html" className="mt-6 inline-flex items-center gap-2 text-sm font-black text-white underline decoration-white/30 underline-offset-4">Explore Agent OS <ArrowRight className="h-4 w-4" /></a>
+          </aside>
         </div>
       </section>
 
@@ -496,16 +479,20 @@ export default function Home() {
         <div className="mx-auto flex max-w-7xl flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-950 text-xs font-black text-white">RG</span>
+              <span className="grid h-10 w-10 place-items-center overflow-hidden rounded-2xl bg-slate-950 p-1.5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/favicon-48x48.png" alt="" className="h-full w-full object-contain" />
+              </span>
               <strong className="text-lg font-black">RealityGenius</strong>
             </div>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">AI-powered property operating platform for Malaysian buyers, agents, admins, and property ecosystem partners.</p>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">AI-powered Malaysian property discovery for buyers, with a dedicated workspace for agents.</p>
           </div>
           <div className="flex flex-wrap gap-4 text-sm font-bold text-slate-600">
             <a href="/privacy.html">Privacy</a>
             <a href="/terms.html">Terms</a>
-            <a href="/login.html">Login</a>
-            <a href="/agents.html">Agent Workspace</a>
+            <a href="/user.html">Explore homes</a>
+            <a href="/login.html?role=user">Login / Sign up</a>
+            <a href="/agents.html">For agents</a>
           </div>
         </div>
       </footer>

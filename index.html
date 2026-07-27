@@ -1271,6 +1271,29 @@ display:flex;
 gap:12px;
 flex-wrap:wrap;
 }
+.buyer-perk-row{
+display:flex;
+gap:9px;
+flex-wrap:wrap;
+}
+.buyer-perk-row span{
+display:inline-flex;
+align-items:center;
+gap:8px;
+min-height:38px;
+padding:0 13px;
+border:1px solid rgba(246,241,230,.18);
+border-radius:999px;
+background:rgba(0,0,0,.28);
+color:rgba(246,241,230,.8);
+font-size:.8rem;
+font-weight:900;
+backdrop-filter:blur(12px);
+}
+.buyer-perk-row i{color:#f6d27a}
+.buyer-offer-panel .workspace-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.buyer-offer-panel .float-card{min-height:126px}
+.buyer-offer-panel .float-card i{color:#f6d27a;font-size:1.2rem}
 .hero-search-widget{
 width:min(780px,100%);
 box-sizing:border-box;
@@ -1822,6 +1845,7 @@ transform:none;
 .property-tile:nth-child(2),
 .property-tile:nth-child(3){transform:none}
 .cinematic-shell::after{opacity:.14}
+.buyer-offer-panel .workspace-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (max-width:560px){
 .cinematic-menu{padding:10px 12px;font-size:.66rem}
@@ -1839,6 +1863,9 @@ transform:none;
 .cinematic-login{padding:16px}
 .cinematic-login .trust-row{display:none}
 .cinematic-login .auth-head h2{font-size:2.15rem}
+.buyer-perk-row{display:grid;grid-template-columns:1fr 1fr}
+.buyer-perk-row span{justify-content:center;text-align:center;padding:8px;min-height:44px}
+.buyer-offer-panel .workspace-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -1851,44 +1878,49 @@ transform:none;
 <span>RealityGenius<sup>TM</sup></span>
 </button>
 <div class="cinematic-nav-links">
-<a href="#gallery">Gallery</a>
+<a href="#gallery">Find homes</a>
+<a href="#buyer-benefits">Buyer benefits</a>
 <a href="#auction">Auction</a>
-<a href="#workspace">Agents</a>
-<a href="#contact">Join</a>
+<a href="#workspace">For agents</a>
 </div>
-<a class="cinematic-menu" href="./login.html">Login</a>
+<a class="cinematic-menu" href="./login.html?role=user">Login / Sign up</a>
 </nav>
-<a class="quick-login" href="./login.html"><i class="fa-solid fa-arrow-right-to-bracket"></i> Login</a>
+<a class="quick-login" href="./login.html?role=user"><i class="fa-solid fa-arrow-right-to-bracket"></i> Login / Sign up</a>
 
 <section class="cinematic-section hero-cinema" style="--scene-bg:url('https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=2400&q=88') center/cover" aria-label="RealityGenius hero">
 <div class="scene-inner">
 <div class="scene-copy reveal">
-<p class="scene-kicker">Malaysia's Next AI Property Ecosystem</p>
-<h1>Build Beyond Reality.</h1>
-<p>Search, compare, shortlist and act inside a cinematic AI property showroom built for Malaysian buyers, agents and serious investors.</p>
+<p class="scene-kicker">Malaysia's AI-powered property experience</p>
+<h1>Find your next home faster.</h1>
+<p>Discover verified Malaysian homes with AI matching, affordability insights and direct viewing requests. Explore first, then create a free buyer account when you are ready.</p>
 <div class="hero-search-widget reveal" aria-label="RealityGenius AI property search preview">
 <div class="hero-search-row">
 <div class="hero-search-field">
 <i class="fa-solid fa-magnifying-glass"></i>
-<span>AI search: RM500k, 3 bedrooms, Shah Alam, near schools</span>
+<span>Try: RM500k, 3 bedrooms, Shah Alam, near schools</span>
 </div>
 <a class="hero-search-submit" href="./user.html#aiBuyerTools"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Match</a>
 </div>
 <div class="hero-proof-row">
-<span><i class="fa-solid fa-circle-check"></i> QC-approved listings</span>
-<span><i class="fa-solid fa-user-check"></i> Trusted agents</span>
-<span><i class="fa-solid fa-calendar-check"></i> Book viewings</span>
-<span><i class="fa-solid fa-chart-line"></i> Investment signals</span>
+<span><i class="fa-solid fa-circle-check"></i> Verified listings</span>
+<span><i class="fa-solid fa-wand-magic-sparkles"></i> Free AI match</span>
+<span><i class="fa-solid fa-calendar-check"></i> Direct viewings</span>
+<span><i class="fa-solid fa-calculator"></i> Affordability tools</span>
 </div>
 </div>
 <div class="scene-actions">
-<a class="scene-button" href="./login.html"><i class="fa-solid fa-arrow-right-to-bracket"></i> Login</a>
-<a class="scene-ghost" href="./user.html"><i class="fa-solid fa-magnifying-glass"></i> Browse first</a>
+<a class="scene-button" href="./user.html"><i class="fa-solid fa-house"></i> Explore homes</a>
+<a class="scene-ghost" href="./login.html?role=user"><i class="fa-solid fa-arrow-right-to-bracket"></i> Login / Sign up</a>
+</div>
+<div class="buyer-perk-row" aria-label="RealityGenius buyer offers">
+<span><i class="fa-solid fa-gift"></i> Free buyer account</span>
+<span><i class="fa-solid fa-heart"></i> Save your shortlist</span>
+<span><i class="fa-solid fa-bell"></i> Property alerts</span>
 </div>
 </div>
 <div class="house-stage house-pin" aria-hidden="true">
-<div class="orbit-chip orbit-chip-one"><i class="fa-solid fa-shield-halved"></i> Trusted Agent Layer</div>
-<div class="orbit-chip orbit-chip-two"><i class="fa-solid fa-bolt"></i> Live Buyer Signals</div>
+<div class="orbit-chip orbit-chip-one"><i class="fa-solid fa-shield-halved"></i> Verified homes</div>
+<div class="orbit-chip orbit-chip-two"><i class="fa-solid fa-bolt"></i> AI buyer match</div>
 <div class="house-scene" data-three-house>
 <canvas class="house-three"></canvas>
 <div class="house-light"></div>
@@ -1899,9 +1931,9 @@ transform:none;
 <article class="landing-showcase-card">
 <div class="landing-showcase-media"></div>
 <div class="landing-showcase-copy">
-<span>AI showroom pick</span>
-<strong>Luxury shortlist engine</strong>
-<p>Gallery, score, agent identity, affordability and viewing action in one trusted flow.</p>
+<span>Made for buyers</span>
+<strong>Your property shortlist, simplified</strong>
+<p>Compare homes, understand affordability and reach the verified agent without leaving the flow.</p>
 </div>
 <div class="landing-showcase-stats">
 <b>RM 780k<small>Guide</small></b>
@@ -1916,9 +1948,10 @@ transform:none;
 <section class="cinematic-section" id="gallery" style="--scene-bg:url('https://images.unsplash.com/photo-1600566752355-35792bedcfea?auto=format&fit=crop&w=2400&q=88') center/cover" aria-label="AI property gallery">
 <div class="scene-inner">
 <div class="scene-copy reveal">
-<p class="scene-kicker">3D Property Gallery</p>
-<h2>Float through homes before you commit.</h2>
-<p>Premium property cards move like a digital showroom: AI match, price intelligence, lifestyle fit and agent trust stay visible as you scroll.</p>
+<p class="scene-kicker">Explore before you log in</p>
+<h2>Homes that are easier to understand.</h2>
+<p>Browse large property photos, compare price and lifestyle fit, check the agent, then save or book a viewing when a home feels right.</p>
+<div class="scene-actions"><a class="scene-button" href="./user.html"><i class="fa-solid fa-magnifying-glass"></i> Browse all homes</a></div>
 </div>
 <div class="gallery-strip">
 <article class="property-tile reveal" style="--tile-img:url('https://images.unsplash.com/photo-1600607687644-c7171b42498f?auto=format&fit=crop&w=900&q=84')"><div><h3>Mont Kiara</h3><p>AI match 94%. Family comfort with investor-grade demand.</p></div></article>
@@ -1949,12 +1982,12 @@ transform:none;
 <section class="cinematic-section" id="workspace" style="--scene-bg:url('https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=2400&q=88') center/cover" aria-label="Agent AI workspace">
 <div class="scene-inner">
 <div class="scene-copy reveal">
-<p class="scene-kicker">Agent Workspace Preview</p>
-<h2>A futuristic control panel for serious agents.</h2>
-<p>Agents control listings, AI content, Telegram imports, auction submissions, buyer signals and admin QC from a premium workspace built for speed.</p>
+<p class="scene-kicker">Also built for agents</p>
+<h2>A faster place to manage property work.</h2>
+<p>Agents can preview the platform, then log in to manage listings, AI content, Telegram imports, buyer leads and admin verification.</p>
 <div class="scene-actions">
-<a class="scene-button" href="./agent.html"><i class="fa-solid fa-user-tie"></i> Open agent side</a>
-<a class="scene-ghost" href="./agents.html">See agent platform</a>
+<a class="scene-button" href="./agents.html"><i class="fa-solid fa-user-tie"></i> Explore Agent OS</a>
+<a class="scene-ghost" href="./login.html?role=agent">Agent login</a>
 </div>
 </div>
 <div class="control-panel reveal" aria-label="RealityGenius agent workspace control panel">
@@ -1971,24 +2004,24 @@ transform:none;
 </div>
 </section>
 
-<section class="cinematic-section" id="first-million" style="--scene-bg:url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=2400&q=88') center/cover" aria-label="First RM1M Challenge">
+<section class="cinematic-section" id="buyer-benefits" style="--scene-bg:url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=2400&q=88') center/cover" aria-label="Free RealityGenius buyer benefits">
 <div class="scene-inner">
 <div class="scene-copy reveal">
-<p class="scene-kicker">First RM1M Challenge</p>
-<h2>Help us hit RM1,000,000 in verified homes.</h2>
-<p>Every live, admin-approved listing counts toward our first million in verified property value. List your property today and put your agency's name on the board.</p>
+<p class="scene-kicker">Free for property buyers</p>
+<h2>More confidence before every viewing.</h2>
+<p>Create a free buyer account to keep your shortlist, receive better property matches and move from browsing to a viewing without repeating your requirements.</p>
 <div class="scene-actions">
-<a class="scene-button" href="./agent.html"><i class="fa-solid fa-plus"></i> List your property</a>
-<a class="scene-ghost" href="./agent.html#agentPricing">See agent plans</a>
+<a class="scene-button" href="./login.html?role=user&mode=signup"><i class="fa-solid fa-user-plus"></i> Create free account</a>
+<a class="scene-ghost" href="./user.html"><i class="fa-solid fa-house"></i> Keep exploring</a>
 </div>
 </div>
-<div class="control-panel reveal" aria-label="First RM1M progress">
-<div class="control-panel-head"><span>Verified Listing Value</span><i class="control-pulse"></i></div>
-<div class="control-row"><div><span>Progress</span><strong id="firstMillionTotal">RM0</strong></div><b id="firstMillionPct">0%</b></div>
-<div class="control-meter"><i id="firstMillionMeter" style="--meter:0%"></i></div>
+<div class="control-panel buyer-offer-panel reveal" aria-label="Buyer account benefits">
+<div class="control-panel-head"><span>Your buyer toolkit</span><i class="control-pulse"></i></div>
 <div class="workspace-grid">
-<article class="float-card"><strong>Target</strong><span>RM1,000,000 in live, agent-uploaded listings.</span></article>
-<article class="float-card"><strong>How to help</strong><span>Every approved listing you add moves the needle.</span></article>
+<article class="float-card"><i class="fa-solid fa-wand-magic-sparkles"></i><strong>AI match</strong><span>Find homes that fit budget, location and lifestyle.</span></article>
+<article class="float-card"><i class="fa-solid fa-calculator"></i><strong>Mortgage estimate</strong><span>Check affordability before arranging a viewing.</span></article>
+<article class="float-card"><i class="fa-solid fa-code-compare"></i><strong>Area comparison</strong><span>Compare neighbourhood fit and nearby essentials.</span></article>
+<article class="float-card"><i class="fa-solid fa-heart"></i><strong>Saved shortlist</strong><span>Return to favourites and contact the agent directly.</span></article>
 </div>
 </div>
 </div>
@@ -1997,21 +2030,21 @@ transform:none;
 <section class="cinematic-section" id="contact" style="--scene-bg:url('https://images.unsplash.com/photo-1600607688969-a5bfcd646154?auto=format&fit=crop&w=2400&q=88') center/cover" aria-label="Join RealityGenius">
 <div class="scene-inner">
 <div class="scene-copy reveal">
-<p class="scene-kicker">Call To Action</p>
-<h2>Enter Malaysia's AI property ecosystem.</h2>
-<p>Start as a buyer, upload as an agent, or use the workspace to move listings from Telegram to admin QC to public discovery.</p>
+<p class="scene-kicker">Ready when you are</p>
+<h2>Turn browsing into a confident next step.</h2>
+<p>Explore freely. When you find a home worth keeping, create your buyer account to save it, compare it and request a viewing.</p>
 <div class="glass-stack">
-<article class="float-card"><strong>QC</strong><span>trusted listings after admin approval</span></article>
-<article class="float-card"><strong>AI</strong><span>search, content, bidding and agent workflow</span></article>
+<article class="float-card"><strong>Verified</strong><span>listings are reviewed before public discovery</span></article>
+<article class="float-card"><strong>Direct</strong><span>move from a property to its agent and viewing request</span></article>
 </div>
 </div>
 <div class="auction-board reveal">
-<p class="scene-kicker">Balanced Performance</p>
-<h3 style="margin:0;font-size:clamp(2rem,4vw,3.8rem);line-height:.9;letter-spacing:-.06em;text-transform:uppercase">Premium outside. Fast inside.</h3>
-<p style="margin:0;color:rgba(246,241,230,.72);font-weight:800;line-height:1.6">The public entrance feels cinematic. Buyer, agent and admin pages stay practical so real workflows remain smooth on normal laptops and phones.</p>
+<p class="scene-kicker">Free buyer access</p>
+<h3 style="margin:0;font-size:clamp(2rem,4vw,3.8rem);line-height:.9;letter-spacing:-.06em;text-transform:uppercase">Your shortlist is waiting.</h3>
+<p style="margin:0;color:rgba(246,241,230,.72);font-weight:800;line-height:1.6">Sign up quickly, save the homes you love and let RealityGenius make the next search more relevant.</p>
 <div class="scene-actions">
-<a class="scene-button" href="./login.html"><i class="fa-solid fa-arrow-right-to-bracket"></i> Login</a>
-<a class="scene-ghost" href="./user.html"><i class="fa-solid fa-house"></i> Browse first</a>
+<a class="scene-button" href="./login.html?role=user"><i class="fa-solid fa-arrow-right-to-bracket"></i> Login / Sign up</a>
+<a class="scene-ghost" href="./user.html"><i class="fa-solid fa-house"></i> Explore homes</a>
 </div>
 </div>
 </section>
@@ -2307,6 +2340,7 @@ import * as THREE from "./js/vendor/three.module.min.js";
 </script>
 <script>
 (function(){
+  if (!document.getElementById("firstMillionMeter")) return;
   var apiBase = (window.REALTYGENIUS_CONFIG && window.REALTYGENIUS_CONFIG.API_BASE) || "https://hh-empire.onrender.com/api";
   fetch(apiBase + "/public/milestone-gmv")
     .then(function(response){ return response.ok ? response.json() : null; })

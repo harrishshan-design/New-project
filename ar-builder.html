@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="RealityGenius AI AR Builder for fast room staging and 3D furniture previews.">
+  <title>RealityGenius | AI AR Builder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="./ar-builder.css">
+</head>
+<body>
+  <main class="ar-builder">
+    <nav class="ar-nav" aria-label="AR Builder navigation">
+      <a class="brand" href="./agent.html">
+        <span>RG</span>
+        <strong>RealityGenius AR</strong>
+      </a>
+      <div class="nav-actions">
+        <a href="./agent.html">Agent Workspace</a>
+        <a class="nav-primary" href="./login.html">Login</a>
+      </div>
+    </nav>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">Fake-but-useful AR MVP</div>
+        <h1>Stage a room. Place furniture. Export the marketing shot.</h1>
+        <p>Upload a room photo, choose a Malaysian property style, generate an AI staging concept, then preview 3D furniture with AR placement.</p>
+        <div class="hero-badges">
+          <span><i class="fa-solid fa-wand-magic-sparkles"></i> AI staging image</span>
+          <span><i class="fa-solid fa-couch"></i> 3D furniture preview</span>
+          <span><i class="fa-solid fa-download"></i> Export ready</span>
+        </div>
+      </div>
+
+      <form class="control-card" id="arForm">
+        <label class="upload-zone" for="roomUpload">
+          <input type="file" id="roomUpload" accept="image/*">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+          <strong>Upload room photo</strong>
+          <span>Empty condo, living hall, bedroom, or listing image</span>
+        </label>
+
+        <label class="field">
+          <span>Interior style</span>
+          <select id="style">
+            <option value="modern luxury">Modern Luxury</option>
+            <option value="minimalist condo">Minimalist Condo</option>
+            <option value="malaysian family home">Malaysian Family Home</option>
+          </select>
+        </label>
+
+        <button class="primary-button" type="submit" id="generateButton">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          Generate AI Staging
+        </button>
+
+        <p class="status" id="statusText">Start by uploading a room photo.</p>
+      </form>
+    </section>
+
+    <section class="studio-grid">
+      <article class="preview-panel">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">AI staging output</div>
+            <h2>Before and staged preview</h2>
+          </div>
+          <button class="ghost-button" type="button" id="saveButton">
+            <i class="fa-regular fa-floppy-disk"></i>
+            Save
+          </button>
+        </div>
+
+        <div class="image-compare">
+          <figure>
+            <span>Uploaded room</span>
+            <img id="sourcePreview" alt="Uploaded room preview">
+          </figure>
+          <figure class="staged-frame">
+            <span>AI staged concept</span>
+            <img id="preview" alt="AI staged room preview">
+            <div class="empty-state" id="previewEmpty">
+              <i class="fa-solid fa-image"></i>
+              <strong>Your staged room appears here</strong>
+              <p>The first MVP uses AI image staging first, then AR furniture placement.</p>
+            </div>
+          </figure>
+        </div>
+
+        <div class="export-row">
+          <a class="secondary-button" id="downloadImage" href="#" download="realitygenius-ai-staged-room.png" aria-disabled="true">
+            <i class="fa-solid fa-download"></i>
+            Export image
+          </a>
+          <button class="secondary-button" type="button" id="copyPromptButton">
+            <i class="fa-regular fa-copy"></i>
+            Copy staging prompt
+          </button>
+        </div>
+      </article>
+
+      <article class="ar-panel">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">AR furniture placement</div>
+            <h2>Drop a sofa into the room</h2>
+          </div>
+          <span class="live-pill">WebAR ready</span>
+        </div>
+
+        <model-viewer
+          id="furnitureViewer"
+          src="/models/sofa.glb"
+          ios-src=""
+          ar
+          ar-modes="webxr scene-viewer quick-look"
+          camera-controls
+          auto-rotate
+          shadow-intensity="1"
+          exposure="1.05"
+          interaction-prompt="auto"
+          style="width:100%;height:430px;">
+        </model-viewer>
+
+        <div class="furniture-tools">
+          <button type="button" data-model="/models/sofa.glb" class="tool active">Sofa</button>
+          <button type="button" data-model="/models/sofa.glb" class="tool">Coffee table soon</button>
+          <button type="button" data-model="/models/sofa.glb" class="tool">Lamp soon</button>
+        </div>
+
+        <p class="helper-note">On supported phones, tap the AR icon in the viewer to place the furniture in your space.</p>
+      </article>
+    </section>
+
+    <section class="workflow-strip">
+      <article><strong>1</strong><span>Upload room photo</span></article>
+      <article><strong>2</strong><span>Generate staged image</span></article>
+      <article><strong>3</strong><span>Add AR furniture</span></article>
+      <article><strong>4</strong><span>Export for listing</span></article>
+    </section>
+  </main>
+
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <script src="./rg-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./auth.js"></script>
+  <script src="./auth-gate.js" data-required-role="agent" data-login-path="/login.html"></script>
+  <script src="./rg-smooth-scroll.js"></script>
+  <script src="./ar-builder.js"></script>
+</body>
+</html>

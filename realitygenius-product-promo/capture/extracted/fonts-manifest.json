@@ -1,0 +1,85 @@
+{
+  "files": [
+    {
+      "file": "LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_d0nNSg.ttf",
+      "family": "Plus Jakarta Sans",
+      "rawFamily": "Plus Jakarta Sans SemiBold",
+      "subfamily": "Regular",
+      "postscript": "PlusJakartaSans-SemiBold",
+      "weight": 600,
+      "style": "normal",
+      "variationAxes": [],
+      "identified": true
+    },
+    {
+      "file": "LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_KUnNSg.ttf",
+      "family": "Plus Jakarta Sans",
+      "rawFamily": "Plus Jakarta Sans ExtraBold",
+      "subfamily": "Regular",
+      "postscript": "PlusJakartaSans-ExtraBold",
+      "weight": 800,
+      "style": "normal",
+      "variationAxes": [],
+      "identified": true
+    },
+    {
+      "file": "LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_m07NSg.ttf",
+      "family": "Plus Jakarta Sans",
+      "rawFamily": "Plus Jakarta Sans Medium",
+      "subfamily": "Regular",
+      "postscript": "PlusJakartaSans-Medium",
+      "weight": 500,
+      "style": "normal",
+      "variationAxes": [],
+      "identified": true
+    },
+    {
+      "file": "LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_qU7NSg.ttf",
+      "family": "Plus Jakarta Sans",
+      "rawFamily": "Plus Jakarta Sans",
+      "subfamily": "Regular",
+      "postscript": "PlusJakartaSans-Regular",
+      "weight": 400,
+      "style": "normal",
+      "variationAxes": [],
+      "identified": true
+    },
+    {
+      "file": "LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_TknNSg.ttf",
+      "family": "Plus Jakarta Sans",
+      "rawFamily": "Plus Jakarta Sans",
+      "subfamily": "Bold",
+      "postscript": "PlusJakartaSans-Bold",
+      "weight": 700,
+      "style": "normal",
+      "variationAxes": [],
+      "identified": true
+    }
+  ],
+  "families": [
+    {
+      "family": "Plus Jakarta Sans",
+      "weights": [
+        400,
+        500,
+        600,
+        700,
+        800
+      ],
+      "variable": false,
+      "fileCount": 5,
+      "files": [
+        "LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_KUnNSg.ttf",
+        "LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_TknNSg.ttf",
+        "LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_d0nNSg.ttf",
+        "LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_m07NSg.ttf",
+        "LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_qU7NSg.ttf"
+      ]
+    }
+  ],
+  "unidentified": [],
+  "meta": {
+    "generatedAt": "2026-06-12T06:37:51.922Z",
+    "tool": "fontkit"
+  }
+}

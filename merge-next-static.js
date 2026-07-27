@@ -23,7 +23,7 @@ const rootExtensions = new Set([
   ".usdz"
 ]);
 
-const rootDirs = new Set(["backend", "css", "dashboard", "js", "models"]);
+const rootDirs = new Set(["assets", "backend", "css", "dashboard", "js", "models"]);
 const skipDirs = new Set([
   ".git",
   ".vercel",
@@ -38,6 +38,59 @@ const skipDirs = new Set([
   "realtygenius-saas",
   "scratch"
 ]);
+
+const skipRootFiles = new Set([
+  "layout_structure.txt",
+  "merge-next-static.js",
+  "next-env.d.ts",
+  "next.config.mjs",
+  "orchestrator.js",
+  "package-lock.json",
+  "package.json",
+  "parse_dom.js",
+  "playwright.config.js",
+  "postcss.config.mjs",
+  "rollback_theme.js",
+  "serve.js",
+  "server.js",
+  "struct.txt",
+  "temp_diff.txt",
+  "test.txt",
+  "top_level.txt",
+  "tsconfig.json",
+  "tsconfig.tsbuildinfo",
+  "workspace.code-workspace"
+]);
+
+const skipRootPrefixes = [
+  "add_",
+  "apply_",
+  "check_",
+  "debug",
+  "execute_",
+  "find_",
+  "fix_",
+  "hook_",
+  "hotfix_",
+  "inject_",
+  "patch_",
+  "perf_",
+  "prep_",
+  "remove_",
+  "restore_",
+  "revert_",
+  "scan_",
+  "split_",
+  "temp_",
+  "unhide_",
+  "update_",
+  "upgrade_",
+  "wire_"
+];
+
+function shouldSkipRootFile(name) {
+  return skipRootFiles.has(name) || skipRootPrefixes.some((prefix) => name.startsWith(prefix));
+}
 
 function copyFile(source, target) {
   fs.mkdirSync(path.dirname(target), { recursive: true });
@@ -90,6 +143,7 @@ copyDirectory(outDir, distDir);
 
 for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
   if (skipDirs.has(entry.name)) continue;
+  if (!entry.isDirectory() && shouldSkipRootFile(entry.name)) continue;
   const source = path.join(root, entry.name);
   const target = path.join(distDir, entry.name);
 

@@ -4,15 +4,21 @@
       "path": "."
     }
   ],
-  "launch": {
-    "version": "0.2.0",
-    "configurations": [
-      {
-        "type": "node",
-        "request": "launch",
-        "name": "Run Backend",
-        "program": "${workspaceFolder}/backend/server.js"
-      }
+  "settings": {
+    "window.title": "RealityGenius Property OS",
+    "files.exclude": {
+      "**/.next": true,
+      "**/dist": true,
+      "**/out": true,
+      "**/node_modules": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode",
+      "bradlc.vscode-tailwindcss",
+      "ms-playwright.playwright"
     ]
   }
 }
