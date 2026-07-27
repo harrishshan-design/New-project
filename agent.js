@@ -2435,6 +2435,7 @@ async function refreshAgentSubscription({ silent = false } = {}) {
     }
     state.subscription.permissions = agent.permissions || {};
     state.subscription.auctionSlotsMonthly = Number(agent.auction_slots_monthly || 0);
+    renderLaunchPricingGrid();
     state.founderPromo = {
       active: Boolean(agent.founder_promo),
       listingsRequired: Number(agent.founder_listings_required || 0),
@@ -2584,6 +2585,44 @@ async function goToStripePaymentLink(paymentLinkUrl, context = {}) {
   window.location.assign(buildStripePaymentLinkUrl(paymentLinkUrl, { agentId, email }));
 }
 
+function renderLaunchPricingGrid() {
+  const grid = document.getElementById("agentPricing");
+  if (!grid) return;
+
+  const priceCuts = { starter: "RM29", pro: "RM59", elite: "RM99" };
+  const activeStatus = ["active", "trialing"].includes(String(state.subscription?.status || "").toLowerCase());
+  const currentTier = activeStatus ? normalizeAgentPlan(localStorage.getItem("agent_plan") || state.subscription?.planId) : "free";
+
+  grid.querySelectorAll("article[data-tier]").forEach((article) => {
+    const tier = article.dataset.tier;
+    const isCurrent = FREE_LAUNCH_MODE && tier === currentTier && currentTier !== "free";
+    article.classList.toggle("is-current-plan", isCurrent);
+
+    if (FREE_LAUNCH_MODE && priceCuts[tier]) {
+      const priceTag = document.getElementById(`${tier}PriceTag`);
+      if (priceTag && !priceTag.dataset.launchApplied) {
+        priceTag.dataset.launchApplied = "true";
+        priceTag.innerHTML = `<span class="launch-price-was">${priceCuts[tier]}</span><span class="launch-price-now">FREE</span> <small>/ mo for now</small><span class="launch-price-badge"><i class="fa-solid fa-bolt"></i> Launch price cut</span>`;
+      }
+    }
+
+    const button = article.querySelector('[data-action="select-agent-plan"]');
+    if (button) {
+      if (isCurrent) {
+        button.textContent = "Current Plan";
+        button.disabled = true;
+        button.classList.add("ghost-button");
+        button.classList.remove("primary-button");
+      } else if (button.dataset.originalLabel) {
+        button.textContent = button.dataset.originalLabel;
+        button.disabled = false;
+      } else {
+        button.dataset.originalLabel = button.textContent;
+      }
+    }
+  });
+}
+
 async function activateAgentPlan(planId) {
   const plan = AGENT_PLAN_TIERS.find((tier) => tier.id === planId);
   if (!plan) return;
@@ -2604,6 +2643,7 @@ async function activateAgentPlan(planId) {
       showToast(`${plan.name} tools are open for free during launch - no payment needed`);
       await refreshAgentSubscription({ silent: true });
       renderWorkspace();
+      renderLaunchPricingGrid();
     } catch (error) {
       showToast(error.message || "Could not activate this plan right now");
     }
@@ -6246,5 +6286,6 @@ renderListingDevicePhotoPreview();
 renderListingEnhancerPhotoPreview();
 updateListingDescriptionCount();
 renderWorkspace();
+renderLaunchPricingGrid();
 refreshAgentSubscription({ silent: true });
 performDailyCheckin();

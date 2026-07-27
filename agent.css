@@ -4759,6 +4759,38 @@ body{
   border-radius:999px;
 }
 
+.launch-price-was{
+  color:#cfc7e9;
+  text-decoration:line-through;
+  font-size:0.55em;
+  font-weight:700;
+  margin-right:8px;
+}
+
+.launch-price-now{
+  color:#23c26b;
+}
+
+.launch-price-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin-left:10px;
+  padding:4px 12px;
+  border-radius:999px;
+  background:rgba(35,194,107,0.16);
+  color:#23c26b;
+  font-size:0.72rem;
+  font-weight:800;
+  letter-spacing:0.02em;
+  vertical-align:middle;
+}
+
+.agentos-pricing-grid article.is-current-plan{
+  outline:2px solid #23c26b;
+  outline-offset:3px;
+}
+
 .plan-feature-list{
   display:grid;
   gap:10px;
