@@ -274,7 +274,7 @@
         if (result.founderPromo) {
           setStatus("Free full features unlocked! Redirecting you to add your first listing...", true);
           const separator = destination.includes("?") ? "&" : "?";
-          window.location.assign(`${destination}${separator}founderPromo=1#listingCreator`);
+          window.location.assign(`${destination}${separator}founderPromo=1`);
           return;
         }
         setStatus("Account ready. Opening your dashboard...", true);

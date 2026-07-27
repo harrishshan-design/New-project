@@ -712,18 +712,22 @@ function normalizeGoogleDriveImageLink(value) {
   if (!original) return { original, display: "", error: "image_link is required" };
 
   const id = extractGoogleDriveId(original);
-  if (!id) {
+  if (id) {
     return {
       original,
-      display: "",
-      error: "image_link must be a public Google Drive file link"
+      display: `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1200`,
+      error: ""
     };
+  }
+
+  if (/^https?:\/\//i.test(original)) {
+    return { original, display: original, error: "" };
   }
 
   return {
     original,
-    display: `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1200`,
-    error: ""
+    display: "",
+    error: "image_link must be a public Google Drive link or a direct photo URL"
   };
 }
 
@@ -6202,12 +6206,10 @@ function applyFounderPromoRedirect() {
   const params = new URLSearchParams(window.location.search);
   if (params.get("founderPromo") !== "1") return;
   params.delete("founderPromo");
-  const cleanUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}#listingCreator`;
+  const cleanUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
   window.history.replaceState({}, document.title, cleanUrl);
   showToast("Free full features unlocked! Add your first listing to get started.");
-  setTimeout(() => {
-    document.getElementById("listingCreator")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, 400);
+  setTimeout(() => openModal("listingModal"), 400);
 }
 
 applyBillingReturn();

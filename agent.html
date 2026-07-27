@@ -111,7 +111,7 @@
           </div>
           <span id="founderPromoLabel">0/10 listings</span>
         </div>
-        <a class="primary-button" href="#listingCreator">Add a listing</a>
+        <button class="primary-button" type="button" data-action="open-listing-modal">Add a listing</button>
       </section>
 
       <section class="milestone-banner" id="firstMillionBanner" aria-label="First RM1M Challenge">
@@ -125,7 +125,7 @@
           </div>
           <span id="agentMilestoneLabel">RM0 of RM1,000,000</span>
         </div>
-        <a class="primary-button" href="#listingCreator">Add a listing</a>
+        <button class="primary-button" type="button" data-action="open-listing-modal">Add a listing</button>
       </section>
 
       <section class="hero" data-panel="overview">
@@ -1051,31 +1051,31 @@
         </div>
         <div class="input-shell">
           <i class="fa-brands fa-google-drive"></i>
-          <input id="listingImageLink" type="url" placeholder="Google Drive image link">
+          <input id="listingImageLink" type="url" placeholder="Front view photo link (Drive or direct URL)">
         </div>
         <div class="input-shell">
           <i class="fa-solid fa-location-arrow"></i>
-          <input id="listingTopViewLink" type="url" placeholder="Top view photo link">
+          <input id="listingTopViewLink" type="url" placeholder="Top view photo link (Drive or direct URL)">
         </div>
         <div class="input-shell">
           <i class="fa-solid fa-bed"></i>
-          <input id="listingRoom1Link" type="url" placeholder="Room 1 photo link">
+          <input id="listingRoom1Link" type="url" placeholder="Room 1 photo link (Drive or direct URL)">
         </div>
         <div class="input-shell">
           <i class="fa-solid fa-bath"></i>
-          <input id="listingBathroomLink" type="url" placeholder="Bathroom photo link">
+          <input id="listingBathroomLink" type="url" placeholder="Bathroom photo link (Drive or direct URL)">
         </div>
         <div class="input-shell">
           <i class="fa-solid fa-kitchen-set"></i>
-          <input id="listingKitchenLink" type="url" placeholder="Kitchen photo link">
+          <input id="listingKitchenLink" type="url" placeholder="Kitchen photo link (Drive or direct URL)">
         </div>
         <div class="input-shell full-width">
           <i class="fa-solid fa-images"></i>
-          <textarea id="listingExtraPhotoLinks" rows="3" placeholder="Optional extra photo links, one per line"></textarea>
+          <textarea id="listingExtraPhotoLinks" rows="3" placeholder="Optional extra photo links (Drive or direct URLs), one per line"></textarea>
         </div>
         <div class="input-shell full-width">
           <i class="fa-solid fa-layer-group"></i>
-          <textarea id="listingBulkPhotoLinks" rows="3" placeholder="Paste 4-10 Google Drive photo links here, then auto-fill"></textarea>
+          <textarea id="listingBulkPhotoLinks" rows="3" placeholder="Paste 4-10 photo links (Google Drive or direct URLs), then auto-fill"></textarea>
         </div>
         <button class="ghost-button full-width" id="autoFillListingPhotos" type="button">
           <i class="fa-solid fa-wand-magic-sparkles"></i>
