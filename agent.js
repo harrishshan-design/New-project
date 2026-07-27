@@ -2608,16 +2608,20 @@ function renderLaunchPricingGrid() {
 
     const button = article.querySelector('[data-action="select-agent-plan"]');
     if (button) {
+      if (!button.dataset.originalLabel) button.dataset.originalLabel = button.textContent;
+      if (button.dataset.originalWasPrimary === undefined) {
+        button.dataset.originalWasPrimary = String(button.classList.contains("primary-button"));
+      }
       if (isCurrent) {
         button.textContent = "Current Plan";
         button.disabled = true;
         button.classList.add("ghost-button");
         button.classList.remove("primary-button");
-      } else if (button.dataset.originalLabel) {
+      } else {
         button.textContent = button.dataset.originalLabel;
         button.disabled = false;
-      } else {
-        button.dataset.originalLabel = button.textContent;
+        button.classList.toggle("primary-button", button.dataset.originalWasPrimary === "true");
+        button.classList.toggle("ghost-button", button.dataset.originalWasPrimary !== "true");
       }
     }
   });
