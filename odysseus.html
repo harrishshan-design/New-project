@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="RealityGenius master-only AI operations console powered by a private local Odysseus workspace.">
+  <title>RealityGenius | AI Operations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="./master.css">
+  <link rel="stylesheet" href="./odysseus.css">
+  <script src="./rg-config.js"></script>
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <div class="workspace">
+    <aside class="sidebar">
+      <a class="brand odysseus-brand-link" href="./master.html" aria-label="Back to Master Control">
+        <div class="brand-mark"><i class="fa-solid fa-eye"></i></div>
+        <div>
+          <div class="eyebrow">Platform Owner</div>
+          <h1>Master Control</h1>
+        </div>
+      </a>
+
+      <nav class="nav" aria-label="Master dashboard sections">
+        <a class="nav-item nav-link" href="./master.html">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Command Center</span>
+        </a>
+        <a class="nav-item nav-link active" href="./odysseus.html" aria-current="page">
+          <i class="fa-solid fa-brain"></i>
+          <span>AI Operations</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-card">
+        <div class="eyebrow soft">Private by design</div>
+        <h3>Your AI workspace stays on the owner device.</h3>
+        <p>RealityGenius only checks the local Pinokio controller. No buyer, agent, listing, or document data is transferred automatically.</p>
+      </div>
+    </aside>
+
+    <main class="main odysseus-main">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">Private Intelligence Layer</div>
+          <h2>AI operations workspace</h2>
+        </div>
+        <div class="top-actions">
+          <button class="ghost-button" id="refreshOdysseusButton" type="button">
+            <i class="fa-solid fa-rotate"></i>
+            Refresh Status
+          </button>
+          <a class="ghost-button odysseus-button-link" href="./master.html">
+            <i class="fa-solid fa-shield-halved"></i>
+            Master Control
+          </a>
+        </div>
+      </header>
+
+      <section class="odysseus-hero" aria-labelledby="odysseusTitle">
+        <div class="odysseus-hero-copy">
+          <div class="hero-pill">Odysseus for RealityGenius</div>
+          <h3 id="odysseusTitle">Research, memory, documents, and operations—kept under owner control.</h3>
+          <p>Use the local workspace for strategic research, private company knowledge, document work, calendars, and email preparation. The public RealityGenius platform remains isolated from the local AI runtime.</p>
+          <div class="odysseus-actions">
+            <button class="primary-button" id="openWorkspaceButton" type="button" disabled>
+              <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              Open Odysseus
+            </button>
+            <button class="ghost-button" id="openPinokioButton" type="button">
+              <i class="fa-solid fa-sliders"></i>
+              Open Pinokio Control
+            </button>
+          </div>
+        </div>
+
+        <article class="odysseus-status-card" aria-live="polite">
+          <div class="odysseus-status-head">
+            <span class="odysseus-status-dot" id="odysseusStatusDot"></span>
+            <div>
+              <div class="eyebrow soft">Local runtime</div>
+              <strong id="odysseusStatusLabel">Checking this device…</strong>
+            </div>
+          </div>
+          <p id="odysseusStatusMessage">Looking for Pinokio on the owner workstation.</p>
+          <dl class="odysseus-runtime-facts">
+            <div>
+              <dt>Install</dt>
+              <dd id="odysseusInstallState">Checking</dd>
+            </div>
+            <div>
+              <dt>Process</dt>
+              <dd id="odysseusProcessState">Checking</dd>
+            </div>
+            <div>
+              <dt>Web UI</dt>
+              <dd id="odysseusReadyState">Checking</dd>
+            </div>
+          </dl>
+        </article>
+      </section>
+
+      <section class="odysseus-panel" aria-labelledby="operationsTitle">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">Owner Workflows</div>
+            <h3 id="operationsTitle">Open a focused workspace</h3>
+          </div>
+          <div class="chip-row">
+            <span class="chip">Local-first</span>
+            <span class="chip">Master only</span>
+            <span class="chip">No public tunnel</span>
+          </div>
+        </div>
+
+        <div class="odysseus-tool-grid">
+          <button class="odysseus-tool-card" type="button" data-odysseus-path="/">
+            <span class="odysseus-tool-icon"><i class="fa-solid fa-comments"></i></span>
+            <span>
+              <strong>Strategy Chat</strong>
+              <small>Think through launches, operations, partnerships, and product decisions.</small>
+            </span>
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+          <button class="odysseus-tool-card" type="button" data-odysseus-path="/memory">
+            <span class="odysseus-tool-icon"><i class="fa-solid fa-database"></i></span>
+            <span>
+              <strong>Company Memory</strong>
+              <small>Keep reusable owner context and operating knowledge on this device.</small>
+            </span>
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+          <button class="odysseus-tool-card" type="button" data-odysseus-path="/library">
+            <span class="odysseus-tool-icon"><i class="fa-solid fa-folder-open"></i></span>
+            <span>
+              <strong>Document Library</strong>
+              <small>Draft, inspect, and organize private working documents.</small>
+            </span>
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+          <button class="odysseus-tool-card" type="button" data-odysseus-path="/calendar">
+            <span class="odysseus-tool-icon"><i class="fa-solid fa-calendar-days"></i></span>
+            <span>
+              <strong>Calendar</strong>
+              <small>Plan demos, follow-ups, investor work, and operational milestones.</small>
+            </span>
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+          <button class="odysseus-tool-card" type="button" data-odysseus-path="/email">
+            <span class="odysseus-tool-icon"><i class="fa-solid fa-envelope"></i></span>
+            <span>
+              <strong>Email Desk</strong>
+              <small>Prepare and review outreach while keeping human approval in the loop.</small>
+            </span>
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+          <button class="odysseus-tool-card" type="button" data-odysseus-path="/cookbook">
+            <span class="odysseus-tool-icon"><i class="fa-solid fa-microchip"></i></span>
+            <span>
+              <strong>Model Cookbook</strong>
+              <small>Connect or serve the model endpoint used by your private workspace.</small>
+            </span>
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </section>
+
+      <section class="odysseus-safety-grid" aria-label="Deployment boundaries">
+        <article>
+          <i class="fa-solid fa-laptop"></i>
+          <div>
+            <strong>Runs on the owner device</strong>
+            <p>The connector looks for Pinokio at loopback only. Other RealityGenius users cannot reach your local workspace.</p>
+          </div>
+        </article>
+        <article>
+          <i class="fa-solid fa-user-lock"></i>
+          <div>
+            <strong>Master account gate</strong>
+            <p>The same verified RealityGenius master-role gate protecting Master Control also protects this page.</p>
+          </div>
+        </article>
+        <article>
+          <i class="fa-solid fa-shield"></i>
+          <div>
+            <strong>No public sharing</strong>
+            <p>Cloudflare sharing and LAN sharing remain disabled. Use a separately secured server before enabling team access.</p>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-loader.js"></script>
+  <script src="./auth.js"></script>
+  <script src="./auth-gate.js" data-required-role="master" data-login-path="/login.html"></script>
+  <script src="./rg-smooth-scroll.js"></script>
+  <script src="./rg-a11y.js"></script>
+  <script src="./odysseus.js"></script>
+</body>
+</html>

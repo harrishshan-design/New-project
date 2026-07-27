@@ -573,12 +573,12 @@
             <article>
               <i class="fa-solid fa-file-excel"></i>
               <div>
-                <strong>Excel upload</strong>
-                <p>Use the RealityGenius template for bulk upload. Supports .xlsx, .xls, and .csv.</p>
+                <strong>10-listing batch upload</strong>
+                <p>Download the ready 10-row workbook, fill your listings, then upload one file. Supports .xlsx, .xls, and .csv.</p>
               </div>
-              <button class="ghost-button" id="overviewDownloadListingTemplate" type="button">Download template</button>
+              <button class="ghost-button" id="overviewDownloadListingTemplate" type="button">Download 10-row template</button>
               <label class="primary-button listing-upload-button">
-                Upload from computer
+                Upload filled workbook
                 <input id="overviewListingExcelInput" type="file" accept=".xlsx,.xls,.csv">
               </label>
             </article>
@@ -591,7 +591,7 @@
               <button class="primary-button" id="overviewDeviceListingUpload" type="button">Add listing with photos</button>
             </article>
           </div>
-          <div class="excel-import-status" id="overviewListingStatus">Excel upload and device upload are ready here.</div>
+          <div class="excel-import-status" id="overviewListingStatus" role="status" aria-live="polite"><strong>Batch goal: 0 / 10</strong><p>Excel upload and device upload are ready here.</p></div>
         </section>
 
         <section class="panel panel-wide content-creator-priority" id="listingCreator" data-panel="overview">
@@ -902,12 +902,12 @@
             <article>
               <i class="fa-solid fa-file-excel"></i>
               <div>
-                <strong>Excel upload</strong>
-                <p>Download the template, fill listing details, then upload .xlsx, .xls, or .csv.</p>
+                <strong>10-listing batch upload</strong>
+                <p>Fill ten listings in one workbook and submit them together for admin QC.</p>
               </div>
-              <button class="ghost-button" id="downloadListingTemplateHub" type="button">Download template</button>
+              <button class="ghost-button" id="downloadListingTemplateHub" type="button">Download 10-row template</button>
               <label class="primary-button listing-upload-button">
-                Upload Excel
+                Upload batch
                 <input id="listingExcelQuickInput" type="file" accept=".xlsx,.xls,.csv">
               </label>
             </article>
@@ -920,7 +920,7 @@
               <button class="primary-button" id="quickDeviceListingUpload" type="button">Upload photos</button>
             </article>
           </div>
-          <div class="excel-import-status" id="listingHubStatus">Choose Excel import or upload photos from your computer to start.</div>
+          <div class="excel-import-status" id="listingHubStatus" role="status" aria-live="polite"><strong>Batch goal: 0 / 10</strong><p>Choose Excel import or upload photos from your computer to start.</p></div>
           <div class="listing-grid" id="listingGrid"></div>
         </section>
       </section>
@@ -1122,8 +1122,8 @@
 
       <div class="excel-import-box">
         <div>
-          <div class="eyebrow">Bulk Excel Import</div>
-          <h4>Required columns</h4>
+          <div class="eyebrow">10-Listing Batch Import</div>
+          <h4>One workbook, ten listings</h4>
           <p>title, area, price, status, property_type, address, landlord_name, landlord_phone, image_link, ar_link, description (optional)</p>
           <p class="subtext">Pictures must be public Google Drive links. AR links can be public Google Drive files or direct .glb/.gltf URLs.</p>
         </div>
@@ -1132,7 +1132,7 @@
           <span>Upload .xlsx, .xls, or .csv</span>
           <input id="listingExcelInput" type="file" accept=".xlsx,.xls,.csv">
         </label>
-        <div class="excel-import-status" id="listingImportStatus">Waiting for Excel file.</div>
+        <div class="excel-import-status" id="listingImportStatus" role="status" aria-live="polite"><strong>Batch goal: 0 / 10</strong><p>Waiting for Excel file.</p></div>
       </div>
     </div>
   </div>
@@ -1450,7 +1450,6 @@
 
   <script src="./negotiation-store.js"></script>
   <script src="./negotiation-assistant.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./supabase-loader.js"></script>
   <script src="./auth.js"></script>

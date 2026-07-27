@@ -2327,6 +2327,23 @@ button:disabled{
   background:rgba(255,107,125,0.1);
 }
 
+.batch-import-progress{
+  height:9px;
+  margin-top:12px;
+  overflow:hidden;
+  border-radius:999px;
+  background:rgba(255,255,255,.09);
+}
+
+.batch-import-progress i{
+  display:block;
+  width:0;
+  height:100%;
+  border-radius:inherit;
+  background:linear-gradient(90deg,#23c2c7,#7ee0aa);
+  transition:width .3s ease;
+}
+
 .itinerary-ar-link{
   width:max-content;
   margin-top:8px;
@@ -3749,8 +3766,25 @@ button:disabled{
     font-size:16px;
   }
 
+  .main,
+  .panel,
+  .agent-profile-editor,
+  .agent-profile-layout,
+  .agent-profile-preview,
+  .agent-profile-form,
+  .input-shell,
+  .input-shell input{
+    min-width:0;
+    max-width:100%;
+  }
+
+  .input-shell{
+    width:100%;
+  }
+
   .main{
     padding:18px;
+    grid-template-columns:minmax(0,1fr);
   }
 
   .sidebar{

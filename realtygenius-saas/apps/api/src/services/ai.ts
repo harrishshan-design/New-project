@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
 import { env } from "../config/env.js";
 
 type ChatMessage = {
@@ -15,12 +16,20 @@ type OpenAiCompatibleResponse = {
 };
 
 let client: OpenAI | null = null;
+let anthropicClient: Anthropic | null = null;
 
 function getOpenAI() {
   if (!client && env.OPENAI_API_KEY) {
     client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
   }
   return client;
+}
+
+function getAnthropic() {
+  if (!anthropicClient && env.ANTHROPIC_API_KEY) {
+    anthropicClient = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+  }
+  return anthropicClient;
 }
 
 function normalizePath(path: string) {
@@ -33,6 +42,10 @@ function shouldUsePinokio() {
 
 function shouldUseOpenAI() {
   return Boolean(env.OPENAI_API_KEY && (env.AI_PROVIDER === "auto" || env.AI_PROVIDER === "openai"));
+}
+
+function shouldUseAnthropic() {
+  return Boolean(env.ANTHROPIC_API_KEY && (env.AI_PROVIDER === "auto" || env.AI_PROVIDER === "anthropic"));
 }
 
 function buildMessages(system: string, input: unknown): ChatMessage[] {
@@ -90,6 +103,28 @@ async function callOpenAI(messages: ChatMessage[], jsonMode: boolean) {
   return response.choices[0]?.message?.content || null;
 }
 
+async function callAnthropic(messages: ChatMessage[], jsonMode: boolean) {
+  if (!shouldUseAnthropic()) return null;
+  const anthropic = getAnthropic();
+  if (!anthropic) return null;
+
+  const system = messages.find((message) => message.role === "system")?.content;
+  const conversation = messages
+    .filter((message): message is ChatMessage & { role: "user" | "assistant" } => message.role !== "system")
+    .map((message) => ({ role: message.role, content: message.content }));
+
+  const response = await anthropic.messages.create({
+    model: env.ANTHROPIC_MODEL,
+    max_tokens: 4096,
+    temperature: 0.2,
+    ...(system ? { system: jsonMode ? `${system}\n\nRespond with valid JSON only, no prose or markdown fences.` : system } : {}),
+    messages: conversation
+  });
+
+  const textBlock = response.content.find((block) => block.type === "text");
+  return textBlock && "text" in textBlock ? textBlock.text : null;
+}
+
 function stripJsonFence(content: string) {
   return content
     .replace(/^```json\s*/i, "")
@@ -107,7 +142,10 @@ export function getAiRuntimeStatus() {
     provider: env.AI_PROVIDER,
     pinokioConfigured: Boolean(env.PINOKIO_BASE_URL),
     openAiConfigured: Boolean(env.OPENAI_API_KEY),
-    model: env.PINOKIO_BASE_URL && env.AI_PROVIDER !== "openai" ? env.PINOKIO_MODEL : env.OPENAI_MODEL
+    anthropicConfigured: Boolean(env.ANTHROPIC_API_KEY),
+    model: env.AI_PROVIDER === "anthropic"
+      ? env.ANTHROPIC_MODEL
+      : env.PINOKIO_BASE_URL && env.AI_PROVIDER !== "openai" ? env.PINOKIO_MODEL : env.OPENAI_MODEL
   };
 }
 
@@ -125,6 +163,13 @@ export async function generateText(system: string, input: unknown, fallback: str
   try {
     const openai = await callOpenAI(messages, false);
     if (openai) return openai;
+  } catch {
+    // Fall through to Anthropic or deterministic fallback.
+  }
+
+  try {
+    const anthropic = await callAnthropic(messages, false);
+    if (anthropic) return anthropic;
   } catch {
     // Fall through to deterministic fallback.
   }
@@ -146,6 +191,13 @@ export async function generateJson<T>(system: string, input: unknown, fallback: 
   try {
     const openai = await callOpenAI(messages, true);
     if (openai) return parseJsonContent<T>(openai);
+  } catch {
+    // Fall through to Anthropic or deterministic fallback.
+  }
+
+  try {
+    const anthropic = await callAnthropic(messages, true);
+    if (anthropic) return parseJsonContent<T>(anthropic);
   } catch {
     // Fall through to deterministic fallback.
   }

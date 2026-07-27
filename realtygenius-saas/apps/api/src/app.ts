@@ -14,6 +14,7 @@ import { cobrokeRouter } from "./routes/cobroke.js";
 import { cheatsheetsRouter } from "./routes/cheatsheets.js";
 import { referralsRouter } from "./routes/referrals.js";
 import { propertiesRouter } from "./routes/properties.js";
+import { telegramRouter } from "./routes/telegram.js";
 
 export const app = express();
 
@@ -33,6 +34,7 @@ app.use("/api/cobroke", cobrokeRouter);
 app.use("/api/cheatsheets", cheatsheetsRouter);
 app.use("/api/referrals", referralsRouter);
 app.use("/api/properties", propertiesRouter);
+app.use("/api/telegram", telegramRouter);
 
 app.use(notFound);
 app.use(errorHandler);

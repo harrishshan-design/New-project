@@ -9,6 +9,7 @@ const STORAGE_KEYS = {
   communityNotes: "kvai_user_community_notes",
   savedSearches: "kvai_user_saved_searches",
   gamification: "rg_user_gamification",
+  dailyMatches: "rg_user_daily_matches",
   leakProofDeals: "kvai_leak_proof_deals",
   buyerLiveListings: "rg_live_buyer_listings",
   backendBuyerListings: "rg_backend_buyer_listings",
@@ -285,24 +286,65 @@ function isPostLaunchAgentListing(item) {
   return Number.isFinite(listingTime) && listingTime >= cutoffTime;
 }
 
+function cleanListingLabel(value = "") {
+  return String(value || "")
+    .replace(/[*_`]+/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getPropertyTitleLabel(item = {}) {
+  const original = cleanListingLabel(item.title);
+  if (original && !/^(available|listing|property|untitled)(\s|$)/i.test(original)) return original.slice(0, 110);
+  const fallback = [item.location, item.address, item.summary, item.description]
+    .map(cleanListingLabel)
+    .find((value) => value && value.length >= 8 && value.length <= 110);
+  return (fallback || original || "Verified Malaysian property").replace(/^available\s*/i, "").trim().slice(0, 110);
+}
+
+function getPropertyAreaLabel(item = {}) {
+  const title = cleanListingLabel(item.title).toLowerCase();
+  const direct = [item.area, item.city, item.district, item.address, item.location]
+    .map(cleanListingLabel)
+    .find((value) => value
+      && value.length <= 62
+      && value.toLowerCase() !== title
+      && !/(available|for sale|for rent|bedroom|bathroom|asking price)/i.test(value));
+  if (direct) return direct;
+
+  const source = cleanListingLabel(item.summary || item.description);
+  const locationMatch = source.match(/(?:location|lokasi)\s*:\s*([^|]+?)(?=\s(?:type|land size|built-up|bedroom|bathroom|selling price)\s*:|$)/i);
+  return cleanListingLabel(locationMatch?.[1] || "Malaysia")
+    .replace(/[\p{So}\p{Sk}\uFE0F]+$/gu, "")
+    .trim()
+    .slice(0, 62);
+}
+
 function mergeLiveProperties(baseProperties = BASE_PROPERTIES) {
   const liveSourceKey = backendListingFeedReady ? STORAGE_KEYS.backendBuyerListings : STORAGE_KEYS.buyerLiveListings;
   const liveListings = readJsonStore(liveSourceKey, [])
     .filter((item) => item && item.title && Number(item.price || 0) > 0 && isAdminApprovedLiveListing(item) && isPostLaunchAgentListing(item))
-    .map((item) => ({
-      ...item,
-      source: item.source || "admin_approved_agent_listing",
-      verifiedType: item.verifiedType || "agent",
-      verificationSource: item.verificationSource || "admin_approved",
-      freshnessStatus: item.freshnessStatus || "fresh",
-      confidenceScore: Number(item.confidenceScore || item.aiScore || 88),
-      aiScore: Number(item.aiScore || item.confidenceScore || 88),
-      liveNow: Number(item.liveNow || 4),
-      adminApproved: true,
-      approvalStatus: "approved",
-      liveStatus: "approved_live",
-      summary: item.summary || "Fresh live listing approved by RealityGenius admin QC."
-    }));
+    .map((item) => {
+      const title = getPropertyTitleLabel(item);
+      const area = getPropertyAreaLabel(item);
+      return {
+        ...item,
+        title,
+        area,
+        location: area,
+        source: item.source || "admin_approved_agent_listing",
+        verifiedType: item.verifiedType || "agent",
+        verificationSource: item.verificationSource || "admin_approved",
+        freshnessStatus: item.freshnessStatus || "fresh",
+        confidenceScore: Number(item.confidenceScore || item.aiScore || 88),
+        aiScore: Number(item.aiScore || item.confidenceScore || 88),
+        liveNow: Number(item.liveNow || 4),
+        adminApproved: true,
+        approvalStatus: "approved",
+        liveStatus: "approved_live",
+        summary: item.summary || "Fresh live listing approved by RealityGenius admin QC."
+      };
+    });
   const liveIds = new Set(liveListings.map((item) => String(item.id)));
   if (backendListingFeedReady) return liveListings;
   return [
@@ -343,6 +385,7 @@ const state = {
   communityNotes: readStore(STORAGE_KEYS.communityNotes, seedCommunityNotes()),
   savedSearches: readStore(STORAGE_KEYS.savedSearches, []),
   gamification: readStore(STORAGE_KEYS.gamification, seedGamification()),
+  dailyMatches: readStore(STORAGE_KEYS.dailyMatches, {}),
   locationFallbacks: {},
   locationFallbackPending: {},
   locationView: "maps"
@@ -353,6 +396,17 @@ const els = {
   notificationsButton: document.getElementById("notificationsButton"),
   favoritesCount: document.getElementById("favoritesCount"),
   notificationsCount: document.getElementById("notificationsCount"),
+  buyerProfileButton: document.getElementById("buyerProfileButton"),
+  closeBuyerProfileButton: document.getElementById("closeBuyerProfileButton"),
+  buyerProfilePanel: document.getElementById("buyerProfilePanel"),
+  buyerProfileMiniPhoto: document.getElementById("buyerProfileMiniPhoto"),
+  buyerProfileForm: document.getElementById("buyerProfileForm"),
+  buyerProfileNameInput: document.getElementById("buyerProfileNameInput"),
+  buyerProfilePhoneInput: document.getElementById("buyerProfilePhoneInput"),
+  buyerCurrentPasswordInput: document.getElementById("buyerCurrentPasswordInput"),
+  buyerNewPasswordInput: document.getElementById("buyerNewPasswordInput"),
+  buyerProfilePhotoInput: document.getElementById("buyerProfilePhotoInput"),
+  buyerProfilePhotoPreview: document.getElementById("buyerProfilePhotoPreview"),
   propertyCount: document.getElementById("propertyCount"),
   savedCount: document.getElementById("savedCount"),
   bookingCount: document.getElementById("bookingCount"),
@@ -376,6 +430,11 @@ const els = {
   propertyGrid: document.getElementById("propertyGrid"),
   videoFeed: document.getElementById("videoFeed"),
   recommendationGrid: document.getElementById("recommendationGrid"),
+  dailyMatchCard: document.getElementById("dailyMatchCard"),
+  dailyMatchSummary: document.getElementById("dailyMatchSummary"),
+  dailyMatchProgressText: document.getElementById("dailyMatchProgressText"),
+  dailyMatchProgressBar: document.getElementById("dailyMatchProgressBar"),
+  dailyMatchResetButton: document.getElementById("dailyMatchResetButton"),
   personalizedSection: document.getElementById("personalizedSection"),
   personalizedGrid: document.getElementById("personalizedGrid"),
   personalizedReason: document.getElementById("personalizedReason"),
@@ -508,6 +567,26 @@ let negotiationTypingTimer = null;
 let arPromptTimer = null;
 let arPromptShown = false;
 let videoFeedObserver = null;
+let modelViewerPromise = null;
+
+function ensureModelViewer() {
+  if (customElements.get("model-viewer")) return Promise.resolve();
+  if (modelViewerPromise) return modelViewerPromise;
+
+  modelViewerPromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.type = "module";
+    script.src = "https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js";
+    script.onload = () => customElements.whenDefined("model-viewer").then(resolve);
+    script.onerror = () => reject(new Error("3D viewer could not be loaded."));
+    document.head.appendChild(script);
+  }).catch((error) => {
+    modelViewerPromise = null;
+    throw error;
+  });
+
+  return modelViewerPromise;
+}
 
 const arModule = new window.PropertyARModule({
   viewer: els.arViewer,
@@ -2076,6 +2155,7 @@ function renderDashboard() {
   renderSearchAlerts();
   renderEngagement();
   renderGamification();
+  renderDailyMatches();
   renderRecommendations();
   renderPersonalizedMatches();
   renderProperties();
@@ -2085,6 +2165,131 @@ function renderDashboard() {
   renderLifestyleSignals(filteredProperties()[0]?.area || "");
   renderMortgageEstimate();
   setupInfiniteFeed();
+}
+
+function normalizeDailyMatches() {
+  const today = malaysiaDateKey();
+  if (state.dailyMatches?.date !== today) {
+    state.dailyMatches = { date: today, reviewed: [], saved: [], passed: [] };
+  }
+  state.dailyMatches.reviewed = [...new Set(state.dailyMatches.reviewed || [])].map(String);
+  state.dailyMatches.saved = [...new Set(state.dailyMatches.saved || [])].map(String);
+  state.dailyMatches.passed = [...new Set(state.dailyMatches.passed || [])].map(String);
+  return state.dailyMatches;
+}
+
+function dailyMatchList() {
+  return [...filteredProperties()]
+    .sort((a, b) => {
+      const aScore = getDecision(a).roi + getMasterFeedScore(a) * 0.12;
+      const bScore = getDecision(b).roi + getMasterFeedScore(b) * 0.12;
+      return bScore - aScore;
+    })
+    .slice(0, 5);
+}
+
+function persistDailyMatches() {
+  writeStore(STORAGE_KEYS.dailyMatches, state.dailyMatches);
+}
+
+function renderDailyMatches() {
+  if (!els.dailyMatchCard || !els.dailyMatchSummary) return;
+  const session = normalizeDailyMatches();
+  const matches = dailyMatchList();
+  const matchIds = new Set(matches.map((property) => String(property.id)));
+  const reviewed = session.reviewed.filter((id) => matchIds.has(id));
+  const current = matches.find((property) => !reviewed.includes(String(property.id)));
+  const total = matches.length;
+  const complete = Math.min(reviewed.length, total);
+  const progress = total ? Math.round((complete / total) * 100) : 0;
+
+  els.dailyMatchProgressText.textContent = `${complete} of ${total || 0} reviewed`;
+  els.dailyMatchProgressBar.style.width = `${progress}%`;
+  els.dailyMatchResetButton.hidden = complete === 0;
+  els.dailyMatchSummary.innerHTML = `
+    <span class="daily-match-summary-label">Today's shortlist</span>
+    <strong>${session.saved.filter((id) => matchIds.has(id)).length}</strong>
+    <p>saved from today's matches</p>
+    <div>
+      <span><i class="fa-solid fa-check"></i> ${complete} reviewed</span>
+      <span><i class="fa-solid fa-forward"></i> ${session.passed.filter((id) => matchIds.has(id)).length} passed</span>
+    </div>
+    <small>Your choices stay private and only improve recommendations on this device.</small>
+  `;
+
+  if (!current) {
+    els.dailyMatchCard.innerHTML = `
+      <div class="daily-match-complete">
+        <i class="fa-solid fa-circle-check"></i>
+        <span>Today's review is complete</span>
+        <h4>${session.saved.filter((id) => matchIds.has(id)).length ? "Your shortlist is ready for a second look." : "You cleared the queue. Try a new area or budget next."}</h4>
+        <p>${session.saved.filter((id) => matchIds.has(id)).length ? "Open Saved Homes to compare your strongest options or book a viewing when one feels right." : "Change the search above and start again to generate a different five-property set."}</p>
+        <div class="daily-match-actions">
+          <a class="primary-button" href="#savedHomes"><i class="fa-solid fa-heart"></i> Review saved homes</a>
+          <button class="ghost-button" data-action="daily-reset" type="button">Review again</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const decision = getDecision(current);
+  const heroImage = getHeroImage(current);
+  const position = complete + 1;
+  els.dailyMatchCard.innerHTML = `
+    <div class="daily-match-media">
+      <img src="${heroImage}" alt="${escapeAttr(current.title)}">
+      <span class="daily-match-position">Match ${position} of ${total}</span>
+      <span class="score-pill score-pill--match">AI ${current.aiScore}% Match</span>
+    </div>
+    <div class="daily-match-copy">
+      <div class="daily-match-title-row">
+        <div>
+          <span>${escapeHtml(current.area)}</span>
+          <h4>${escapeHtml(current.title)}</h4>
+        </div>
+        <strong>${money(current.price)}</strong>
+      </div>
+      <p>${escapeHtml(decision.reasons[0] || current.summary)}</p>
+      <div class="daily-match-facts">
+        <span><i class="fa-solid fa-bed"></i> ${current.bedrooms} bed</span>
+        <span><i class="fa-solid fa-ruler-combined"></i> ${current.sqft} sqft</span>
+        <span><i class="fa-solid fa-chart-line"></i> ${decision.roi}% ROI</span>
+      </div>
+      <div class="daily-match-actions">
+        <button class="ghost-button" data-action="daily-pass" data-id="${escapeAttr(current.id)}" type="button"><i class="fa-solid fa-forward"></i> Pass</button>
+        <button class="ghost-button" data-action="open-details" data-id="${escapeAttr(current.id)}" type="button">View details</button>
+        <button class="primary-button" data-action="daily-save" data-id="${escapeAttr(current.id)}" type="button"><i class="fa-solid fa-heart"></i> Save match</button>
+      </div>
+    </div>
+  `;
+}
+
+function handleDailyMatch(action, propertyId) {
+  if (!requireBuyerSessionForExplore()) return;
+  normalizeDailyMatches();
+  const property = properties.find((item) => String(item.id) === String(propertyId));
+  if (!property) return;
+  const id = String(property.id);
+  if (!state.dailyMatches.reviewed.includes(id)) state.dailyMatches.reviewed.push(id);
+  if (action === "save" && !state.dailyMatches.saved.includes(id)) state.dailyMatches.saved.push(id);
+  if (action === "pass" && !state.dailyMatches.passed.includes(id)) state.dailyMatches.passed.push(id);
+  persistDailyMatches();
+
+  if (action === "save" && !state.favorites.includes(property.id)) {
+    toggleFavorite(property.id);
+    showToast("Saved. Here is your next match");
+    return;
+  }
+  renderDashboard();
+  showToast(action === "pass" ? "Passed. Recommendations adjusted" : "Here is your next match");
+}
+
+function resetDailyMatches() {
+  state.dailyMatches = { date: malaysiaDateKey(), reviewed: [], saved: [], passed: [] };
+  persistDailyMatches();
+  renderDailyMatches();
+  showToast("Today's five matches are ready again");
 }
 
 function savedSearchLabel(alert) {
@@ -2193,7 +2398,7 @@ function renderEngagement() {
     },
     {
       title: trend ? `Top momentum: ${trend.area}` : "Momentum waiting",
-      body: trend ? `${trend.label} is showing stronger buyer interest, so it is worth comparing real options there tonight.` : "Once you browse, we will surface the strongest pocket in your feed."
+      body: trend ? `${trend.area || trend.location || "This area"} is showing stronger buyer interest, so it is worth comparing real options there tonight.` : "Once you browse, we will surface the strongest pocket in your feed."
     },
     {
       title: unlocked ? "Secret property unlocked" : "Unlock after 3 saves",
@@ -3228,8 +3433,17 @@ function configureAr(property, reset = false) {
   resetArPrompt();
   if (!property?.modelUrl) {
     els.arTooltip?.classList.add("is-hidden");
+    arModule.setProperty(property);
+    return;
   }
-  arModule.setProperty(property);
+  arModule.setStatus("Loading the 3D property viewer...", "ready");
+  ensureModelViewer()
+    .then(() => {
+      if (String(state.activePropertyId) === String(property.id)) arModule.setProperty(property);
+    })
+    .catch((error) => {
+      arModule.clear(error.message || "3D viewer is unavailable right now.");
+    });
 }
 
 function submitBooking(event) {
@@ -3419,6 +3633,11 @@ function bindEvents() {
   });
 
   els.saveSearchButton?.addEventListener("click", saveCurrentSearchAlert);
+  els.dailyMatchResetButton?.addEventListener("click", resetDailyMatches);
+  els.buyerProfileButton?.addEventListener("click", () => toggleBuyerProfilePanel(true));
+  els.closeBuyerProfileButton?.addEventListener("click", () => toggleBuyerProfilePanel(false));
+  els.buyerProfileForm?.addEventListener("submit", saveBuyerProfile);
+  els.buyerProfilePhotoInput?.addEventListener("change", handleBuyerProfilePhoto);
   els.aiMatchForm?.addEventListener("submit", (event) => {
     event.preventDefault();
     const prompt = els.aiMatchPrompt?.value.trim() || "";
@@ -3437,8 +3656,11 @@ function bindEvents() {
 
   document.querySelectorAll(".filter-chip").forEach((button) => {
     button.addEventListener("click", () => {
-      
-      button.classList.add("active");
+      document.querySelectorAll(".filter-chip").forEach((chip) => {
+        const isActive = chip === button;
+        chip.classList.toggle("active", isActive);
+        chip.setAttribute("aria-pressed", String(isActive));
+      });
       state.filter = button.dataset.filter;
       resetFeedWindow();
       renderDashboard();
@@ -3468,13 +3690,18 @@ function bindEvents() {
     }
     const actionTarget = target?.closest("[data-action]");
     if (actionTarget) {
-      const id = Number(actionTarget.dataset.id);
       const action = actionTarget.dataset.action;
+      const rawId = actionTarget.dataset.id;
+      const matchedProperty = properties.find((property) => String(property.id) === String(rawId));
+      const id = matchedProperty?.id ?? Number(rawId);
       if (action === "toggle-save") toggleFavorite(id);
-    if (action === "save-search-alert") saveCurrentSearchAlert();
-    if (action === "open-favorites-drawer") openDrawer("favoritesDrawer");
-    if (action === "open-alerts-drawer") openDrawer("notificationsDrawer");
-    if (action === "open-details") {
+      if (action === "daily-save") handleDailyMatch("save", rawId);
+      if (action === "daily-pass") handleDailyMatch("pass", rawId);
+      if (action === "daily-reset") resetDailyMatches();
+      if (action === "save-search-alert") saveCurrentSearchAlert();
+      if (action === "open-favorites-drawer") openDrawer("favoritesDrawer");
+      if (action === "open-alerts-drawer") openDrawer("notificationsDrawer");
+      if (action === "open-details") {
         if (requireBuyerSessionForExplore()) openPropertyModal(id);
       }
       if (action === "select-gallery-image") selectModalGalleryImage(Number(actionTarget.dataset.index));
@@ -3964,6 +4191,107 @@ async function submitDigest(event) {
   }
 }
 
+function readBuyerAccountProfile() {
+  const session = readStore("rg_session", null) || {};
+  const stored = readStore("rg_buyer_profile_editor", {});
+  return {
+    name: stored.name || session.name || state.buyerProfile.name || "",
+    email: session.email || stored.email || "",
+    phone: stored.phone || session.phone || state.buyerProfile.phone || "",
+    photo: stored.photo || session.profilePhoto || ""
+  };
+}
+
+function buyerInitials(name = "", email = "") {
+  return String(name || email || "RG")
+    .split(/[\s@._-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "RG";
+}
+
+function applyBuyerProfilePhoto(element, photo, initials) {
+  if (!element) return;
+  if (photo) {
+    element.textContent = "";
+    element.innerHTML = "";
+    element.style.backgroundImage = `url("${photo}")`;
+  } else {
+    element.style.backgroundImage = "";
+    element.textContent = initials;
+  }
+}
+
+function renderBuyerProfileEditor() {
+  const profile = readBuyerAccountProfile();
+  const initials = buyerInitials(profile.name, profile.email);
+  if (els.buyerProfileNameInput && document.activeElement !== els.buyerProfileNameInput) els.buyerProfileNameInput.value = profile.name || "";
+  if (els.buyerProfilePhoneInput && document.activeElement !== els.buyerProfilePhoneInput) els.buyerProfilePhoneInput.value = profile.phone || "";
+  applyBuyerProfilePhoto(els.buyerProfilePhotoPreview, profile.photo, initials);
+  applyBuyerProfilePhoto(els.buyerProfileMiniPhoto, profile.photo, initials);
+}
+
+function toggleBuyerProfilePanel(open = true) {
+  if (!els.buyerProfilePanel) return;
+  els.buyerProfilePanel.hidden = !open;
+  if (open) {
+    renderBuyerProfileEditor();
+    els.buyerProfilePanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+async function handleBuyerProfilePhoto(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    const photo = await window.RealityGeniusAuth?.prepareProfilePhoto?.(file);
+    if (!photo) throw new Error("Profile picture processing is unavailable.");
+    const current = readBuyerAccountProfile();
+    const next = { ...current, photo, updatedAt: new Date().toISOString() };
+    writeStore("rg_buyer_profile_editor", next);
+    renderBuyerProfileEditor();
+    showToast("Profile picture updated");
+  } catch (error) {
+    showToast(error.message || "Could not update profile picture");
+    event.target.value = "";
+  }
+}
+
+async function saveBuyerProfile(event) {
+  event?.preventDefault();
+  const current = readBuyerAccountProfile();
+  const next = {
+    ...current,
+    name: els.buyerProfileNameInput?.value.trim() || current.name,
+    phone: els.buyerProfilePhoneInput?.value.trim() || current.phone,
+    updatedAt: new Date().toISOString()
+  };
+  try {
+    const result = await window.RealityGeniusAuth?.updateCurrentProfile?.({
+      currentPassword: els.buyerCurrentPasswordInput?.value || "",
+      newPassword: els.buyerNewPasswordInput?.value || "",
+      profile: next
+    });
+    writeStore("rg_buyer_profile_editor", {
+      ...next,
+      photo: result?.profile?.profilePhoto || next.photo || ""
+    });
+    state.buyerProfile = {
+      ...state.buyerProfile,
+      name: next.name,
+      phone: next.phone
+    };
+    writeStore(STORAGE_KEYS.buyerProfile, state.buyerProfile);
+    if (els.buyerCurrentPasswordInput) els.buyerCurrentPasswordInput.value = "";
+    if (els.buyerNewPasswordInput) els.buyerNewPasswordInput.value = "";
+    renderBuyerProfileEditor();
+    showToast("Profile saved");
+  } catch (error) {
+    showToast(error.message || "Could not save profile");
+  }
+}
+
 function initGrowthSuite() {
   const growthEls = getGrowthElements();
   if (!growthEls.section) return;
@@ -4021,5 +4349,6 @@ function initGrowthSuite() {
 initGrowthSuite();
 applyInitialQueryParams();
 bindEvents();
+renderBuyerProfileEditor();
 renderDashboard();
 hydrateBackendLiveListings();

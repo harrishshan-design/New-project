@@ -2,43 +2,36 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch Chrome",
+      "name": "RealityGenius: Chrome local static",
       "request": "launch",
       "type": "chrome",
-      "url": "http://localhost:5173",
-      "webRoot": "${workspaceFolder}/real-estate-ai/frontend"
+      "url": "http://127.0.0.1:4177",
+      "webRoot": "${workspaceFolder}/dist"
     },
     {
-      "name": "Connect to server",
-      "type": "go",
-      "request": "attach",
-      "mode": "remote",
-      "remotePath": "${workspaceFolder}",
-      "port": 2345,
-      "host": "127.0.0.1"
-    },
-    {
-      "name": "Launch Chrome (Alternate)",
+      "name": "RealityGenius: Chrome production",
       "request": "launch",
       "type": "chrome",
-      "url": "http://localhost:5173",
-      "webRoot": "${workspaceFolder}/real-estate-ai/frontend"
+      "url": "https://realitygenius.company",
+      "webRoot": "${workspaceFolder}"
     },
     {
-      "type": "PowerShell",
+      "name": "RealityGenius: API server",
+      "type": "node",
       "request": "launch",
-      "name": "Launch Backend (server.ps1)",
-      "script": "${workspaceFolder}/backend/server.ps1",
-      "args": [],
+      "program": "${workspaceFolder}/server.js",
       "cwd": "${workspaceFolder}",
-      "createTemporaryIntegratedConsole": true
+      "runtimeExecutable": "node",
+      "console": "integratedTerminal"
     },
     {
-      "type": "chrome",
+      "name": "RealityGenius: Playwright debug",
+      "type": "node",
       "request": "launch",
-      "name": "Open http://localhost:5173 in Chrome",
-      "url": "http://localhost:5173",
-      "webRoot": "${workspaceFolder}/real-estate-ai/frontend"
+      "program": "${workspaceFolder}/node_modules/@playwright/test/cli.js",
+      "args": ["test", "--debug"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
     }
   ]
 }
