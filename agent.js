@@ -21,7 +21,7 @@ const STORAGE_KEYS = {
   globalAlert: "rg_global_platform_alert"
 };
 
-const FREE_LAUNCH_MODE = false;
+const FREE_LAUNCH_MODE = true;
 
 // Direct Stripe Payment Links - agents redirect straight to Stripe's
 // hosted page (client_reference_id + prefilled_email appended at click
@@ -2588,6 +2588,28 @@ async function activateAgentPlan(planId) {
   const plan = AGENT_PLAN_TIERS.find((tier) => tier.id === planId);
   if (!plan) return;
 
+  if (FREE_LAUNCH_MODE) {
+    const token = await readAgentAuthToken();
+    if (!token) {
+      showToast("Login as an approved agent before activating a plan");
+      window.location.href = "/login.html?role=agent&next=/agent.html";
+      return;
+    }
+    try {
+      await fetchJsonWithFallback([agentApiUrl("/agent/activate-free-plan")], {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ plan: plan.billingPlan || plan.id })
+      });
+      showToast(`${plan.name} tools are open for free during launch - no payment needed`);
+      await refreshAgentSubscription({ silent: true });
+      renderWorkspace();
+    } catch (error) {
+      showToast(error.message || "Could not activate this plan right now");
+    }
+    return;
+  }
+
   state.subscription = {
     ...state.subscription,
     planId: plan.id,
@@ -2602,6 +2624,10 @@ async function activateAgentPlan(planId) {
 }
 
 async function purchaseExtraAuctionSlot() {
+  if (FREE_LAUNCH_MODE) {
+    showToast("Auction slot add-ons are paused during free launch - included plans still work as normal.");
+    return;
+  }
   await goToStripePaymentLink(EXTRA_AUCTION_SLOT.paymentLinkUrl, { toastMessage: "Opening Extra Auction Slot checkout" });
 }
 

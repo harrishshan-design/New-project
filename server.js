@@ -1050,6 +1050,46 @@ async function getAuthenticatedProfile(req) {
     return { profile };
 }
 
+// FREE LAUNCH MODE - agents get every paid tier's features unlocked for
+// free, no Stripe checkout, while the platform is still onboarding its
+// first agents. Flip this to false (and redeploy) to require real payment
+// again - nothing else needs to change, since agent.js's own
+// FREE_LAUNCH_MODE flag gates whether it ever calls this endpoint.
+const AGENT_FREE_LAUNCH_MODE = true;
+
+async function activateAgentFreePlan(req, payload = {}) {
+    if (!AGENT_FREE_LAUNCH_MODE) return { __status: 403, error: 'Free launch mode is off. Upgrade via Stripe checkout instead.' };
+
+    const accessToken = getBearerToken(req);
+    if (!accessToken) return { __status: 401, error: 'Bearer token is required.' };
+
+    const authUser = await getSupabaseAuthUser(accessToken);
+    const row = authUser.email ? await findUserByEmail(authUser.email) : null;
+    if (!row?.id) return { __status: 404, error: 'Agent profile not found.' };
+    if (String(row.role || '').toLowerCase() !== 'agent') return { __status: 403, error: 'Agent account required.' };
+
+    const requestedPlan = normalizeStripePlan(payload.plan || '');
+    if (!requestedPlan || requestedPlan === 'free') return { __status: 400, error: 'A valid plan is required.' };
+
+    const updated = await patchSupabaseRow('users', row.id, {
+        subscription_plan: requestedPlan,
+        subscription_status: 'active',
+        plan: legacyStripePlan(requestedPlan),
+        features_unlocked: true,
+        updated_at: new Date().toISOString()
+    });
+    if (!updated) return { __status: 500, error: 'Could not activate the free plan.' };
+
+    return {
+        agent: {
+            subscription_plan: requestedPlan,
+            subscription_status: 'active',
+            features_unlocked: true,
+            permissions: PLAN_FEATURES[requestedPlan] || PLAN_FEATURES.free
+        }
+    };
+}
+
 async function getAgentMe(req) {
     const accessToken = getBearerToken(req);
     if (!accessToken) return { __status: 401, error: 'Bearer token is required.' };
@@ -3406,6 +3446,10 @@ const server = http.createServer(async (req, res) => {
 
         if (url === '/api/agent/me') {
             return getAgentMe(req);
+        }
+
+        if (url === '/api/agent/activate-free-plan') {
+            return activateAgentFreePlan(req, payload);
         }
 
         if (url === '/api/auth/dual-role') {
