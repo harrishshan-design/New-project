@@ -225,6 +225,7 @@ export default function Home() {
 
       <nav
         ref={navRef}
+        className="rg-nav"
         style={{
           position: "fixed",
           top: 0,
@@ -243,14 +244,14 @@ export default function Home() {
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 19, letterSpacing: ".04em", textTransform: "uppercase", marginRight: "auto" }}>
           Reality<span style={{ color: "var(--color-accent-300)" }}>Genius</span>
         </span>
-        <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
+        <div className="rg-nav-links" style={{ display: "flex", alignItems: "center", gap: 22 }}>
           <a href="#benefits" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>Benefits</a>
           <a href="#toolkit" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>Toolkit</a>
           <a href="#how" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>How it works</a>
           <a href="/agents.html" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>For agents</a>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <a className="rg-btn rg-btn-secondary" href="/user.html" style={{ textDecoration: "none" }}>Explore homes</a>
+          <a className="rg-btn rg-btn-secondary rg-nav-explore" href="/user.html" style={{ textDecoration: "none" }}>Explore homes</a>
           <a className="rg-btn rg-btn-primary" href="/login.html?role=user" style={{ textDecoration: "none" }}>Login / Sign up</a>
         </div>
       </nav>
@@ -260,7 +261,7 @@ export default function Home() {
           className="rg-hero-sticky"
           style={{ position: "sticky", top: 0, height: "100vh", display: "flex", alignItems: "center", padding: "76px clamp(20px,5vw,72px) 88px", boxSizing: "border-box" }}
         >
-          <div style={{ maxWidth: 1240, margin: "0 auto", width: "100%", display: "grid", gridTemplateColumns: "minmax(0,7fr) minmax(0,4fr)", gap: 48, alignItems: "end" }}>
+          <div className="rg-hero-grid" style={{ maxWidth: 1240, margin: "0 auto", width: "100%", display: "grid", gridTemplateColumns: "minmax(0,7fr) minmax(0,4fr)", gap: 48, alignItems: "end" }}>
             <div ref={heroContentRef} style={{ willChange: "transform,opacity" }}>
               <span style={{ display: "block", fontSize: 13, letterSpacing: ".1em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-accent-300)", marginBottom: 12 }}>
                 Malaysia&#8217;s smarter property search
@@ -311,7 +312,7 @@ export default function Home() {
 
       <main style={{ position: "relative", zIndex: 1 }}>
         <section style={{ background: "var(--color-accent-900)", borderTop: "1px solid var(--color-divider)", borderBottom: "1px solid var(--color-divider)", color: "#f2f2f3", padding: "64px clamp(20px,5vw,72px)" }}>
-          <div style={{ maxWidth: 1240, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4, auto)", justifyContent: "space-between", gap: 36 }}>
+          <div className="rg-stats-grid" style={{ maxWidth: 1240, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4, auto)", justifyContent: "space-between", gap: 36 }}>
             {STATS.map((s, index) => (
               <div key={s.label} data-reveal={index}>
                 <p data-count={s.num} style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(38px,3.8vw,58px)", lineHeight: 1.05, margin: "0 0 0 -0.03em", fontFeatureSettings: "'tnum' 1" }}>{s.num}</p>
@@ -411,7 +412,7 @@ export default function Home() {
               ))}
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "minmax(0,6fr) minmax(0,5fr)", gap: "clamp(32px,5vw,88px)", alignItems: "center", marginTop: 110 }}>
+            <div className="rg-offer-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0,6fr) minmax(0,5fr)", gap: "clamp(32px,5vw,88px)", alignItems: "center", marginTop: 110 }}>
               <div data-reveal={0}>
                 <span style={{ display: "block", fontSize: 13, letterSpacing: ".1em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-accent-300)", marginBottom: 12 }}>Buyer launch offer</span>
                 <hr style={{ height: 1, border: 0, margin: "0 0 24px", background: "var(--color-divider)" }} />
