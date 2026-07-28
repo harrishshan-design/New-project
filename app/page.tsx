@@ -1,501 +1,524 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
-import DeferredHeroSkyline from "./DeferredHeroSkyline";
-import DeferredStreetRide from "./DeferredStreetRide";
-import {
-  ArrowRight,
-  BadgeCheck,
-  Bell,
-  Calculator,
-  CalendarCheck,
-  ChevronDown,
-  Gavel,
-  Heart,
-  House,
-  Layers3,
-  MapPin,
-  MousePointer2,
-  Search,
-  ShieldCheck,
-  Sparkles,
-  Users,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import Script from "next/script";
+import { useEffect, useRef } from "react";
+import "./landing.css";
 
-const navItems = [
-  { label: "Explore", href: "/user.html" },
-  { label: "Buyer benefits", href: "#buyer-benefits" },
-  { label: "How it works", href: "#about" },
-  { label: "Auction", href: "/user.html#auction-night" },
-  { label: "For agents", href: "/agents.html" }
+const AREAS = ["KLCC", "Mont Kiara", "Shah Alam", "Petaling Jaya", "Penang", "Johor Bahru"];
+
+const STATS = [
+  { num: "360°", label: "Immersive tours on ready listings" },
+  { num: "60s", label: "Agent listing upload, start to live" },
+  { num: "94%", label: "AI match scoring on every fit" },
+  { num: "0", label: "Unreviewed listings shown" }
 ];
 
-const popularAreas = ["KLCC", "Mont Kiara", "Shah Alam", "Petaling Jaya", "Penang", "Johor Bahru"];
-
-const problems = [
-  {
-    title: "Verified homes, not endless noise",
-    body: "Browse cleaner property information and see the listing, price, location and agent in one confident flow."
-  },
-  {
-    title: "AI that understands what matters",
-    body: "Tell RealityGenius your budget, preferred area and lifestyle. It helps surface better-fit homes instead of making you start from zero."
-  },
-  {
-    title: "A shorter path to a real viewing",
-    body: "Save favourites, estimate affordability and contact the listing agent directly when a property is worth seeing."
-  }
+const BENEFITS = [
+  { no: "01", title: "Verified homes, not noise", body: "Cleaner property information: the listing, price, location and agent in one confident flow — every listing through admin review first." },
+  { no: "02", title: "AI that understands fit", body: "Tell it your budget, preferred area and lifestyle. It surfaces better-fit homes instead of making you start from zero." },
+  { no: "03", title: "A shorter path to a viewing", body: "Save favourites, estimate affordability and contact the listing agent directly the moment a home is worth seeing." }
 ];
 
-type IconCard = {
-  title: string;
-  body: string;
-  icon: LucideIcon;
-};
-
-const products: IconCard[] = [
-  { title: "AI Property Search", body: "Describe the home you need in natural language and discover more relevant Malaysian listings.", icon: Sparkles },
-  { title: "Smart Shortlist", body: "Save favourites, return later and keep the homes you are seriously considering in one place.", icon: Heart },
-  { title: "Affordability Tools", body: "Estimate mortgage affordability and compare the practical fit before arranging a viewing.", icon: Calculator },
-  { title: "Friday Auction Night", body: "Selected homes become weekly live offer events with safer non-binding highest-offer wording.", icon: Gavel },
-  { title: "Verified Listing Flow", body: "Admin review and visible agent details help buyers understand who and what they are dealing with.", icon: ShieldCheck },
-  { title: "Agent Workspace", body: "Agents get listing, AI content, Telegram import and buyer-lead tools in a separate focused workspace.", icon: Users }
+const HOMES = [
+  { src: "https://www.pexels.com/download/video/34593442/", title: "Skyline Residence", area: "Mont Kiara, KL", spec: "3 bed · 2,150 sq ft", match: "94%", price: "RM 2.4M" },
+  { src: "https://www.pexels.com/download/video/18293320/", title: "Twin Towers View Suites", area: "KLCC, KL", spec: "2 bed · 1,180 sq ft", match: "91%", price: "RM 1.68M" },
+  { src: "https://www.pexels.com/download/video/7578546/", title: "Garden Family Home", area: "Petaling Jaya", spec: "4 bed · 2,800 sq ft", match: "89%", price: "RM 1.35M" },
+  { src: "https://www.pexels.com/download/video/31617692/", title: "Modern Straits Suites", area: "George Town, Penang", spec: "3 bed · 1,540 sq ft", match: "87%", price: "RM 980K" }
 ];
 
-const workflow: IconCard[] = [
-  { title: "Tell us what you need", body: "Enter your budget, location, property type and must-haves in plain language.", icon: Search },
-  { title: "Compare better-fit homes", body: "Review verified details, AI match signals and affordability in a cleaner shortlist.", icon: BadgeCheck },
-  { title: "Save or book a viewing", body: "Create a free account to save favourites, receive alerts and contact the agent directly.", icon: CalendarCheck }
+const TOOLS = [
+  { no: "T‐01", title: "AI property search", body: "Describe the home you need in plain language — “3-bedroom under RM700k near KL” — and get relevant Malaysian listings back." },
+  { no: "T‐02", title: "Smart shortlist", body: "Save favourites and keep the homes you are seriously considering in one place, ready when you return." },
+  { no: "T‐03", title: "Affordability tools", body: "Estimate mortgage affordability and compare the practical fit before arranging a viewing." },
+  { no: "T‐04", title: "Friday auction night", body: "Selected homes become weekly live offer events — with safer, non-binding highest-offer wording." },
+  { no: "T‐05", title: "Verified listing flow", body: "Admin review and visible agent details, so you always know who and what you are dealing with." },
+  { no: "T‐06", title: "Agent workspace", body: "Agents get listing, AI content, Telegram import and buyer-lead tools in a separate, focused workspace." }
 ];
 
-const faqs = [
-  ["Can I explore without creating an account?", "Yes. Browse available homes first. Create a free buyer account when you want to save favourites, receive alerts or continue a viewing request."],
-  ["What does the AI match do?", "It uses your budget, preferred area, property type and lifestyle needs to help prioritise more relevant homes."],
-  ["Are auction bids automatic purchases?", "No. A winning bid means the buyer submitted the highest offer. Final purchase is still subject to owner approval, booking fee, loan eligibility, agreement terms, and legal documentation."],
-  ["Does RealityGenius support agents too?", "Yes. Agents have a separate workspace for listings, AI content, Telegram import, leads and admin verification."]
+const PERKS = [
+  { title: "Free AI match", body: "Search around your budget and lifestyle." },
+  { title: "Saved shortlist", body: "Keep serious options together." },
+  { title: "Property alerts", body: "Return when a relevant home appears." },
+  { title: "Affordability", body: "Estimate before you arrange a viewing." }
 ];
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 28 },
-  show: { opacity: 1, y: 0 }
-};
+const STEPS = [
+  { no: "01", title: "Tell us what you need", body: "Budget, location, property type and must-haves — in plain language." },
+  { no: "02", title: "Compare better-fit homes", body: "Verified details, AI match signals and affordability in one cleaner shortlist." },
+  { no: "03", title: "Save or book a viewing", body: "Create a free account to save favourites, get alerts and contact the agent directly." }
+];
 
-type PublicProperty = {
-  id: number | string;
-  title: string;
-  area?: string;
-  location?: string;
-  price?: number;
-  image?: string;
-  bedrooms?: number;
-  bathrooms?: number;
-  panoramas?: unknown[];
-};
-
-function formatPrice(value?: number) {
-  const amount = Number(value || 0);
-  return amount ? `RM ${Math.round(amount).toLocaleString("en-MY")}` : "Price on request";
-}
-
-function BuyerLaunchOffer() {
-  return (
-    <section id="buyer-benefits" className="deferred-section px-4 py-16">
-      <div className="mx-auto max-w-6xl rounded-[2.4rem] border border-emerald-200 bg-emerald-50 p-8 shadow-xl shadow-emerald-950/[0.04] md:p-12">
-        <div className="grid gap-8 md:grid-cols-[1.1fr_.9fr] md:items-center">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-emerald-700">Buyer launch offer</p>
-            <h2 className="mt-3 text-3xl font-black tracking-[-0.03em] text-slate-900 md:text-4xl">
-              Explore freely. Keep the good ones.
-            </h2>
-            <p className="mt-4 leading-7 text-slate-600">
-              Your RealityGenius buyer account is free. Use it to save favourites, receive new-property alerts, keep your search preferences and request viewings directly.
-            </p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <a href="/login.html?role=user&mode=signup" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-emerald-700 px-6 text-sm font-black text-white shadow-lg shadow-emerald-950/20 transition hover:bg-emerald-800">
-                Create free account <ArrowRight className="h-4 w-4" />
-              </a>
-              <a href="/user.html" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-emerald-300 bg-white px-6 text-sm font-black text-emerald-900">
-                Explore homes
-              </a>
-            </div>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {[
-              [Sparkles, "Free AI match", "Search around your budget and lifestyle."],
-              [Heart, "Saved shortlist", "Keep serious options together."],
-              [Bell, "Property alerts", "Return when a relevant home appears."],
-              [Calculator, "Affordability", "Estimate before you arrange a viewing."]
-            ].map(([Icon, title, body]) => {
-              const BenefitIcon = Icon as LucideIcon;
-              return (
-                <article key={String(title)} className="rounded-[1.4rem] border border-emerald-200 bg-white p-5">
-                  <BenefitIcon className="h-6 w-6 text-emerald-700" />
-                  <strong className="mt-4 block text-base font-black text-slate-900">{String(title)}</strong>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">{String(body)}</p>
-                </article>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function FeaturedListings() {
-  const [listings, setListings] = useState<PublicProperty[]>([]);
-
-  useEffect(() => {
-    const base =
-      (typeof window !== "undefined" && (window as { REALTYGENIUS_CONFIG?: { API_BASE?: string } }).REALTYGENIUS_CONFIG?.API_BASE) ||
-      "https://hh-empire.onrender.com/api";
-    fetch(`${base}/properties`, { headers: { Accept: "application/json" } })
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
-      .then((payload) => {
-        const items: PublicProperty[] = Array.isArray(payload) ? payload : payload.items || [];
-        setListings(items.filter((item) => item?.title && Number(item.price || 0) > 0).slice(0, 6));
-      })
-      .catch(() => setListings([]));
-  }, []);
-
-  if (!listings.length) return null;
-
-  return (
-    <section className="deferred-section px-4 pb-6 pt-2">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-emerald-700">Live on RealityGenius</p>
-            <h2 className="mt-3 text-3xl font-black tracking-[-0.04em] text-slate-950 md:text-5xl">Fresh homes across Malaysia</h2>
-          </div>
-          <a href="/user.html" className="inline-flex min-h-12 items-center gap-2 rounded-full bg-slate-950 px-6 text-sm font-black text-white shadow-xl shadow-slate-950/15">
-            Browse all listings
-            <ArrowRight className="h-4 w-4" />
-          </a>
-        </div>
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {listings.map((listing, index) => (
-            <motion.a
-              key={listing.id}
-              href={`/property/${listing.id}`}
-              variants={fadeUp}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.06 }}
-              className="group overflow-hidden rounded-[1.8rem] border border-slate-200 bg-white shadow-xl shadow-slate-950/[0.05] transition hover:-translate-y-1 hover:shadow-2xl"
-            >
-              <div className="relative h-52 overflow-hidden bg-slate-100">
-                {listing.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={listing.image} alt={listing.title} loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
-                ) : null}
-                <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1.5 text-xs font-black text-emerald-900 backdrop-blur">
-                  {listing.area || "Malaysia"}
-                </span>
-                {(listing.panoramas || []).length ? (
-                  <span className="absolute bottom-4 left-4 rounded-full bg-emerald-700/90 px-3 py-1.5 text-xs font-black text-emerald-50 backdrop-blur">360&deg; Tour</span>
-                ) : null}
-              </div>
-              <div className="p-5">
-                <strong className="text-xl font-black tracking-[-0.03em] text-emerald-800">{formatPrice(listing.price)}</strong>
-                <h3 className="mt-2 line-clamp-1 text-lg font-black text-slate-900">{listing.title}</h3>
-                <p className="mt-1 flex items-center gap-2 text-sm font-bold text-slate-500">
-                  <MapPin className="h-4 w-4 text-emerald-600" />
-                  <span className="line-clamp-1">{listing.location || listing.area || "Malaysia"}</span>
-                </p>
-                <p className="mt-3 text-sm font-bold text-slate-600">
-                  {Number(listing.bedrooms || 0)} bed · {Number(listing.bathrooms || 0)} bath
-                </p>
-              </div>
-            </motion.a>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function SectionIntro({
-  eyebrow,
-  title,
-  body,
-  light = false
-}: {
-  eyebrow: string;
-  title: string;
-  body: string;
-  light?: boolean;
-}) {
-  return (
-    <motion.div
-      variants={fadeUp}
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.6 }}
-      className="mx-auto mb-12 max-w-3xl text-center"
-    >
-      <p className={`text-xs font-black uppercase tracking-[0.28em] ${light ? "text-cyan-200" : "text-emerald-700"}`}>{eyebrow}</p>
-      <h2 className={`mt-4 text-4xl font-black tracking-[-0.04em] md:text-6xl ${light ? "text-white" : "text-slate-950"}`}>{title}</h2>
-      <p className={`mt-5 text-base leading-8 md:text-lg ${light ? "text-slate-300" : "text-slate-600"}`}>{body}</p>
-    </motion.div>
-  );
-}
+const FAQS = [
+  { q: "Can I explore without an account?", a: "Yes. Browse available homes freely. Create a free buyer account when you want to save favourites, receive alerts or continue a viewing request." },
+  { q: "What does the AI match do?", a: "It uses your budget, preferred area, property type and lifestyle needs to prioritise more relevant homes — so you compare fits, not just filters." },
+  { q: "Are auction bids automatic purchases?", a: "No. A winning bid means you submitted the highest offer. Final purchase is still subject to owner approval, booking fee, loan eligibility, agreement terms and legal documentation." },
+  { q: "Does RealityGenius support agents too?", a: "Yes. Agents have a separate workspace for listings, AI content, Telegram import, leads and admin verification." }
+];
 
 export default function Home() {
+  const navRef = useRef<HTMLElement>(null);
+  const heroContentRef = useRef<HTMLDivElement>(null);
+  const heroCardRef = useRef<HTMLDivElement>(null);
+  const cueRef = useRef<HTMLDivElement>(null);
+  const stripWrapRef = useRef<HTMLDivElement>(null);
+  const stripTrackRef = useRef<HTMLDivElement>(null);
+  const stripBarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const motion: string = "subtle";
+    let raf = 0;
+    let io: IntersectionObserver | undefined;
+    let io2: IntersectionObserver | undefined;
+    let ioVid: IntersectionObserver | undefined;
+    let stripScrub = true;
+
+    if (!reduced && motion !== "off") {
+      const els = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
+      const toObserve: HTMLElement[] = [];
+      els.forEach((el) => {
+        if (el.getBoundingClientRect().top > innerHeight * 0.92) {
+          const i = parseInt(el.getAttribute("data-reveal") || "0", 10) || 0;
+          el.classList.add("rg-reveal");
+          el.style.transitionDelay = (i % 6) * 70 + "ms";
+          toObserve.push(el);
+        }
+      });
+      io = new IntersectionObserver(
+        (ents) => {
+          ents.forEach((e) => {
+            if (e.isIntersecting) {
+              e.target.classList.add("is-visible");
+              io?.unobserve(e.target);
+            }
+          });
+        },
+        { threshold: 0.12 }
+      );
+      toObserve.forEach((el) => io?.observe(el));
+    }
+
+    if (!reduced && motion !== "off") {
+      const lines = Array.from(document.querySelectorAll<HTMLElement>("[data-line]"));
+      lines.forEach((el) => el.classList.add("rg-line"));
+      const counts = Array.from(document.querySelectorAll<HTMLElement>("[data-count]"));
+      io2 = new IntersectionObserver(
+        (ents) => {
+          ents.forEach((e) => {
+            if (!e.isIntersecting) return;
+            io2?.unobserve(e.target);
+            const el = e.target as HTMLElement;
+            if (el.hasAttribute("data-line")) {
+              el.classList.add("is-visible");
+              return;
+            }
+            const raw = el.getAttribute("data-count") || "";
+            const m = raw.match(/^(\d+)(.*)$/);
+            if (!m) return;
+            const target = parseInt(m[1], 10);
+            const suffix = m[2];
+            const t0 = performance.now();
+            const step = (now: number) => {
+              const t = Math.min((now - t0) / 1400, 1);
+              const v = Math.round(target * (1 - Math.pow(1 - t, 3)));
+              el.textContent = v + suffix;
+              if (t < 1) requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+          });
+        },
+        { threshold: 0.4 }
+      );
+      lines.forEach((el) => io2?.observe(el));
+      counts.forEach((el) => io2?.observe(el));
+    }
+
+    const vids = Array.from(document.querySelectorAll<HTMLVideoElement>(".rg-vid-el"));
+    vids.forEach((v) => {
+      v.muted = true;
+      v.setAttribute("muted", "");
+    });
+    ioVid = new IntersectionObserver(
+      (ents) => {
+        ents.forEach((e) => {
+          const v = e.target as HTMLVideoElement;
+          if (e.isIntersecting) {
+            v.muted = true;
+            v.play().catch(() => {});
+          } else v.pause();
+        });
+      },
+      { threshold: 0.05 }
+    );
+    vids.forEach((v) => ioVid?.observe(v));
+
+    const plx = Array.from(document.querySelectorAll<HTMLElement>("[data-plx]"));
+
+    if ((reduced || motion === "off") && stripWrapRef.current && stripTrackRef.current) {
+      stripWrapRef.current.style.height = "auto";
+      const inner = stripTrackRef.current.parentElement;
+      if (inner) {
+        inner.style.position = "static";
+        inner.style.height = "auto";
+        inner.style.padding = "80px 0";
+      }
+      stripTrackRef.current.style.overflowX = "auto";
+      stripTrackRef.current.style.width = "auto";
+      stripScrub = false;
+    }
+
+    const mult = motion === "cinematic" ? 1 : motion === "subtle" ? 0.45 : 0;
+    const tick = () => {
+      raf = requestAnimationFrame(tick);
+      const y = (document.scrollingElement || document.documentElement).scrollTop;
+      if (navRef.current) {
+        const on = y > 40;
+        navRef.current.style.background = on ? "color-mix(in srgb, var(--color-bg) 84%, transparent)" : "transparent";
+        navRef.current.style.backdropFilter = on ? "blur(10px)" : "none";
+        navRef.current.style.borderBottomColor = on ? "var(--color-divider)" : "transparent";
+      }
+      if (reduced || !mult) return;
+      const vh = innerHeight;
+      const t = Math.min(Math.max(y / (vh * 0.85), 0), 1);
+      if (heroContentRef.current) {
+        heroContentRef.current.style.opacity = String(Math.max(1 - t * 1.15, 0));
+        heroContentRef.current.style.transform = "translateY(" + (y * 0.22 * mult).toFixed(1) + "px)";
+      }
+      if (heroCardRef.current) {
+        heroCardRef.current.style.opacity = String(Math.max(1 - t * 1.05, 0));
+        heroCardRef.current.style.transform = "translateY(" + (y * 0.1 * mult).toFixed(1) + "px)";
+      }
+      if (cueRef.current) cueRef.current.style.opacity = String(Math.max(1 - y / 180, 0));
+      if (stripScrub && stripWrapRef.current && stripTrackRef.current) {
+        const r = stripWrapRef.current.getBoundingClientRect();
+        const total = r.height - vh;
+        if (total > 0) {
+          const pr = Math.min(Math.max(-r.top / total, 0), 1);
+          const shift = Math.max(stripTrackRef.current.scrollWidth - innerWidth, 0);
+          stripTrackRef.current.style.transform = "translate3d(" + (-pr * shift).toFixed(1) + "px,0,0)";
+          if (stripBarRef.current) stripBarRef.current.style.transform = "scaleX(" + pr.toFixed(3) + ")";
+        }
+      }
+      for (const el of plx) {
+        const r = el.getBoundingClientRect();
+        if (r.bottom < -100 || r.top > vh + 100) continue;
+        const sp = parseFloat(el.getAttribute("data-plx") || "0.12");
+        el.style.transform = "translateY(" + ((r.top + r.height / 2 - vh / 2) * sp).toFixed(1) + "px)";
+      }
+    };
+    tick();
+
+    return () => {
+      cancelAnimationFrame(raf);
+      io?.disconnect();
+      io2?.disconnect();
+      ioVid?.disconnect();
+    };
+  }, []);
+
   return (
-    <main className="min-h-screen bg-[#f6f8fb] text-slate-950">
-      <nav className="sticky top-0 z-50 border-b border-white/60 bg-white/82 px-4 py-3 backdrop-blur-2xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-          <a href="/" className="flex items-center gap-3" aria-label="RealityGenius home">
-            <span className="grid h-11 w-11 place-items-center overflow-hidden rounded-2xl bg-slate-950 p-1.5 shadow-xl shadow-slate-950/10">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/favicon-48x48.png" alt="" className="h-full w-full object-contain" />
-            </span>
-            <span className="text-lg font-black tracking-[-0.03em]">RealityGenius</span>
-          </a>
-          <div className="hidden items-center gap-8 text-sm font-bold text-slate-600 lg:flex">
-            {navItems.map((item) => (
-              <a key={item.label} href={item.href} className="transition hover:text-slate-950">
-                {item.label}
-              </a>
-            ))}
-          </div>
-          <div className="flex items-center gap-2">
-            <a href="/user.html" className="hidden items-center rounded-full px-3 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-100 sm:inline-flex sm:px-4">
-              Explore
-            </a>
-            <a href="/login.html?role=user" className="inline-flex min-h-11 items-center rounded-full bg-slate-950 px-5 text-sm font-black text-white shadow-xl shadow-slate-950/15">
-              Login / Sign up
-            </a>
-          </div>
+    <div className="rg-landing" style={{ position: "relative", minHeight: "100vh" }}>
+      <Script src="/js/rg-skyline.js" strategy="afterInteractive" />
+
+      {/* @ts-expect-error -- rg-skyline is a vanilla custom element, not a typed React component */}
+      <rg-skyline density="1" motion="subtle" style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }} />
+
+      <nav
+        ref={navRef}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 20,
+          display: "flex",
+          alignItems: "center",
+          gap: 28,
+          padding: "14px clamp(20px,5vw,72px)",
+          background: "transparent",
+          borderBottom: "1px solid transparent",
+          transition: "background .4s ease, border-color .4s ease, backdrop-filter .4s ease"
+        }}
+      >
+        <span style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 19, letterSpacing: ".04em", textTransform: "uppercase", marginRight: "auto" }}>
+          Reality<span style={{ color: "var(--color-accent-300)" }}>Genius</span>
+        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
+          <a href="#benefits" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>Benefits</a>
+          <a href="#toolkit" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>Toolkit</a>
+          <a href="#how" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>How it works</a>
+          <a href="/agents.html" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>For agents</a>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <a className="rg-btn rg-btn-secondary" href="/user.html" style={{ textDecoration: "none" }}>Explore homes</a>
+          <a className="rg-btn rg-btn-primary" href="/login.html?role=user" style={{ textDecoration: "none" }}>Login / Sign up</a>
         </div>
       </nav>
 
-      <section id="platform" className="relative overflow-hidden bg-slate-950 px-4 py-14 text-white sm:py-20 md:py-28">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(16,185,129,.22),transparent_30%),radial-gradient(circle_at_84%_14%,rgba(59,130,246,.2),transparent_30%),linear-gradient(135deg,#020617,#0f172a_52%,#052e2b)]" />
-        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#f6f8fb] to-transparent" />
-        <div className="hero-grid absolute inset-0 opacity-35" />
-        <div className="relative mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1fr_.82fr]">
-          <motion.div initial={{ opacity: 0, y: 34 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-emerald-100 shadow-sm backdrop-blur-xl">
-              <Sparkles className="h-4 w-4" />
-              Malaysia&apos;s smarter property search
-            </div>
-            <h1 className="mt-6 max-w-5xl text-[2.68rem] font-black leading-[1.02] tracking-[-0.035em] text-white sm:text-6xl md:mt-7 md:text-7xl md:leading-[0.95] md:tracking-[-0.065em] lg:text-8xl">
-              Find the right Malaysian home faster
-            </h1>
-            <p className="hidden">
-              Verified sale, rent, new project, and auction listings with AI match scoring, 360&deg; immersive tours, and direct agent contact — Malaysia&apos;s AI property portal.
-            </p>
-            <p className="mt-7 max-w-3xl text-lg leading-9 text-slate-300 md:text-xl">
-              Explore verified listings, get AI-powered matches, check affordability and contact the agent directly. Browse first, then create a free account when you want to save a home.
-            </p>
-            <div className="mt-7 max-w-2xl rounded-[1.5rem] border border-white/12 bg-white/10 p-3 shadow-2xl shadow-emerald-950/25 backdrop-blur-xl">
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <label className="flex min-h-14 flex-1 items-center gap-3 rounded-2xl bg-white px-4 text-slate-950">
-                  <Search className="h-5 w-5 text-emerald-600" />
-                  <span className="text-sm font-black">Try: 3-bedroom home under RM700k near KL</span>
-                </label>
-                <a href="/user.html" className="inline-flex min-h-14 items-center justify-center rounded-2xl bg-emerald-400 px-5 text-sm font-black text-emerald-950">
-                  Get AI Match
-                </a>
+      <div style={{ position: "relative", zIndex: 1, height: "190vh" }}>
+        <div
+          className="rg-hero-sticky"
+          style={{ position: "sticky", top: 0, height: "100vh", display: "flex", alignItems: "center", padding: "76px clamp(20px,5vw,72px) 88px", boxSizing: "border-box" }}
+        >
+          <div style={{ maxWidth: 1240, margin: "0 auto", width: "100%", display: "grid", gridTemplateColumns: "minmax(0,7fr) minmax(0,4fr)", gap: 48, alignItems: "end" }}>
+            <div ref={heroContentRef} style={{ willChange: "transform,opacity" }}>
+              <span style={{ display: "block", fontSize: 13, letterSpacing: ".1em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-accent-300)", marginBottom: 12 }}>
+                Malaysia&#8217;s smarter property search
+              </span>
+              <hr style={{ height: 1, border: 0, margin: "0 0 24px", background: "var(--color-divider)", maxWidth: 420 }} />
+              <h1 className="rg-hero-h1" style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(52px,7.6vw,108px)", lineHeight: 1.02, letterSpacing: ".01em", textTransform: "uppercase", margin: "0 0 0 -0.05em" }}>
+                <span style={{ display: "block", overflow: "hidden" }}>
+                  <span className="rg-rise-a" style={{ display: "block", animation: "rg-rise .9s cubic-bezier(.22,1,.36,1) both .15s" }}>The right home,</span>
+                </span>
+                <span style={{ display: "block", overflow: "hidden" }}>
+                  <span className="rg-rise-a" style={{ display: "block", color: "var(--color-accent-300)", animation: "rg-rise .9s cubic-bezier(.22,1,.36,1) both .32s" }}>found faster.</span>
+                </span>
+              </h1>
+              <p style={{ fontSize: 17, lineHeight: 1.55, maxWidth: "56ch", margin: "26px 0 0", color: "color-mix(in srgb, var(--color-text) 82%, transparent)" }}>
+                Verified sale, rent, new-project and auction listings across Malaysia &mdash; scored by AI against your budget and lifestyle, toured in 360&deg;, and one message away from the listing agent.
+              </p>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 30 }}>
+                <a className="rg-btn rg-btn-primary" href="/user.html" style={{ textDecoration: "none", fontSize: 15 }}>Get AI match</a>
+                <a className="rg-btn rg-btn-secondary" href="/login.html?role=user" style={{ textDecoration: "none", fontSize: 15 }}>Login / Sign up</a>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 28 }}>
+                <span style={{ fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: "color-mix(in srgb, var(--color-text) 55%, transparent)" }}>Popular</span>
+                {AREAS.map((area) => (
+                  <a key={area} className="rg-tag rg-tag-outline" href="/user.html#explore" style={{ textDecoration: "none" }}>{area}</a>
+                ))}
               </div>
             </div>
-            <div className="mt-6 flex flex-wrap items-center gap-2" aria-label="Popular areas">
-              <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Popular:</span>
-              {popularAreas.map((areaName) => (
-                <a
-                  key={areaName}
-                  href={`/user.html#explore`}
-                  className="rounded-full border border-white/15 bg-white/[0.07] px-4 py-2 text-sm font-bold text-slate-200 backdrop-blur-xl transition hover:border-emerald-300/50 hover:text-white"
-                >
-                  {areaName}
-                </a>
-              ))}
-            </div>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a href="/user.html" className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-emerald-400 px-7 font-black text-emerald-950 shadow-2xl shadow-emerald-700/20">
-                Explore homes
-                <ArrowRight className="h-5 w-5" />
-              </a>
-              <a href="/login.html?role=user" className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full border border-white/15 bg-white/10 px-7 font-black text-white shadow-xl shadow-slate-950/5 backdrop-blur-xl">
-                Login / Sign up
-              </a>
-            </div>
-            <div className="mt-5 flex flex-wrap gap-2 text-xs font-black text-emerald-50/80">
-              <span className="rounded-full border border-white/12 bg-white/[0.06] px-3 py-2">Free buyer account</span>
-              <span className="rounded-full border border-white/12 bg-white/[0.06] px-3 py-2">Save favourites</span>
-              <span className="rounded-full border border-white/12 bg-white/[0.06] px-3 py-2">Book viewings</span>
-              <a href="/agents.html" className="rounded-full px-3 py-2 text-slate-300 underline decoration-white/25 underline-offset-4">Agent platform</a>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 28 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.12 }}
-            className="hero-visual relative min-h-[420px] overflow-hidden rounded-[2.2rem] border border-white/15 bg-white/[0.04] text-white shadow-2xl shadow-slate-950/40 sm:min-h-[560px]"
-          >
-            <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-cyan-400/25 blur-3xl" />
-            <div className="absolute -bottom-10 left-8 h-32 w-64 rounded-full bg-emerald-400/15 blur-3xl" />
-
-            <div className="absolute inset-0">
-              <DeferredHeroSkyline />
-            </div>
-
-            <div className="pointer-events-none absolute left-5 top-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-slate-950/60 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-amber-100 backdrop-blur-xl">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
-              Live property skyline
-            </div>
-
-            <motion.div
-              animate={{ y: [0, -8, 0] }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              className="pointer-events-none absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4 rounded-[1.6rem] border border-white/12 bg-slate-950/64 p-5 backdrop-blur-2xl sm:left-6 sm:right-auto sm:w-[380px]"
-            >
-              <div>
-                <p className="flex items-center gap-2 text-sm font-bold text-slate-300">
-                  <MapPin className="h-4 w-4 text-emerald-300" /> Mont Kiara, Kuala Lumpur
-                </p>
-                <h3 className="mt-2 text-xl font-black sm:text-2xl">AI-matched luxury residence</h3>
-                <p className="mt-2 flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-amber-200">
-                  <Layers3 className="h-4 w-4" /> 360&deg; Immersive View ready
-                </p>
-              </div>
-              <span className="rounded-full bg-emerald-400 px-3 py-2 text-xs font-black text-emerald-950">94% Match</span>
-            </motion.div>
-
-            <motion.div
-              animate={{ y: [0, 10, 0] }}
-              transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-              className="pointer-events-none absolute right-5 top-16 hidden w-52 rounded-[1.4rem] border border-white/14 bg-slate-950/70 p-4 backdrop-blur-2xl md:block"
-            >
-              <div className="flex items-center gap-3">
-                <span className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-400 text-emerald-950"><MousePointer2 className="h-5 w-5" /></span>
-                <div>
-                  <p className="text-[10px] font-black uppercase text-slate-400">Buyer match ready</p>
-                  <p className="mt-0.5 text-sm font-black">Shortlist updated</p>
+            <div ref={heroCardRef} className="rg-hero-card" style={{ alignSelf: "center", marginBottom: "8vh", willChange: "transform,opacity" }}>
+              <div className="rg-blueprint rg-float-a" style={{ background: "color-mix(in srgb, var(--color-bg) 78%, transparent)", backdropFilter: "blur(8px)", padding: 20, animation: "rg-float 7s ease-in-out infinite" }}>
+                <i className="corner tl" /><i className="corner tr" /><i className="corner bl" /><i className="corner br" />
+                <span style={{ display: "block", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--color-accent-300)", fontWeight: 600 }}>Live property skyline</span>
+                <hr style={{ height: 1, border: 0, margin: "10px 0 14px", background: "var(--color-divider)" }} />
+                <p style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 22, textTransform: "uppercase", letterSpacing: ".02em", margin: 0 }}>Mont Kiara, Kuala Lumpur</p>
+                <p style={{ fontSize: 13, margin: "6px 0 14px", color: "color-mix(in srgb, var(--color-text) 70%, transparent)" }}>AI-matched luxury residence &middot; 360&deg; immersive view ready</p>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                  <span className="rg-tag rg-tag-accent">94% match</span>
+                  <a href="/user.html" style={{ fontSize: 12, letterSpacing: ".06em", textTransform: "uppercase", fontWeight: 600, textDecoration: "none" }}>View listing &rarr;</a>
                 </div>
               </div>
-              <div className="mt-3 h-1.5 rounded-full bg-white/10"><div className="h-1.5 w-[78%] rounded-full bg-emerald-400" /></div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
+          <div ref={cueRef} className="rg-cue-wrap" style={{ position: "absolute", left: "50%", bottom: 26, transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "color-mix(in srgb, var(--color-text) 55%, transparent)" }}>Scroll &mdash; fly through the skyline</span>
+            <span style={{ display: "block", width: 1, height: 34, background: "var(--color-accent-300)", animation: "rg-cue 2.2s ease-in-out infinite" }} />
+          </div>
         </div>
-      </section>
+      </div>
 
-      <FeaturedListings />
-
-      <section id="products" className="deferred-section bg-white px-4 py-20">
-        <SectionIntro eyebrow="Why buyers use RealityGenius" title="Less searching. More confidence." body="RealityGenius helps you understand the property, the fit and the next step without turning the experience into another endless directory." />
-        <div className="mx-auto grid max-w-7xl gap-5 md:grid-cols-3">
-          {problems.map((problem, index) => (
-            <motion.article key={problem.title} variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} transition={{ delay: index * 0.08 }} className="rounded-[2rem] border border-slate-200 bg-slate-50 p-7">
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-red-50 text-lg font-black text-red-600">0{index + 1}</span>
-              <h3 className="mt-6 text-2xl font-black tracking-[-0.03em]">{problem.title}</h3>
-              <p className="mt-4 leading-7 text-slate-600">{problem.body}</p>
-            </motion.article>
-          ))}
-        </div>
-      </section>
-
-      <section className="deferred-section px-4 py-20">
-        <SectionIntro eyebrow="Buyer toolkit" title="Useful AI at the moments that matter." body="Search, shortlist, compare and act with practical tools around verified Malaysian property. Agent tools remain available in their own workspace." />
-        <div className="mx-auto grid max-w-7xl gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {products.map(({ title, body, icon: Icon }, index) => (
-            <motion.article key={title} variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} transition={{ delay: index * 0.04 }} className="group rounded-[2rem] border border-slate-200 bg-white p-7 shadow-xl shadow-slate-950/[0.035] transition hover:-translate-y-1 hover:shadow-2xl">
-              <div className="grid h-13 w-13 place-items-center rounded-2xl bg-emerald-50 text-emerald-700">
-                <Icon className="h-6 w-6" />
+      <main style={{ position: "relative", zIndex: 1 }}>
+        <section style={{ background: "var(--color-accent-900)", borderTop: "1px solid var(--color-divider)", borderBottom: "1px solid var(--color-divider)", color: "#f2f2f3", padding: "64px clamp(20px,5vw,72px)" }}>
+          <div style={{ maxWidth: 1240, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4, auto)", justifyContent: "space-between", gap: 36 }}>
+            {STATS.map((s, index) => (
+              <div key={s.label} data-reveal={index}>
+                <p data-count={s.num} style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(38px,3.8vw,58px)", lineHeight: 1.05, margin: "0 0 0 -0.03em", fontFeatureSettings: "'tnum' 1" }}>{s.num}</p>
+                <p style={{ fontSize: 13, letterSpacing: ".08em", textTransform: "uppercase", fontWeight: 600, color: "color-mix(in srgb, #f2f2f3 58%, transparent)", margin: "10px 0 0" }}>{s.label}</p>
               </div>
-              <h3 className="mt-7 text-2xl font-black tracking-[-0.035em]">{title}</h3>
-              <p className="mt-4 leading-7 text-slate-600">{body}</p>
-            </motion.article>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
 
-      <BuyerLaunchOffer />
-
-      <section id="about" className="deferred-section bg-slate-950 px-4 py-24 text-white">
-        <SectionIntro light eyebrow="How it works" title="From a simple request to a real viewing." body="Start with what you need, compare better-fit homes and create a free account only when you want to save or contact." />
-        <div className="mx-auto grid max-w-6xl gap-5 md:grid-cols-3">
-          {workflow.map(({ title, body, icon: Icon }, index) => (
-            <motion.article key={title} variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="relative rounded-[2rem] border border-white/10 bg-white/[0.06] p-7">
-              <span className="absolute right-6 top-6 text-5xl font-black text-white/10">0{index + 1}</span>
-              <Icon className="h-9 w-9 text-cyan-200" />
-              <h3 className="mt-8 text-2xl font-black">{title}</h3>
-              <p className="mt-4 leading-7 text-slate-300">{body}</p>
-            </motion.article>
-          ))}
-        </div>
-      </section>
-
-      <DeferredStreetRide />
-
-      <section className="deferred-section px-4 py-20">
-        <SectionIntro eyebrow="FAQ" title="What buyers usually ask first." body="Clear answers before you create an account or contact an agent." />
-        <div className="mx-auto grid max-w-4xl gap-4">
-          {faqs.map(([question, answer]) => (
-            <details key={question} className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-950/[0.03]">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-lg font-black">
-                {question}
-                <ChevronDown className="h-5 w-5 transition group-open:rotate-180" />
-              </summary>
-              <p className="mt-4 leading-8 text-slate-600">{answer}</p>
-            </details>
-          ))}
-        </div>
-      </section>
-
-      <section id="contact" className="deferred-section px-4 py-20">
-        <div className="mx-auto grid max-w-7xl gap-8 rounded-[2.4rem] bg-[linear-gradient(135deg,#064e3b,#0f172a)] p-7 text-white shadow-2xl shadow-emerald-950/20 lg:grid-cols-[1.2fr_.8fr] lg:p-12">
-          <div className="self-center">
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-emerald-200">Your next step</p>
-            <h2 className="mt-4 text-4xl font-black tracking-[-0.045em] md:text-6xl">Find a home worth saving.</h2>
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-emerald-50/80">Browse freely, then log in or create a free buyer account to keep favourites, receive alerts and request a viewing.</p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a href="/user.html" className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-emerald-300 px-7 font-black text-emerald-950">
-                <House className="h-5 w-5" /> Explore homes
-              </a>
-              <a href="/login.html?role=user" className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full border border-white/20 bg-white/10 px-7 font-black text-white backdrop-blur-xl">
-                Login / Sign up <ArrowRight className="h-5 w-5" />
-              </a>
+        <section id="benefits" style={{ background: "color-mix(in srgb, var(--color-bg) 94%, transparent)", backdropFilter: "blur(6px)", padding: "96px clamp(20px,5vw,72px)" }}>
+          <div style={{ maxWidth: 1240, margin: "0 auto" }}>
+            <div data-reveal={0}>
+              <span style={{ display: "block", fontSize: 13, letterSpacing: ".1em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-accent-300)", marginBottom: 12 }}>Why buyers use RealityGenius</span>
+              <hr data-line={1} style={{ height: 1, border: 0, margin: "0 0 28px", background: "var(--color-divider)" }} />
+              <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(34px,3.6vw,52px)", lineHeight: 1.06, textTransform: "uppercase", letterSpacing: ".01em", margin: "0 0 12px" }}>Less searching. More confidence.</h2>
+              <p style={{ fontSize: 16, lineHeight: 1.55, maxWidth: "62ch", margin: "0 0 48px", color: "color-mix(in srgb, var(--color-text) 78%, transparent)" }}>Understand the property, the fit and the next step &mdash; without wading through another endless directory.</p>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "clamp(24px,3vw,48px)" }}>
+              {BENEFITS.map((b, index) => (
+                <div key={b.no} className="rg-blueprint" data-reveal={index} style={{ padding: 28 }}>
+                  <i className="corner tl" /><i className="corner tr" /><i className="corner bl" /><i className="corner br" />
+                  <span style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 14, color: "var(--color-accent-300)", letterSpacing: ".1em" }}>{b.no}</span>
+                  <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 23, textTransform: "uppercase", letterSpacing: ".02em", lineHeight: 1.15, margin: "14px 0 10px" }}>{b.title}</h3>
+                  <p style={{ fontSize: 15, lineHeight: 1.55, margin: 0, color: "color-mix(in srgb, var(--color-text) 78%, transparent)" }}>{b.body}</p>
+                </div>
+              ))}
             </div>
           </div>
-          <aside className="self-center rounded-[2rem] border border-white/14 bg-white/[0.08] p-6 backdrop-blur-xl">
-            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white text-emerald-800"><Users className="h-6 w-6" /></div>
-            <p className="mt-5 text-xs font-black uppercase tracking-[0.22em] text-emerald-200">For property agents</p>
-            <h3 className="mt-3 text-2xl font-black">List, create content and manage leads faster.</h3>
-            <p className="mt-3 leading-7 text-emerald-50/70">Preview Agent OS first, then use the agent login when you are ready.</p>
-            <a href="/agents.html" className="mt-6 inline-flex items-center gap-2 text-sm font-black text-white underline decoration-white/30 underline-offset-4">Explore Agent OS <ArrowRight className="h-4 w-4" /></a>
-          </aside>
-        </div>
-      </section>
+        </section>
 
-      <footer className="border-t border-slate-200 bg-white px-4 py-10">
-        <div className="mx-auto flex max-w-7xl flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center overflow-hidden rounded-2xl bg-slate-950 p-1.5">
+        <section ref={stripWrapRef} style={{ position: "relative", height: "340vh", background: "var(--color-accent-900)", borderTop: "1px solid var(--color-divider)", borderBottom: "1px solid var(--color-divider)", color: "#f2f2f3" }}>
+          <div style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <div ref={stripTrackRef} style={{ display: "flex", alignItems: "center", gap: "clamp(24px,3.5vw,64px)", width: "max-content", padding: "0 clamp(20px,5vw,72px)", willChange: "transform" }}>
+              <div style={{ width: "min(38vw,480px)", flex: "none" }}>
+                <span style={{ display: "block", fontSize: 13, letterSpacing: ".1em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-accent-300)", marginBottom: 12 }}>Featured homes</span>
+                <hr style={{ height: 1, border: 0, margin: "0 0 24px", background: "color-mix(in srgb, #f2f2f3 22%, transparent)" }} />
+                <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(38px,4vw,60px)", lineHeight: 1.04, textTransform: "uppercase", letterSpacing: ".01em", margin: "0 0 14px" }}>Homes worth stopping for.</h2>
+                <p style={{ fontSize: 16, lineHeight: 1.55, margin: 0, maxWidth: "40ch", color: "color-mix(in srgb, #f2f2f3 68%, transparent)" }}>A scroll through this week&#8217;s stand-outs &mdash; every one admin-reviewed, AI-scored and ready for a 360&deg; tour.</p>
+                <p style={{ fontSize: 11, letterSpacing: ".14em", textTransform: "uppercase", margin: "26px 0 0", color: "color-mix(in srgb, #f2f2f3 45%, transparent)" }}>Keep scrolling &rarr;</p>
+              </div>
+              {HOMES.map((h) => (
+                <figure key={h.title} className="rg-blueprint rg-vid" style={{ flex: "none", width: "min(58vw,780px)", margin: 0, borderColor: "color-mix(in srgb, #f2f2f3 25%, transparent)" }}>
+                  <i className="corner tl" style={{ color: "color-mix(in srgb, #f2f2f3 55%, transparent)" }} />
+                  <i className="corner tr" style={{ color: "color-mix(in srgb, #f2f2f3 55%, transparent)" }} />
+                  <i className="corner bl" style={{ color: "color-mix(in srgb, #f2f2f3 55%, transparent)" }} />
+                  <i className="corner br" style={{ color: "color-mix(in srgb, #f2f2f3 55%, transparent)" }} />
+                  <div style={{ position: "relative", aspectRatio: "16/9", overflow: "hidden", background: "#152230" }}>
+                    {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                    <video className="rg-vid-el" src={h.src} loop playsInline preload="metadata" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                    <div className="rg-vid-tint" style={{ position: "absolute", inset: 0, background: "var(--color-accent)", mixBlendMode: "color", pointerEvents: "none" }} />
+                    <span className="rg-tag rg-tag-accent" style={{ position: "absolute", top: 14, left: 14 }}>{h.match} match</span>
+                    <span style={{ position: "absolute", top: 16, right: 14, fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "color-mix(in srgb, #f2f2f3 80%, transparent)" }}>360&deg; ready</span>
+                  </div>
+                  <figcaption style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, padding: "16px 18px", flexWrap: "wrap" }}>
+                    <span>
+                      <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 21, textTransform: "uppercase", letterSpacing: ".02em" }}>{h.title}</span>
+                      <span style={{ display: "block", fontSize: 13, marginTop: 2, color: "color-mix(in srgb, #f2f2f3 60%, transparent)" }}>{h.area} &middot; {h.spec}</span>
+                    </span>
+                    <span style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 22, letterSpacing: ".02em", color: "var(--color-accent-300)" }}>{h.price}</span>
+                  </figcaption>
+                </figure>
+              ))}
+              <div style={{ flex: "none", width: "min(34vw,420px)", textAlign: "left" }}>
+                <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(28px,2.8vw,40px)", lineHeight: 1.08, textTransform: "uppercase", letterSpacing: ".01em", margin: "0 0 18px" }}>And 4,000 more,<br />all verified.</h3>
+                <a className="rg-btn" href="/user.html" style={{ textDecoration: "none", fontSize: 15, color: "var(--color-accent-900)", background: "#f2f2f3", borderColor: "#f2f2f3" }}>See every listing &rarr;</a>
+              </div>
+            </div>
+            <div style={{ position: "absolute", left: "clamp(20px,5vw,72px)", right: "clamp(20px,5vw,72px)", bottom: 30 }}>
+              <div style={{ height: 1, background: "color-mix(in srgb, #f2f2f3 20%, transparent)" }}>
+                <div ref={stripBarRef} style={{ height: 1, background: "var(--color-accent-300)", transform: "scaleX(0)", transformOrigin: "left", willChange: "transform" }} />
+              </div>
+              <p style={{ fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", margin: "10px 0 0", color: "color-mix(in srgb, #f2f2f3 40%, transparent)" }}>Sample listings &middot; preview footage via Pexels</p>
+            </div>
+          </div>
+        </section>
+
+        <div style={{ height: "70vh", display: "grid", placeItems: "center", position: "relative", overflow: "hidden" }}>
+          <span data-plx="0.14" style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(70px,11vw,170px)", letterSpacing: ".04em", textTransform: "uppercase", color: "color-mix(in srgb, var(--color-accent) 26%, transparent)", whiteSpace: "nowrap", willChange: "transform" }}>3&deg;09&prime;N &middot; 101&deg;43&prime;E</span>
+          <span className="rg-tag rg-tag-outline" style={{ background: "var(--color-bg)", letterSpacing: ".12em", textTransform: "uppercase", padding: "6px 16px", position: "relative" }}>Kuala Lumpur &mdash; rendered live in 3D</span>
+        </div>
+
+        <section id="toolkit" style={{ background: "color-mix(in srgb, var(--color-bg) 94%, transparent)", backdropFilter: "blur(6px)", padding: "96px clamp(20px,5vw,72px)" }}>
+          <div style={{ maxWidth: 1240, margin: "0 auto" }}>
+            <div data-reveal={0}>
+              <span style={{ display: "block", fontSize: 13, letterSpacing: ".1em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-accent-300)", marginBottom: 12 }}>Buyer toolkit</span>
+              <hr data-line={1} style={{ height: 1, border: 0, margin: "0 0 28px", background: "var(--color-divider)" }} />
+              <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(34px,3.6vw,52px)", lineHeight: 1.06, textTransform: "uppercase", letterSpacing: ".01em", margin: "0 0 48px" }}>Useful AI at the moments that matter.</h2>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "clamp(24px,3vw,44px)" }}>
+              {TOOLS.map((t, index) => (
+                <div key={t.no} className="rg-blueprint" data-reveal={index} style={{ padding: 26 }}>
+                  <i className="corner tl" /><i className="corner tr" /><i className="corner bl" /><i className="corner br" />
+                  <span style={{ fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-accent-300)" }}>{t.no}</span>
+                  <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 21, textTransform: "uppercase", letterSpacing: ".02em", lineHeight: 1.15, margin: "12px 0 8px" }}>{t.title}</h3>
+                  <p style={{ fontSize: 14, lineHeight: 1.55, margin: 0, color: "color-mix(in srgb, var(--color-text) 75%, transparent)" }}>{t.body}</p>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0,6fr) minmax(0,5fr)", gap: "clamp(32px,5vw,88px)", alignItems: "center", marginTop: 110 }}>
+              <div data-reveal={0}>
+                <span style={{ display: "block", fontSize: 13, letterSpacing: ".1em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-accent-300)", marginBottom: 12 }}>Buyer launch offer</span>
+                <hr style={{ height: 1, border: 0, margin: "0 0 24px", background: "var(--color-divider)" }} />
+                <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(30px,3vw,44px)", lineHeight: 1.08, textTransform: "uppercase", letterSpacing: ".01em", margin: "0 0 12px" }}>Explore freely. Keep the good ones.</h2>
+                <p style={{ fontSize: 16, lineHeight: 1.55, margin: "0 0 26px", maxWidth: "52ch", color: "color-mix(in srgb, var(--color-text) 78%, transparent)" }}>Your buyer account is free. Save favourites, get new-property alerts, keep your search preferences and request viewings directly.</p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px 28px", marginBottom: 30 }}>
+                  {PERKS.map((pk) => (
+                    <div key={pk.title} style={{ borderLeft: "1px solid var(--color-divider)", paddingLeft: 14 }}>
+                      <p style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 16, textTransform: "uppercase", letterSpacing: ".02em", margin: 0 }}>{pk.title}</p>
+                      <p style={{ fontSize: 13, lineHeight: 1.5, margin: "4px 0 0", color: "color-mix(in srgb, var(--color-text) 68%, transparent)" }}>{pk.body}</p>
+                    </div>
+                  ))}
+                </div>
+                <a className="rg-btn rg-btn-primary" href="/login.html?role=user&mode=signup" style={{ textDecoration: "none", fontSize: 15 }}>Create free account</a>
+              </div>
+              <figure className="rg-blueprint" data-reveal={1} style={{ margin: 0 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/favicon-48x48.png" alt="" className="h-full w-full object-contain" />
-              </span>
-              <strong className="text-lg font-black">RealityGenius</strong>
+                <img
+                  src="https://images.pexels.com/photos/29185333/pexels-photo-29185333.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                  alt="Property photo"
+                  style={{ width: "100%", aspectRatio: "4/5", objectFit: "cover", display: "block" }}
+                />
+                <i className="corner tl" /><i className="corner tr" /><i className="corner bl" /><i className="corner br" />
+              </figure>
             </div>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">AI-powered Malaysian property discovery for buyers, with a dedicated workspace for agents.</p>
+
+            <div id="how" style={{ marginTop: 110 }}>
+              <div data-reveal={0}>
+                <span style={{ display: "block", fontSize: 13, letterSpacing: ".1em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-accent-300)", marginBottom: 12 }}>How it works</span>
+                <hr data-line={1} style={{ height: 1, border: 0, margin: "0 0 28px", background: "var(--color-divider)" }} />
+                <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(34px,3.6vw,52px)", lineHeight: 1.06, textTransform: "uppercase", letterSpacing: ".01em", margin: "0 0 48px" }}>From a simple request to a real viewing.</h2>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "clamp(24px,3vw,48px)" }}>
+                {STEPS.map((st, index) => (
+                  <div key={st.no} data-reveal={index} style={{ borderTop: "1px solid var(--color-divider)", paddingTop: 20 }}>
+                    <span style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(40px,3.4vw,56px)", lineHeight: 1, color: "var(--color-accent-300)" }}>{st.no}</span>
+                    <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 22, textTransform: "uppercase", letterSpacing: ".02em", margin: "16px 0 8px" }}>{st.title}</h3>
+                    <p style={{ fontSize: 15, lineHeight: 1.55, margin: 0, color: "color-mix(in srgb, var(--color-text) 75%, transparent)" }}>{st.body}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-4 text-sm font-bold text-slate-600">
-            <a href="/privacy.html">Privacy</a>
-            <a href="/terms.html">Terms</a>
-            <a href="/user.html">Explore homes</a>
-            <a href="/login.html?role=user">Login / Sign up</a>
-            <a href="/agents.html">For agents</a>
-          </div>
+        </section>
+
+        <div style={{ height: "60vh", display: "grid", placeItems: "center", position: "relative", overflow: "hidden" }}>
+          <span data-plx="0.14" style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(70px,12vw,190px)", letterSpacing: ".06em", textTransform: "uppercase", color: "color-mix(in srgb, var(--color-accent) 26%, transparent)", whiteSpace: "nowrap", willChange: "transform" }}>Verified</span>
+          <span className="rg-tag rg-tag-outline" style={{ background: "var(--color-bg)", letterSpacing: ".12em", textTransform: "uppercase", padding: "6px 16px", position: "relative" }}>Every listing, admin-reviewed</span>
         </div>
-      </footer>
-    </main>
+
+        <section style={{ background: "color-mix(in srgb, var(--color-bg) 94%, transparent)", backdropFilter: "blur(6px)", padding: "96px clamp(20px,5vw,72px)" }}>
+          <div style={{ maxWidth: 900, margin: "0 auto" }}>
+            <div data-reveal={0}>
+              <span style={{ display: "block", fontSize: 13, letterSpacing: ".1em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-accent-300)", marginBottom: 12 }}>FAQ</span>
+              <hr data-line={1} style={{ height: 1, border: 0, margin: "0 0 28px", background: "var(--color-divider)" }} />
+              <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(30px,3vw,44px)", lineHeight: 1.08, textTransform: "uppercase", letterSpacing: ".01em", margin: "0 0 36px" }}>What buyers ask first.</h2>
+            </div>
+            <div data-reveal={1}>
+              {FAQS.map((f) => (
+                <details key={f.q} style={{ borderTop: "1px solid var(--color-divider)" }}>
+                  <summary style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, cursor: "pointer", padding: "20px 4px", fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 19, letterSpacing: ".02em", textTransform: "uppercase" }}>
+                    <span>{f.q}</span>
+                    <span className="faq-x" style={{ color: "var(--color-accent-300)", fontSize: 22, lineHeight: 1, flex: "none" }}>+</span>
+                  </summary>
+                  <p style={{ fontSize: 15, lineHeight: 1.6, margin: 0, padding: "0 4px 22px", maxWidth: "64ch", color: "color-mix(in srgb, var(--color-text) 78%, transparent)" }}>{f.a}</p>
+                </details>
+              ))}
+              <hr style={{ height: 1, border: 0, margin: 0, background: "var(--color-divider)" }} />
+            </div>
+          </div>
+        </section>
+
+        <section style={{ background: "var(--color-accent-900)", borderTop: "1px solid var(--color-divider)", borderBottom: "1px solid var(--color-divider)", color: "#f2f2f3", padding: "72px clamp(20px,5vw,72px)" }}>
+          <div style={{ maxWidth: 1240, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 36, flexWrap: "wrap" }}>
+            <div data-reveal={0} style={{ maxWidth: "60ch" }}>
+              <span style={{ display: "block", fontSize: 12, letterSpacing: ".12em", textTransform: "uppercase", fontWeight: 600, color: "color-mix(in srgb, #f2f2f3 58%, transparent)", marginBottom: 10 }}>For property agents</span>
+              <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(26px,2.6vw,38px)", lineHeight: 1.1, textTransform: "uppercase", letterSpacing: ".01em", margin: "0 0 8px" }}>List, create content and manage leads faster.</h2>
+              <p style={{ fontSize: 15, lineHeight: 1.55, margin: 0, color: "color-mix(in srgb, #f2f2f3 70%, transparent)" }}>Listing upload in 60 seconds, AI content, Telegram import and buyer-lead tools &mdash; in a workspace of its own.</p>
+            </div>
+            <a className="rg-btn" data-reveal={1} href="/agents.html" style={{ textDecoration: "none", fontSize: 15, color: "#f2f2f3", borderColor: "color-mix(in srgb, #f2f2f3 45%, transparent)" }}>Explore Agent OS &rarr;</a>
+          </div>
+        </section>
+
+        <section style={{ background: "color-mix(in srgb, var(--color-bg) 94%, transparent)", backdropFilter: "blur(6px)", padding: "120px clamp(20px,5vw,72px) 96px", textAlign: "center" }}>
+          <div style={{ maxWidth: 900, margin: "0 auto" }} data-reveal={0}>
+            <span style={{ display: "block", fontSize: 13, letterSpacing: ".1em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-accent-300)", marginBottom: 16 }}>Your next step</span>
+            <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(44px,5.6vw,84px)", lineHeight: 1.02, textTransform: "uppercase", letterSpacing: ".01em", margin: 0 }}>Find a home worth saving.</h2>
+            <p style={{ fontSize: 16, lineHeight: 1.55, margin: "24px auto 34px", maxWidth: "54ch", color: "color-mix(in srgb, var(--color-text) 78%, transparent)" }}>Browse freely. When a home is worth keeping, log in or create a free account to save it, get alerts and request a viewing.</p>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+              <a className="rg-btn rg-btn-primary" href="/login.html?role=user" style={{ textDecoration: "none", fontSize: 16, padding: "14px 34px" }}>Login / Create free account</a>
+              <a className="rg-btn rg-btn-secondary" href="/user.html" style={{ textDecoration: "none", fontSize: 16, padding: "14px 34px" }}>Explore homes</a>
+            </div>
+          </div>
+        </section>
+
+        <footer style={{ background: "var(--color-bg)", borderTop: "1px solid var(--color-divider)", padding: "36px clamp(20px,5vw,72px)" }}>
+          <div style={{ maxWidth: 1240, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, flexWrap: "wrap", fontSize: 13, color: "color-mix(in srgb, var(--color-text) 70%, transparent)" }}>
+            <span style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 15, letterSpacing: ".04em", textTransform: "uppercase", color: "var(--color-text)" }}>RealityGenius</span>
+            <span>AI-powered Malaysian property discovery for buyers &mdash; with a dedicated workspace for agents.</span>
+            <div style={{ display: "flex", gap: 18 }}>
+              <a href="/privacy.html" style={{ color: "inherit" }}>Privacy</a>
+              <a href="/terms.html" style={{ color: "inherit" }}>Terms</a>
+              <a href="/agents.html" style={{ color: "inherit" }}>For agents</a>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </div>
   );
 }
