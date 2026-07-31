@@ -36,7 +36,7 @@ const AGENT_PLAN_TIERS = [
     paymentLinkUrl: "https://buy.stripe.com/3cI5kwbHJ2Hgf7r1TG3Nm00",
     tagline: "For solo agents who want content and faster listing preparation.",
     badge: "Entry",
-    features: ["Everything in Free", "AI Content Creator", "WhatsApp follow-up captions", "AI AR Builder demo preview", "Smart listing checklist"]
+    features: ["Everything in Free", "AI Content Creator", "WhatsApp follow-up drafts", "Excel and Telegram listing workflow", "AI AR Builder demo preview", "Smart listing checklist"]
   },
   {
     id: "pro",
@@ -47,7 +47,7 @@ const AGENT_PLAN_TIERS = [
     paymentLinkUrl: "https://buy.stripe.com/4gMbIU5jla9I9N769W3Nm01",
     tagline: "For active agents running serious buyer pipelines and premium listings.",
     badge: "Recommended",
-    features: ["Everything in Starter RG", "AI Document Vault", "DSR calculator", "Smart viewing itinerary", "Co-broke matchmaker", "1 Friday Auction Night slot", "30 days free trial"]
+    features: ["Everything in Starter RG", "Buyer intent scoring with visible inputs", "DSR conversation worksheet", "Smart viewing itinerary", "Co-broke preparation", "1 Friday Auction Night submission", "30 days free trial"]
   },
   {
     id: "elite",
@@ -58,7 +58,7 @@ const AGENT_PLAN_TIERS = [
     paymentLinkUrl: "https://buy.stripe.com/8x2cMY5jlepY1gB1TG3Nm02",
     tagline: "For agents who want the full automation engine.",
     badge: "Best Value",
-    features: ["Everything in Pro Agent", "Extra Friday Auction Night slot", "Referral autopilot", "Team setup support", "30 days free trial"]
+    features: ["Everything in Pro Agent", "4 Friday Auction Night submissions", "Referral lifecycle drafts", "Team inquiry routing", "30 days free trial"]
   }
 ];
 
@@ -225,8 +225,8 @@ const LISTING_EXCEL_SAMPLE_ROW = {
   status: "Pending QC",
   property_type: "Condo",
   address: "Jalan Sri Manja, Pjs 3, 46000 Petaling Jaya, Selangor",
-  landlord_name: "Arvind Govindasamy",
-  landlord_phone: "60123456789",
+  landlord_name: "Owner / co-agent name",
+  landlord_phone: "601XXXXXXXX",
   front_view_link: "https://drive.google.com/file/d/FRONT_VIEW_IMAGE_FILE_ID/view?usp=sharing",
   top_view_link: "https://drive.google.com/file/d/TOP_VIEW_IMAGE_FILE_ID/view?usp=sharing",
   room_1_link: "https://drive.google.com/file/d/ROOM_1_IMAGE_FILE_ID/view?usp=sharing",
@@ -956,7 +956,7 @@ function buildListingFromData(data, source = "manual", rowNumber = null) {
       listingPurpose: String(row.listing_purpose || row.listingPurpose || "sale").trim().toLowerCase() === "rent" ? "rent" : "sale",
       address: String(row.address || `${area}, Klang Valley`).trim(),
       landlordName: String(row.landlord_name || row.landlordName || "Landlord / co-agent").trim(),
-      landlordPhone: String(row.landlord_phone || row.landlordPhone || "60123456789").replace(/[^\d+]/g, ""),
+      landlordPhone: String(row.landlord_phone || row.landlordPhone || "").replace(/[^\d+]/g, ""),
       image: media.gallery[0]?.url || "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=600&q=80",
       gallery: media.gallery,
       galleryCount: media.gallery.length,
@@ -1225,9 +1225,11 @@ function mergeBackendListingRow(listing, row = {}) {
 
 async function saveAgentListingToBackend(listing) {
   try {
+    const token = await readAgentAuthToken();
+    if (!token) throw new Error("Approved agent login is required.");
     const response = await fetch(agentApiUrl("/agent/listings"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify(serializeAgentListingForBackend(listing))
     });
     const payload = await response.json().catch(() => ({}));
@@ -1415,9 +1417,9 @@ function openListingDeviceUpload() {
 const ENGAGEMENT_STORE_KEY = "rg_agent_engagement";
 const LEADS_REVIEWED_STORE_KEY = "rg_agent_leads_reviewed_date";
 const ENGAGEMENT_TIERS = [
-  { key: "elite", label: "Elite Frontliner", minPoints: 1000 },
-  { key: "dedicated", label: "Dedicated Agent", minPoints: 400 },
-  { key: "rising", label: "Rising Agent", minPoints: 0 }
+  { key: "elite", label: "Workflow Pro", minPoints: 1000 },
+  { key: "dedicated", label: "Consistent Agent", minPoints: 400 },
+  { key: "rising", label: "Getting Started", minPoints: 0 }
 ];
 
 let agentEngagement = readStore(ENGAGEMENT_STORE_KEY, null);
@@ -1452,9 +1454,11 @@ async function performDailyCheckin() {
   const agent = readLiveAgentProfile();
   const alreadyToday = agentEngagement?.lastCheckinDate === todayStamp() && agentEngagement?.synced;
   try {
+    const token = await readAgentAuthToken();
+    if (!token) throw new Error("Approved agent login is required.");
     const response = await fetch(agentApiUrl("/agent/checkin"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ agentId: agent.id })
     });
     const payload = await response.json().catch(() => ({}));
@@ -1467,7 +1471,7 @@ async function performDailyCheckin() {
   writeStore(ENGAGEMENT_STORE_KEY, agentEngagement);
   renderAgentRoutine();
   if (!alreadyToday && agentEngagement.earnedToday > 0) {
-    showToast(`+${agentEngagement.earnedToday} points · Day ${agentEngagement.streakDays} streak. Your listings move up the buyer feed.`);
+    showToast(`+${agentEngagement.earnedToday} points - Day ${agentEngagement.streakDays} streak. Routine points stay private.`);
   }
 }
 
@@ -1495,7 +1499,7 @@ function renderAgentRoutine() {
 
   els.routinePointsTotal.textContent = points.toLocaleString("en-MY");
   els.routineStreakDays.textContent = Number(summary.streakDays || 0);
-  els.routineTierLabel.textContent = tier.label || "Rising Agent";
+  els.routineTierLabel.textContent = tier.label || "Getting Started";
   els.routineTierBadge.className = `routine-tier tier-${tier.key || "rising"}`;
 
   const nextTier = [...ENGAGEMENT_TIERS].reverse().find((candidate) => candidate.minPoints > points) || null;
@@ -1506,7 +1510,7 @@ function renderAgentRoutine() {
     els.routineTierNext.textContent = `${nextTier.minPoints - points} points to ${nextTier.label}`;
   } else {
     els.routineTierProgress.style.width = "100%";
-    els.routineTierNext.textContent = "Top tier reached. Your listings lead the buyer feed.";
+    els.routineTierNext.textContent = "Top private consistency level reached.";
   }
 
   setRoutineCheckState(els.routineCheckLogin, Boolean(summary.checkedInToday || summary.lastCheckinDate === todayStamp()));
@@ -1518,8 +1522,8 @@ function renderAgentRoutine() {
     els.routineRank.hidden = !hasRank;
     if (hasRank) {
       els.routineRankText.textContent = summary.rank === 1
-        ? `#1 frontline agent of ${summary.totalAgents} - buyers see you first`
-        : `Frontline rank #${summary.rank} of ${summary.totalAgents} agents`;
+        ? `#1 activity consistency of ${summary.totalAgents} agents`
+        : `Activity consistency #${summary.rank} of ${summary.totalAgents} agents`;
     }
   }
 
@@ -1613,11 +1617,11 @@ function renderWorkspace() {
 
 function readLiveAgentProfile() {
   const fallback = {
-    id: "ag-arvind",
-    name: "Arvind Govindasamy",
-    email: "arvind@realtygenius.my",
-    phone: "60123456789",
-    agencyName: "RealtyGenius IQI Project Desk",
+    id: "",
+    name: "RealityGenius Agent",
+    email: "",
+    phone: "",
+    agencyName: "Independent agent",
     renNumber: "REN-PENDING",
     status: "approved"
   };
@@ -1816,7 +1820,7 @@ function renderCommandCenter() {
   const queueItems = [
     hottest[0] ? {
       title: `Call ${hottest[0].name} now`,
-      body: `${hottest[0].probability}% close probability in ${hottest[0].area}. ${hottest[0].note}`,
+      body: `${hottest[0].probability}% intent score in ${hottest[0].area}. ${hottest[0].note}`,
       action: "Open Lead Desk",
       section: "leads"
     } : null,
@@ -1868,7 +1872,7 @@ function renderRoadmapBoard() {
       title: "Make this the source of truth",
       status: "Live now",
       body: "Lead scoring, WhatsApp engagement, AI lead management, commission visibility, and one-screen control.",
-      features: ["Lead probability scoring", "WhatsApp engagement system", "AI lead desk"]
+      features: ["Explainable intent scoring", "WhatsApp engagement system", "AI lead desk"]
     },
     {
       phase: "Phase 2",
@@ -1918,7 +1922,7 @@ function renderPipeline() {
               </div>
               <div class="meta-row">
                 <span class="meta-pill">${money(lead.budget)}</span>
-                <span class="meta-pill">${lead.probability}% close chance</span>
+                <span class="meta-pill">${lead.probability}% intent score</span>
               </div>
             </article>
           `).join("") || `<div class="subtext">No leads in this stage.</div>`}
@@ -1960,7 +1964,7 @@ function renderLeadListLegacy() {
       <p class="subtext">${lead.note}</p>
       <div class="meta-row">
         <span class="meta-pill">${lead.stage}</span>
-        <span class="meta-pill">${lead.probability}% close chance</span>
+        <span class="meta-pill">${lead.probability}% intent score</span>
         <span class="meta-pill">${money(lead.budget)}</span>
       </div>
       <div class="action-row">
@@ -2448,6 +2452,56 @@ async function refreshAgentSubscription({ silent = false } = {}) {
   } catch (error) {
     if (!silent) showToast(error.message || "Subscription refresh failed");
     return null;
+  }
+}
+
+function normalizeAssignedLead(item = {}) {
+  const existing = state.leads.find((lead) => String(lead.backendLeadId || "") === String(item.id || ""));
+  const clean = (value, fallback = "") => String(value || fallback).replace(/[<>]/g, "").slice(0, 220);
+  const intentScore = Math.max(0, Math.min(100, Number(item.intentScore || 0)));
+  const signals = Array.isArray(item.signals) ? item.signals.map((value) => clean(value)).filter(Boolean) : [];
+  const context = [
+    item.purchaseTimeline ? `Timeline: ${clean(item.purchaseTimeline)}` : "Timeline not stated",
+    item.financingStage ? `Financing: ${clean(item.financingStage)}` : "Financing not stated",
+    signals.length ? `Signals: ${signals.join(", ")}` : "No additional intent signals"
+  ].join(". ");
+  return {
+    id: existing?.id || Number(item.id) || Date.now(),
+    backendLeadId: item.id,
+    name: clean(item.buyerName, "Website visitor"),
+    phone: clean(item.buyerPhone),
+    area: clean(item.propertyArea, "Klang Valley"),
+    propertyTitle: clean(item.propertyTitle, "Property inquiry"),
+    stage: existing?.stage || "New",
+    temperature: ["Hot", "Warm", "Cold"].includes(item.temperature) ? item.temperature : "Cold",
+    budget: Number(item.buyerBudget || 0),
+    probability: intentScore,
+    intentScore,
+    qualificationStatus: clean(item.qualificationStatus, "anonymous_signal"),
+    purchaseTimeline: clean(item.purchaseTimeline),
+    financingStage: clean(item.financingStage),
+    note: `${clean(item.propertyTitle, "Property inquiry")}. ${context}`,
+    createdAt: item.createdAt || item.timestamp || new Date().toISOString()
+  };
+}
+
+async function refreshAgentLeads({ silent = true } = {}) {
+  const token = await readAgentAuthToken();
+  if (!token) return [];
+  try {
+    const payload = await fetchJsonWithFallback([agentApiUrl("/agent/leads")], {
+      headers: { Accept: "application/json", Authorization: `Bearer ${token}` }
+    });
+    const remote = (payload.items || []).map(normalizeAssignedLead);
+    const remoteIds = new Set(remote.map((lead) => String(lead.backendLeadId)));
+    const localOnly = state.leads.filter((lead) => !lead.backendLeadId || !remoteIds.has(String(lead.backendLeadId)));
+    state.leads = [...remote, ...localOnly];
+    writeStore(STORAGE_KEYS.agentLeads, state.leads);
+    renderWorkspace();
+    return remote;
+  } catch (error) {
+    if (!silent) showToast(error.message || "Could not refresh assigned inquiries");
+    return [];
   }
 }
 
@@ -2970,7 +3024,7 @@ function renderLeadList() {
     els.leadList.innerHTML = `
       <article class="feature-card locked">
         <h3>Lead Heat is locked</h3>
-        <p>Upgrade to Pro or Elite to unlock hot lead scoring, priority follow-up, and lead temperature workflow.</p>
+        <p>Upgrade to Pro or Elite to prioritise inquiries from submitted contact, budget, timeline, financing, viewing, and on-site activity signals.</p>
         <button class="primary-button" data-action="select-agent-plan" data-plan-id="pro" type="button">Upgrade to Pro</button>
       </article>
     `;
@@ -2982,21 +3036,22 @@ function renderLeadList() {
       <div class="lead-head">
         <div>
           <div class="lead-name">${lead.name}</div>
-          <div class="subtext">${lead.area} - ${lead.phone}</div>
+          <div class="subtext">${lead.area} - ${lead.phone || "No contact number submitted"}</div>
         </div>
         <span class="status-pill ${getTemperatureClass(lead.temperature)}">${lead.temperature}</span>
       </div>
       <p class="subtext">${lead.note}</p>
       <div class="meta-row">
         <span class="meta-pill">${lead.stage}</span>
-        <span class="meta-pill">${lead.probability}% close chance</span>
-        <span class="meta-pill">${money(lead.budget)}</span>
+        <span class="meta-pill">${lead.probability}% intent score</span>
+        <span class="meta-pill">${lead.budget ? money(lead.budget) : "Budget not stated"}</span>
+        <span class="meta-pill">${String(lead.qualificationStatus || "manual").replace(/_/g, " ")}</span>
       </div>
       <div class="action-row">
-        <a class="primary-button" href="${getWhatsappLink(lead)}" target="_blank" rel="noopener noreferrer">
+        ${lead.phone ? `<a class="primary-button" href="${getWhatsappLink(lead)}" target="_blank" rel="noopener noreferrer">
           <i class="fa-brands fa-whatsapp"></i>
           Contact now
-        </a>
+        </a>` : ""}
         <button class="ghost-button" data-action="promote-lead" data-id="${lead.id}" type="button">
           <i class="fa-solid fa-arrow-up-right-dots"></i>
           Move forward
@@ -4077,7 +4132,7 @@ function getEnhancedListing(listing) {
     developer: listing.developer || enhancement.developer || "Developer background pending",
     transactions: listing.transactions || enhancement.transactions || [],
     landlordName: listing.landlordName || enhancement.landlordName || "Landlord / co-agent",
-    landlordPhone: listing.landlordPhone || enhancement.landlordPhone || "60123456789",
+    landlordPhone: listing.landlordPhone || enhancement.landlordPhone || "",
     image: heroImage,
     gallery,
     galleryCount: gallery.length,
@@ -4494,12 +4549,12 @@ function renderCobrokeMatchmaker() {
   els.cobrokePropertyType.value = cobroke.requirements.propertyType;
   els.cobrokeBuyerAgent.value = cobroke.requirements.buyerAgent;
 
-  const accepted = cobroke.matches.filter((match) => ["accepted", "signed"].includes(match.status)).length;
+  const accepted = cobroke.matches.filter((match) => ["accepted", "reviewed", "signed"].includes(match.status)).length;
   els.cobrokeSummary.innerHTML = `
     <div>
       <div class="eyebrow">Private Match Engine</div>
       <h4>${cobroke.matches.length} matches · ${accepted} accepted</h4>
-      <p class="subtext">Scored by location, budget, and property type. Only verified private matches are shown.</p>
+      <p class="subtext">Scored from submitted location, budget, and property type. Both agents must confirm the buyer, listing, commission terms, and authority.</p>
     </div>
     <span class="itinerary-provider-pill">AI matchmaker</span>
   `;
@@ -4516,7 +4571,7 @@ function renderCobrokeMatchmaker() {
       <div class="cobroke-reasons">
         ${match.reasons.map((reason) => `<span>${reason}</span>`).join("")}
       </div>
-      <span class="cobroke-status ${match.status.replace(/\s+/g, "-")}">${match.status}</span>
+      <span class="cobroke-status ${match.status.replace(/\s+/g, "-")}">${match.status === "signed" ? "reviewed draft" : match.status}</span>
       <div class="action-row">
         <button class="primary-button" data-action="accept-cobroke" data-id="${match.id}" type="button">${match.status === "pending admin approval" ? "Approval Pending" : "Request Admin Approval"}</button>
         <button class="ghost-button" data-action="reject-cobroke" data-id="${match.id}" type="button">Reject</button>
@@ -4538,9 +4593,9 @@ function renderCobrokeAgreement() {
     els.cobrokeAgreement.innerHTML = `
       <div>
         <div class="eyebrow">Agreement Generator</div>
-        <h4>Waiting for match</h4>
+        <h4>Waiting for a match</h4>
       </div>
-      <p class="subtext">Accept a match to auto-generate the 50/50 commission agreement and e-sign block.</p>
+      <p class="subtext">Accept a match to prepare a non-binding commission checklist for both agents to review with the appropriate stakeholders.</p>
     `;
     return;
   }
@@ -4549,9 +4604,9 @@ function renderCobrokeAgreement() {
   const signed = agreement.signatures.listingAgent && agreement.signatures.buyerAgent;
   els.cobrokeAgreement.innerHTML = `
     <div>
-      <div class="eyebrow">Commission Agreement</div>
+      <div class="eyebrow">Commission Checklist Draft</div>
       <h4>${agreement.reference}</h4>
-      <p class="subtext">${signed ? "Fully signed and ready for deal-room records." : "Generated 50/50 agreement awaiting e-signatures."}</p>
+      <p class="subtext">${signed ? "Both agents marked this draft reviewed. Complete any binding agreement outside this preview." : "Draft awaiting both agents' review; it is not a legal signature or binding agreement."}</p>
     </div>
     <div class="agreement-grid">
       <div><span>Property</span><strong>${agreement.propertyTitle}</strong></div>
@@ -4562,16 +4617,16 @@ function renderCobrokeAgreement() {
     <div class="signature-row">
       <div class="signature-card ${agreement.signatures.listingAgent ? "is-signed" : ""}">
         <strong>Listing agent</strong>
-        <span>${agreement.signatures.listingAgent ? "Signed electronically" : "Signature pending"}</span>
+        <span>${agreement.signatures.listingAgent ? "Marked reviewed" : "Review pending"}</span>
       </div>
       <div class="signature-card ${agreement.signatures.buyerAgent ? "is-signed" : ""}">
         <strong>Buyer agent</strong>
-        <span>${agreement.signatures.buyerAgent ? "Signed electronically" : "Signature pending"}</span>
+        <span>${agreement.signatures.buyerAgent ? "Marked reviewed" : "Review pending"}</span>
       </div>
     </div>
     <div class="action-row">
-      <button class="primary-button" data-action="sign-cobroke-listing" data-id="${match.id}" type="button">E-sign as Listing Agent</button>
-      <button class="ghost-button" data-action="sign-cobroke-buyer" data-id="${match.id}" type="button">E-sign as Buyer Agent</button>
+      <button class="primary-button" data-action="sign-cobroke-listing" data-id="${match.id}" type="button">Mark Listing Agent Reviewed</button>
+      <button class="ghost-button" data-action="sign-cobroke-buyer" data-id="${match.id}" type="button">Mark Buyer Agent Reviewed</button>
     </div>
   `;
 }
@@ -4651,21 +4706,16 @@ function signCobroke(id, side) {
     };
     return {
       ...match,
-      status: agreement.signatures.listingAgent && agreement.signatures.buyerAgent ? "signed" : "accepted",
+      status: agreement.signatures.listingAgent && agreement.signatures.buyerAgent ? "reviewed" : "accepted",
       agreement
     };
   });
-  showToast("E-signature saved");
+  showToast("Draft review acknowledgement saved");
 }
 
 function transactionFallback(listing) {
   if (!listing) return [];
-  if (listing.transactions?.length) return listing.transactions;
-  return [
-    { date: "Recent", price: Math.round(listing.price * 0.98), note: "Comparable unit" },
-    { date: "Previous", price: Math.round(listing.price * 0.94), note: "Similar size" },
-    { date: "Older", price: Math.round(listing.price * 0.9), note: "Lower floor or older condition" }
-  ];
+  return Array.isArray(listing.transactions) ? listing.transactions : [];
 }
 
 function listingForCheatSheet(propertyId) {
@@ -4684,18 +4734,18 @@ function listingForCheatSheet(propertyId) {
 
 function generateFallbackCheatSheet(listing) {
   const transactions = transactionFallback(listing);
-  const latest = transactions[0]?.price || listing.price || 0;
-  const premium = latest ? ((listing.price - latest) / latest) * 100 : 0;
+  const latest = transactions[0]?.price || 0;
+  const premium = latest ? ((listing.price - latest) / latest) * 100 : null;
 
   return {
     recentTransactions: transactions,
-    priceContext: premium > 3
-      ? `Asking is about ${premium.toFixed(1)}% above the latest comparable, so anchor on condition, scarcity, and negotiation room.`
-      : `Asking is close to recent transactions, so frame it as a realistic offer zone.`,
+    priceContext: premium == null
+      ? "No sourced transaction evidence is attached. Treat the price as an asking price and verify comparables before using them with a buyer."
+      : `Agent-supplied comparable context puts the ask ${premium >= 0 ? `${Math.abs(premium).toFixed(1)}% above` : `${Math.abs(premium).toFixed(1)}% below`} the latest entered figure. Confirm its source and date before presenting it as evidence.`,
     keySellingPoints: [
       `${listing.area} location gives the buyer a clear lifestyle or rental-demand story.`,
       `${listing.propertyType} format is easy to compare and easier for banks to understand.`,
-      `Current ask of ${money(listing.price)} is supported by nearby recent transaction evidence.`
+      `Current asking price is ${money(listing.price)}; transaction support is ${transactions.length ? "agent supplied and needs source confirmation" : "not yet attached"}.`
     ],
     weaknesses: [
       `Maintenance fee needs confirmation before offer: ${listing.maintenanceFee}.`,
@@ -4705,7 +4755,9 @@ function generateFallbackCheatSheet(listing) {
     objectionScripts: [
       {
         objection: "The asking price feels high.",
-        response: `The latest comparable is ${money(latest)}, and this ask is mainly about condition, availability, and negotiation room. We can test an offer with evidence instead of guessing.`
+        response: latest
+          ? `The latest agent-entered comparable is ${money(latest)}. I will confirm its source and date before relying on it, then compare condition and availability.`
+          : "I do not have sourced transaction evidence attached yet. I will verify comparables before making a price claim.",
       },
       {
         objection: "Maintenance fee may be expensive.",
@@ -4724,7 +4776,7 @@ function generateFallbackCheatSheet(listing) {
 function normalizeCheatSheetContent(content, listing) {
   return {
     recentTransactions: content.recentTransactions || content.transactions || transactionFallback(listing),
-    priceContext: content.priceContext || "Recent comparable transactions are ready for price anchoring.",
+    priceContext: content.priceContext || "No sourced transaction evidence is attached yet.",
     keySellingPoints: content.keySellingPoints || content.sellingPoints || [],
     weaknesses: content.weaknesses || content.negativePoints || [],
     objectionScripts: content.objectionScripts || content.objections || [],
@@ -4809,9 +4861,9 @@ function renderCheatSheet() {
     </section>
 
     <section class="cheat-section">
-      <h5><i class="fa-solid fa-chart-line"></i> Recent Transactions</h5>
+      <h5><i class="fa-solid fa-chart-line"></i> Comparable Evidence</h5>
       <div class="cheat-list">
-        ${(content.recentTransactions || []).map((txn) => `
+        ${(content.recentTransactions || []).length ? (content.recentTransactions || []).map((txn) => `
           <div class="transaction-row">
             <div>
               <strong>${money(txn.price)}</strong>
@@ -4819,7 +4871,7 @@ function renderCheatSheet() {
             </div>
             <span>${txn.date || txn.transactedAt || "Recent"}</span>
           </div>
-        `).join("")}
+        `).join("") : `<p class="subtext">No comparable is attached. Add a named source and date before presenting transaction evidence.</p>`}
       </div>
     </section>
 
@@ -5908,7 +5960,7 @@ function loadContentFromTopListing() {
   els.contentHighlights.value = [
     `${listing.propertyType} in ${listing.area}`,
     `Asking price ${money(listing.price)}`,
-    `Latest comparable around ${money(transaction.price)}`,
+    transaction ? `Agent-entered comparable ${money(transaction.price)} - confirm source and date` : "No sourced transaction comparable attached",
     `Maintenance fee: ${listing.maintenanceFee}`,
     `Developer: ${listing.developer}`
   ].join("\n");
@@ -6304,4 +6356,5 @@ updateListingDescriptionCount();
 renderWorkspace();
 renderLaunchPricingGrid();
 refreshAgentSubscription({ silent: true });
+refreshAgentLeads({ silent: true });
 performDailyCheckin();

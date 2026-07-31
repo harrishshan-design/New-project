@@ -19,7 +19,7 @@ const STORAGE_KEYS = {
 };
 
 const DEFAULT_ALGORITHM = {
-  paidAdsBoost: 20,
+  paidAdsBoost: 0,
   staleListingPenalty: -50,
   highYieldInvestorPriority: 35
 };
@@ -345,7 +345,6 @@ function getAllLogs() {
     ...buildAdminTaskLogs(),
     ...buildNegotiationLogs(),
     ...buildCobrokeLogs(),
-    ...buildEscrowLogs(),
     ...buildListingAnalyticsLogs(),
     ...buildCollabRequestLogs()
   ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -574,15 +573,15 @@ function switchSection(section) {
 function renderMetrics() {
   const moneyState = getMoneySnapshot();
   const logs = getAllLogs();
-  els.liveEscrowMetric.textContent = money(moneyState.heldEscrow);
+  els.liveEscrowMetric.textContent = "Not connected";
   els.saasMetric.textContent = money(moneyState.saasRevenue);
   els.bankReferralMetric.textContent = money(moneyState.bankReferral);
   els.logMetric.textContent = logs.length;
-  els.tapeEscrow.textContent = money(moneyState.heldEscrow);
+  els.tapeEscrow.textContent = "OFF";
   els.tapeSaas.textContent = money(moneyState.saasRevenue);
   els.tapeBank.textContent = money(moneyState.bankReferral);
   els.tapeLogs.textContent = logs.length;
-  els.tapeStatus.textContent = state.killSwitches.escrowFrozen ? "ESCROW FROZEN" : "NORMAL";
+  els.tapeStatus.textContent = state.killSwitches.escrowFrozen ? "PAYMENT DEMO OFF" : "NORMAL";
   els.tapeStatus.parentElement.classList.toggle("is-risk", state.killSwitches.escrowFrozen);
 }
 
@@ -681,19 +680,13 @@ function renderMasterCollabControls(selected) {
 
 function renderMoney() {
   const snapshot = getMoneySnapshot();
-  els.escrowHeldValue.textContent = money(snapshot.heldEscrow);
-  els.escrowReleasedValue.textContent = money(snapshot.releasedEscrow);
+  els.escrowHeldValue.textContent = "Not connected";
+  els.escrowReleasedValue.textContent = "Not connected";
   els.subscriptionValue.textContent = money(snapshot.saasRevenue);
   els.subscriptionDetail.textContent = `${snapshot.subscriptionsToday.length} agents paid RM 299 today.`;
   els.bankPipelineValue.textContent = money(snapshot.bankReferral);
 
   const ledgerRows = [
-    ...snapshot.deals.map((deal) => ({
-      title: deal.propertyTitle,
-      type: "Escrow",
-      value: money(deal.escrow?.amount || 0),
-      detail: `${deal.buyerName || "Buyer"} - ${statusText(deal.escrow?.status)} - ${deal.escrow?.reference || "No reference"}`
-    })),
     ...state.subscriptions.map((sub) => ({
       title: sub.agentName,
       type: "SaaS",
@@ -716,7 +709,7 @@ function renderMoney() {
       <strong>${row.title}</strong>
       <p>${row.detail}</p>
     </article>
-  `).join("") : `<article class="ledger-card"><strong>No money records yet</strong><p>Escrow, subscriptions, and loan referrals will appear here.</p></article>`;
+  `).join("") : `<article class="ledger-card"><strong>No provider-backed money records yet</strong><p>Stripe subscription records appear here when available. RealityGenius escrow is not connected.</p></article>`;
 }
 
 function syncAlgorithmInputs() {
@@ -728,16 +721,16 @@ function syncAlgorithmInputs() {
 
 function renderAlgorithmValues() {
   state.algorithm = {
-    paidAdsBoost: Number(els.paidAdsSlider.value),
+    paidAdsBoost: 0,
     staleListingPenalty: Number(els.stalePenaltySlider.value),
     highYieldInvestorPriority: Number(els.yieldPrioritySlider.value)
   };
-  els.paidAdsValue.textContent = `${state.algorithm.paidAdsBoost >= 0 ? "+" : ""}${state.algorithm.paidAdsBoost}%`;
+  els.paidAdsValue.textContent = "Off";
   els.stalePenaltyValue.textContent = `${state.algorithm.staleListingPenalty}%`;
   els.yieldPriorityValue.textContent = `${state.algorithm.highYieldInvestorPriority >= 0 ? "+" : ""}${state.algorithm.highYieldInvestorPriority}%`;
   els.algorithmPreview.innerHTML = `
-    <strong>Current ranking formula override</strong>
-    <p>Developer paid ads visibility ${els.paidAdsValue.textContent}; stale listings older than 60 days ${els.stalePenaltyValue.textContent}; investor quiz high-yield priority ${els.yieldPriorityValue.textContent}. Saved controls are read by user.html feed ranking immediately.</p>
+    <strong>Current organic ranking controls</strong>
+    <p>Paid feed influence is off. Stale listings older than 60 days use ${els.stalePenaltyValue.textContent}; investor intent relevance uses ${els.yieldPriorityValue.textContent}. Neither control changes QC or REN status.</p>
   `;
 }
 
@@ -774,8 +767,8 @@ function renderKillStatus() {
   els.globalAlertPreview.textContent = globalAlert?.message || "";
   els.killStatus.innerHTML = `
     <article class="status-card">
-      <strong>Escrow freeze</strong>
-      <p>${state.killSwitches.escrowFrozen ? `Frozen since ${dateTime(state.killSwitches.frozenAt)}` : "Escrow transfers are currently active."}</p>
+      <strong>Legacy payment demo</strong>
+      <p>${state.killSwitches.escrowFrozen ? `Disabled since ${dateTime(state.killSwitches.frozenAt)}` : "Browser-only demo enabled; no money can move."}</p>
     </article>
     <article class="status-card">
       <strong>Global alert</strong>
@@ -819,10 +812,10 @@ function freezeEscrow() {
     frozenAt: new Date().toISOString()
   };
   writeStore(STORAGE_KEYS.killSwitches, state.killSwitches);
-  addAudit("escrow_frozen", "All escrow transfers halted by owner kill switch.");
+  addAudit("payment_demo_disabled", "Browser-only legacy payment demo disabled. No financial provider is connected.");
   renderKillStatus();
   renderAudit();
-  showToast("Escrow frozen");
+  showToast("Legacy payment demo disabled");
 }
 
 function unfreezeEscrow() {
@@ -831,10 +824,10 @@ function unfreezeEscrow() {
     frozenAt: null
   };
   writeStore(STORAGE_KEYS.killSwitches, state.killSwitches);
-  addAudit("escrow_unfrozen", "Escrow transfers re-enabled by owner.");
+  addAudit("payment_demo_enabled", "Browser-only legacy payment demo enabled. No financial provider is connected.");
   renderKillStatus();
   renderAudit();
-  showToast("Escrow unfrozen");
+  showToast("Legacy payment demo enabled");
 }
 
 function pushGlobalAlert() {
@@ -1142,7 +1135,7 @@ switchSection(["panopticon", "money", "algorithm", "killswitch", "audit"].includ
 bindEvents();
 bindPulseEvents();
 armDangerButton(els.banAgencyButton, "Ban Agency", banAgency);
-armDangerButton(els.freezeEscrowButton, "Freeze Escrow", freezeEscrow);
+armDangerButton(els.freezeEscrowButton, "Disable Demo", freezeEscrow);
 armDangerButton(els.pushAlertButton, "Push Global Alert", pushGlobalAlert);
 renderTerminalClock();
 setInterval(renderTerminalClock, 1000);

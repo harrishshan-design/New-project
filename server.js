@@ -231,7 +231,7 @@ function getSearchIntent(query) {
     return SEARCH_INTENT_RULES.find((rule) => rule.terms.some((term) => normalized.includes(term))) || {
         type: "area",
         label: "Area insight",
-        body: "No exact verified listing exists for this search yet. Treat it as buyer demand and compare nearby verified stock."
+        body: "No exact QC-approved listing exists for this search yet. Treat it as buyer demand and compare nearby reviewed inventory."
     };
 }
 
@@ -287,10 +287,10 @@ function getTrustState(listing) {
 function getSuggestionReason(listing, query, knownArea) {
     const nearbyAreas = knownArea ? AREA_NEARBY_MAP[knownArea] || [] : [];
     if (knownArea && listing.area === knownArea) {
-        return `Verified stock inside ${knownArea}. Use it before requesting a more exact match.`;
+        return `QC-approved inventory inside ${knownArea}. Use it before requesting a more exact match.`;
     }
     if (knownArea && nearbyAreas.includes(listing.area)) {
-        return `${listing.area} is a nearby verified pocket to ${knownArea}, useful as a price and lifestyle anchor.`;
+        return `${listing.area} is a nearby reviewed area to ${knownArea}, useful as an asking-price and lifestyle anchor.`;
     }
     if (Number(listing.yield || 0) >= 4.5) {
         return `Good yield benchmark at ${listing.yield}% while we source the exact location.`;
@@ -298,7 +298,7 @@ function getSuggestionReason(listing, query, knownArea) {
     if (/luxury|premium|prestige/i.test(`${listing.vibe || ''} ${(listing.tags || []).join(' ')}`)) {
         return "Useful premium-area comparison so the buyer can judge if the original location is priced fairly.";
     }
-    return "Closest verified inventory match from the platform while the exact search becomes an agent sourcing signal.";
+    return "Closest QC-approved inventory match while the exact search becomes an agent sourcing signal.";
 }
 
 function getNearbyLocationSuggestions(query, filter) {
@@ -608,12 +608,9 @@ const PLAN_FEATURES = {
 const FOUNDER_AGENT_SLOT_LIMIT = 10;
 const FOUNDER_LISTINGS_REQUIRED = 10;
 
-// TEMPORARY: skip admin QC entirely so new agent listings go straight to
-// live/buyer-visible on submission, no manual review wait. Flip this back
-// to false (and redeploy) to restore the normal pending_qc -> admin review
-// -> live pipeline - nothing else needs to change, since every listing
-// write already funnels through pickAgentListingPayload().
-const LISTING_QC_BYPASS = true;
+// New and edited agent listings always return to admin QC before they can
+// appear in public inventory. Trust states must never be unlocked by plan.
+const LISTING_QC_BYPASS = false;
 
 async function countExistingAgentSignups() {
     const rows = await selectSupabaseRows('users', 'select=id&role=eq.agent&limit=1000').catch(() => []);
@@ -1074,6 +1071,9 @@ async function activateAgentFreePlan(req, payload = {}) {
     const row = authUser.email ? await findUserByEmail(authUser.email) : null;
     if (!row?.id) return { __status: 404, error: 'Agent profile not found.' };
     if (String(row.role || '').toLowerCase() !== 'agent') return { __status: 403, error: 'Agent account required.' };
+    if (!['active', 'approved'].includes(String(row.status || '').toLowerCase())) {
+        return { __status: 403, error: 'Agent approval is required before activating tools.' };
+    }
 
     const requestedPlan = normalizeStripePlan(payload.plan || '');
     if (!requestedPlan || requestedPlan === 'free') return { __status: 400, error: 'A valid plan is required.' };
@@ -1107,6 +1107,9 @@ async function getAgentMe(req) {
 
     const profile = profileFromAuthUser(authUser, row);
     if (String(profile.role || '').toLowerCase() !== 'agent') return { __status: 403, error: 'Agent account required.' };
+    if (!['active', 'approved'].includes(String(profile.status || '').toLowerCase())) {
+        return { __status: 403, error: 'Agent approval is required before using the workspace.' };
+    }
 
     const subscriptionPlan = normalizeStripePlan(row.subscription_plan || row.profile_json?.subscription?.subscriptionPlan || row.plan) || 'free';
     const subscriptionStatus = String(row.subscription_status || row.profile_json?.subscription?.status || 'inactive').toLowerCase();
@@ -1140,6 +1143,12 @@ async function getAgentMe(req) {
             founder_listings_submitted: founderListingsSubmitted
         }
     };
+}
+
+async function requireAgentAccess(req) {
+    const result = await getAgentMe(req);
+    if (result?.error) return { ok: false, status: result.__status || 403, error: result.error };
+    return { ok: true, agent: result.agent };
 }
 
 // ---------------------------------------------------------
@@ -1562,7 +1571,7 @@ function importedListingToPublicProperty(item) {
         id: numericPublicId(item.id),
         importId: item.id,
         source: "telegram_ai_import",
-        badge: "live-agent",
+        badge: "qc-approved",
         title: item.title || "AI Imported Property",
         area,
         location: item.location || area,
@@ -1603,7 +1612,9 @@ function importedListingToPublicProperty(item) {
         updatedAt: item.updated_at || item.created_at,
         mapLink: `https://www.google.com/maps/search/${encodeURIComponent(item.map_query || item.location || item.title || "Malaysia")}`,
         agentName: agentProfile.name || "RealityGenius AI Import Desk",
-        agencyName: agentProfile.agencyName || "RealityGenius"
+        agencyName: agentProfile.agencyName || "RealityGenius",
+        renNumber: agentProfile.renId || "",
+        renVerified: agentProfile.renVerified === true
     };
 }
 
@@ -2011,7 +2022,7 @@ function agentListingToPublicProperty(item) {
         id: numericPublicId(`agent-${item.id}`),
         agentListingId: item.id,
         source: "admin_approved_agent_listing",
-        badge: "verified-agent",
+        badge: "qc-approved",
         title: item.title || "Agent Property Listing",
         area,
         location: item.address || area,
@@ -2029,7 +2040,7 @@ function agentListingToPublicProperty(item) {
         gallery,
         galleryCount: gallery.length,
         panoramas: normalizePublicGalleryUrls(item.pano_urls).slice(0, 3),
-        whatsapp: item.landlord_phone || "",
+        whatsapp: "",
         aiScore: 88,
         confidenceScore: 88,
         yield: 4.2,
@@ -2051,7 +2062,7 @@ function agentListingToPublicProperty(item) {
         createdAt: item.created_at,
         updatedAt: item.updated_at || item.created_at,
         mapLink: `https://www.google.com/maps/search/${encodeURIComponent(item.address || item.area || item.title || "Malaysia")}`,
-        agentName: "RealityGenius Verified Agent",
+        agentName: "Listing representative",
         agencyName: "RealityGenius Agent Network",
         arLink: item.ar_link || "",
         modelUrl: item.ar_link || ""
@@ -3075,13 +3086,23 @@ async function reviewAiImport(payload) {
     return { item: { ...row, telegram_profile: agentApproval?.telegramProfile || null, approved_agent: agentApproval?.user || null } };
 }
 
-async function createAgentListing(payload = {}) {
+async function createAgentListing(payload = {}, requesterAgentId = '') {
     if (!hasSupabaseConfig()) return { __status: 500, error: "Supabase is not configured." };
-    const listing = await pickAgentListingPayload(payload);
+    if (!requesterAgentId) return { __status: 401, error: "Approved agent login is required." };
+    const listing = await pickAgentListingPayload({ ...payload, agentId: requesterAgentId, agent_id: requesterAgentId });
     if (listing.error) return { __status: 400, error: listing.error };
 
     const existingId = listing.id;
     delete listing.id;
+    if (existingId) {
+        const ownedRows = await selectSupabaseRows(
+            "agent_property_listings",
+            `select=id,agent_id&id=${supabaseEq(existingId)}&agent_id=${supabaseEq(requesterAgentId)}&limit=1`
+        );
+        if (!Array.isArray(ownedRows) || !ownedRows[0]) {
+            return { __status: 404, error: "Listing was not found for this agent." };
+        }
+    }
     const row = existingId
         ? await patchSupabaseRow("agent_property_listings", existingId, listing)
         : await insertSupabaseRow("agent_property_listings", listing);
@@ -3108,14 +3129,14 @@ async function listAdminAgentListings() {
 }
 
 // ---------------------------------------------------------
-// AGENT ENGAGEMENT: daily check-in streaks, points, tiers.
-// Points decide frontline ordering in the buyer feed.
+// AGENT ENGAGEMENT: private routine streaks, points, and activity levels.
+// These values never affect public listing order, QC, or REN status.
 // ---------------------------------------------------------
 const AGENT_POINTS = { dailyCheckin: 10, streak3Bonus: 5, streak7Bonus: 15, listingSubmitted: 50 };
 const AGENT_TIERS = [
-    { key: "elite", label: "Elite Frontliner", minPoints: 1000 },
-    { key: "dedicated", label: "Dedicated Agent", minPoints: 400 },
-    { key: "rising", label: "Rising Agent", minPoints: 0 }
+    { key: "elite", label: "Workflow Pro", minPoints: 1000 },
+    { key: "dedicated", label: "Consistent Agent", minPoints: 400 },
+    { key: "rising", label: "Getting Started", minPoints: 0 }
 ];
 
 function agentTierForPoints(points) {
@@ -3148,7 +3169,7 @@ async function getAgentEngagementRow(agentId) {
     return Array.isArray(rows) && rows[0] ? rows[0] : null;
 }
 
-async function agentFrontlineRank(agentId, points) {
+async function agentActivityRank(agentId, points) {
     try {
         const rows = await selectSupabaseRows("agent_engagement", "select=agent_id,points&order=points.desc&limit=500");
         const list = Array.isArray(rows) ? rows : [];
@@ -3168,7 +3189,7 @@ async function agentDailyCheckin(payload = {}) {
     const existing = await getAgentEngagementRow(agentId);
 
     if (existing && existing.last_checkin_date === today) {
-        const standing = await agentFrontlineRank(agentId, existing.points);
+        const standing = await agentActivityRank(agentId, existing.points);
         return { engagement: engagementSummary(existing, { checkedInToday: true, earnedToday: 0, ...standing }) };
     }
 
@@ -3189,7 +3210,7 @@ async function agentDailyCheckin(payload = {}) {
         updated_at: new Date().toISOString()
     }, "agent_id");
 
-    const standing = await agentFrontlineRank(agentId, row?.points);
+    const standing = await agentActivityRank(agentId, row?.points);
     return { engagement: engagementSummary(row, { checkedInToday: true, earnedToday: earned, ...standing }) };
 }
 
@@ -3251,8 +3272,8 @@ async function reviewAgentListing(payload = {}) {
 
 // ---------------------------------------------------------
 // MASTER PULSE: real, read-only platform metrics for the owner
-// dashboard - paying agent counts, listing pipeline, and the
-// frontline leaderboard. Gated behind the same admin API key admin.html
+// dashboard - paying agent counts, listing pipeline, and private workflow
+// consistency. Gated behind the same admin API key admin.html
 // already uses (both are owner-only surfaces).
 // ---------------------------------------------------------
 const FIRST_MILLION_TARGET = 1000000;
@@ -3327,6 +3348,11 @@ async function getMasterPulse() {
     };
 }
 
+function isKlangValleyPublicListing(item = {}) {
+    const place = `${item.title || ''} ${item.area || ''} ${item.location || ''} ${item.address || ''}`.toLowerCase();
+    return /kuala lumpur|\bkl\b|\bklcc\b|\bpj\b|selangor|putrajaya|cyberjaya|shah alam|petaling jaya|subang|klang|puchong|cheras|kajang|ampang|gombak|setapak|kepong|damansara|bangsar|mont kiara|bukit jalil|sri petaling|sentul|serdang|sri kembangan|rawang|semenyih|bandar utama|sungai buloh|ara damansara/.test(place);
+}
+
 async function listPublicProperties() {
     if (!hasSupabaseConfig()) return { items: [] };
     const importedRows = await selectSupabaseRows(
@@ -3337,28 +3363,175 @@ async function listPublicProperties() {
         "agent_property_listings",
         "select=*&status=in.(approved,live)&order=updated_at.desc&limit=100"
     );
+    const agentIds = [...new Set((agentRows || []).map((row) => String(row.agent_id || '')).filter(Boolean))];
+    const agentIdFilter = agentIds.length ? agentIds.map((id) => `"${id.replace(/"/g, '')}"`).join(',') : '';
+    const [userProfiles, legacyProfiles] = agentIds.length ? await Promise.all([
+        selectSupabaseRows('users', `select=*&id=in.(${agentIdFilter})&limit=200`).catch(() => []),
+        selectSupabaseRows('profiles', `select=*&id=in.(${agentIdFilter})&limit=200`).catch(() => [])
+    ]) : [[], []];
+    const profileById = new Map();
+    [...(legacyProfiles || []), ...(userProfiles || [])].forEach((profile) => {
+        if (profile?.id) profileById.set(String(profile.id), profile);
+    });
 
-    // Frontline ordering: dedicated agents (more engagement points) surface first.
-    const pointsByAgent = await agentPointsByAgentId((agentRows || []).map((row) => row.agent_id));
+    const seenListings = new Set();
     const items = [
         ...(importedRows || []).map(importedListingToPublicProperty),
         ...(agentRows || []).map((row) => {
-            const points = pointsByAgent.get(String(row.agent_id)) || 0;
-            const tier = agentTierForPoints(points);
+            const item = agentListingToPublicProperty(row);
+            const profile = profileById.get(String(row.agent_id || '')) || {};
+            const profileJson = typeof profile.profile_json === 'string' ? safeJsonParse(profile.profile_json, {}) : profile.profile_json || {};
             return {
-                ...agentListingToPublicProperty(row),
-                agentPoints: points,
-                agentTier: tier.key,
-                agentTierLabel: tier.label
+                ...item,
+                whatsapp: cleanPhone(profile.phone || profileJson.phone || ''),
+                agentName: profile.name || profileJson.name || 'Listing representative',
+                agencyName: profile.agency_name || profileJson.agency_name || 'Independent agent',
+                renNumber: profile.ren_id || profileJson.ren_id || '',
+                renVerified: profile.ren_verified === true || profileJson.renVerified === true
             };
         })
     ]
         .filter((item) => item && item.title && Number(item.price || 0) > 0)
-        .sort((a, b) => {
-            const pointsGap = Number(b.agentPoints || 0) - Number(a.agentPoints || 0);
-            if (pointsGap) return pointsGap;
-            return new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0);
+        .filter(isKlangValleyPublicListing)
+        .filter((item) => {
+            const key = `${String(item.title).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()}|${Number(item.price || 0)}|${String(item.area || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()}`;
+            if (seenListings.has(key)) return false;
+            seenListings.add(key);
+            return true;
+        })
+        .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
+    return { items };
+}
+
+const LEAD_RATE_LIMIT = { perIpPerHour: 20 };
+const leadRateHits = new Map();
+
+function checkLeadRateLimit(ip = 'unknown') {
+    const now = Date.now();
+    const recent = (leadRateHits.get(ip) || []).filter((time) => now - time < 60 * 60 * 1000);
+    if (recent.length >= LEAD_RATE_LIMIT.perIpPerHour) {
+        return { ok: false, error: 'Too many inquiry attempts. Please wait and try again.' };
+    }
+    recent.push(now);
+    leadRateHits.set(ip, recent);
+    return { ok: true };
+}
+
+function getLeadIntentScore(payload = {}) {
+    const signals = [];
+    let score = 10;
+    const phone = cleanPhone(payload.buyerPhone || '');
+    const budget = Number(payload.buyerBudget || payload.budget || 0);
+    const timeline = String(payload.purchaseTimeline || '').toLowerCase();
+    const financing = String(payload.financingStage || '').toLowerCase();
+    const isBooking = payload.inquiryType === 'viewing_request' && payload.bookingDate && payload.bookingTime;
+
+    if (phone.length >= 8) { score += 25; signals.push('contact supplied'); }
+    if (budget > 0) { score += 15; signals.push('budget stated'); }
+    if (isBooking) { score += 20; signals.push('viewing requested'); }
+    if (/0.?3|ready|this month|immediate/.test(timeline)) { score += 15; signals.push('near-term timeline'); }
+    else if (timeline) { score += 8; signals.push('timeline stated'); }
+    if (/pre.?approved/.test(financing)) { score += 15; signals.push('buyer states pre-approval'); }
+    else if (/documents|checking|cash/.test(financing)) { score += 8; signals.push('financing stage stated'); }
+    const behavior = Math.min(10, Number(payload.savedCount || 0) * 2 + Math.min(6, Number(payload.viewedCount || 0)));
+    if (behavior > 0) { score += behavior; signals.push('on-site activity'); }
+
+    const intentScore = Math.max(0, Math.min(100, Math.round(score)));
+    const temperature = intentScore >= 75 ? 'Hot' : intentScore >= 50 ? 'Warm' : 'Cold';
+    const structuredFields = [budget > 0, Boolean(timeline), Boolean(financing), Boolean(isBooking)].filter(Boolean).length;
+    const qualificationStatus = phone.length >= 8 && structuredFields >= 2
+        ? 'structured_contactable'
+        : phone.length >= 8 ? 'contactable' : 'anonymous_signal';
+    return { intentScore, temperature, signals, qualificationStatus };
+}
+
+async function resolveLeadAssignment(payload = {}) {
+    const requestedListingId = String(payload.agentListingId || '').trim();
+    if (requestedListingId) {
+        const rows = await selectSupabaseRows(
+            'agent_property_listings',
+            `select=id,agent_id,title,status&id=${supabaseEq(requestedListingId)}&status=in.(approved,live)&limit=1`
+        ).catch(() => []);
+        if (rows?.[0]?.agent_id) return { agentId: rows[0].agent_id, title: rows[0].title || payload.propertyTitle || '' };
+    }
+
+    const publicId = String(payload.propertyId || '');
+    if (publicId) {
+        const [agentRows, importedRows] = await Promise.all([
+            selectSupabaseRows('agent_property_listings', 'select=id,agent_id,title,status&status=in.(approved,live)&limit=200').catch(() => []),
+            selectSupabaseRows('ai_imported_listings', 'select=id,approved_agent_user_id,title,status&status=in.(approved,live)&limit=200').catch(() => [])
+        ]);
+        const agentListing = (agentRows || []).find((row) => String(numericPublicId(`agent-${row.id}`)) === publicId);
+        if (agentListing?.agent_id) return { agentId: agentListing.agent_id, title: agentListing.title || payload.propertyTitle || '' };
+        const imported = (importedRows || []).find((row) => String(numericPublicId(row.id)) === publicId);
+        if (imported?.approved_agent_user_id) return { agentId: imported.approved_agent_user_id, title: imported.title || payload.propertyTitle || '' };
+    }
+    return { agentId: '', title: payload.propertyTitle || '' };
+}
+
+async function createWebsiteLead(payload = {}) {
+    const rate = checkLeadRateLimit(payload.__clientIp || 'unknown');
+    if (!rate.ok) return { __status: 429, error: rate.error };
+    if (!payload.propertyId && !payload.propertyTitle) return { __status: 400, error: 'Property context is required.' };
+
+    const assignment = hasSupabaseConfig() ? await resolveLeadAssignment(payload) : { agentId: '', title: payload.propertyTitle || '' };
+    const scoring = getLeadIntentScore(payload);
+    const newLead = {
+        id: Date.now(),
+        propertyId: String(payload.propertyId || ''),
+        agentListingId: String(payload.agentListingId || ''),
+        propertyTitle: String(assignment.title || payload.propertyTitle || '').slice(0, 180),
+        propertyArea: String(payload.propertyArea || '').slice(0, 120),
+        propertyPrice: Number(payload.propertyPrice || 0),
+        buyerName: String(payload.buyerName || 'Website visitor').slice(0, 120),
+        buyerPhone: cleanPhone(payload.buyerPhone || ''),
+        buyerBudget: Number(payload.buyerBudget || payload.budget || 0),
+        purchaseTimeline: String(payload.purchaseTimeline || '').slice(0, 80),
+        financingStage: String(payload.financingStage || '').slice(0, 80),
+        message: String(payload.message || '').slice(0, 600),
+        inquiryType: String(payload.inquiryType || 'property_inquiry').slice(0, 80),
+        source: String(payload.source || 'user_dashboard').slice(0, 80),
+        bookingDate: String(payload.bookingDate || '').slice(0, 20),
+        bookingTime: String(payload.bookingTime || '').slice(0, 30),
+        behaviorIntent: String(payload.behaviorIntent || '').slice(0, 80),
+        viewedCount: Math.max(0, Number(payload.viewedCount || 0)),
+        savedCount: Math.max(0, Number(payload.savedCount || 0)),
+        assignedAgentId: assignment.agentId,
+        ...scoring,
+        timestamp: new Date().toISOString()
+    };
+
+    if (hasSupabaseConfig()) {
+        await insertSupabaseRow('website_leads', {
+            property_id: newLead.propertyId || null,
+            buyer_name: newLead.buyerName || null,
+            buyer_phone: newLead.buyerPhone || null,
+            source: newLead.source || null,
+            inquiry_type: newLead.inquiryType || null,
+            payload: newLead
         });
+    } else {
+        const db = readDatabase();
+        db.leads.push(newLead);
+        writeDatabase(db);
+    }
+
+    let assignedAgent = null;
+    if (assignment.agentId && hasSupabaseConfig()) {
+        const rows = await selectSupabaseRows('users', `select=id,name&id=${supabaseEq(assignment.agentId)}&limit=1`).catch(() => []);
+        if (rows?.[0]) assignedAgent = { name: rows[0].name || 'Listing representative' };
+    }
+    return { success: true, lead: newLead, assignedAgent };
+}
+
+async function listAgentWebsiteLeads(agentId = '') {
+    if (!agentId) return { __status: 401, error: 'Approved agent login is required.' };
+    if (!hasSupabaseConfig()) return { items: [] };
+    const rows = await selectSupabaseRows('website_leads', 'select=*&order=created_at.desc&limit=250');
+    const items = (rows || []).map((row) => {
+        const payload = typeof row.payload === 'string' ? safeJsonParse(row.payload, {}) : row.payload || {};
+        return { ...payload, id: row.id, createdAt: row.created_at || payload.timestamp };
+    }).filter((item) => String(item.assignedAgentId || '') === String(agentId));
     return { items };
 }
 
@@ -3518,11 +3691,21 @@ const server = http.createServer(async (req, res) => {
         }
 
         if (url === '/api/agent/listings') {
-            return createAgentListing(payload);
+            const auth = await requireAgentAccess(req);
+            if (!auth.ok) return { __status: auth.status, error: auth.error };
+            return createAgentListing(payload, auth.agent.id);
         }
 
         if (url === '/api/agent/checkin') {
-            return agentDailyCheckin(payload);
+            const auth = await requireAgentAccess(req);
+            if (!auth.ok) return { __status: auth.status, error: auth.error };
+            return agentDailyCheckin({ ...payload, agentId: auth.agent.id });
+        }
+
+        if (url === '/api/agent/leads') {
+            const auth = await requireAgentAccess(req);
+            if (!auth.ok) return { __status: auth.status, error: auth.error };
+            return listAgentWebsiteLeads(auth.agent.id);
         }
 
         if (url === '/api/admin/listings') {
@@ -3786,7 +3969,9 @@ Rank and explain best 3 properties.`;
         }
 
         // Standard Lead Routing (Twilio Hookup)
-        if (url === '/api/leads') {
+        if (url === '/api/leads') return createWebsiteLead(payload);
+
+        if (false && url === '/api/leads') {
             const newLead = { id: Date.now(), ...payload, timestamp: new Date().toISOString() };
 
             if (hasSupabaseConfig()) {
@@ -3852,7 +4037,7 @@ Rank and explain best 3 properties.`;
                 const payload = isArGenerate && isMultipart
                     ? { __multipart: parseArMultipart(rawBody, req.headers['content-type']) }
                     : (rawBody.length ? JSON.parse(rawBody.toString('utf8')) : {});
-                if (isArGenerate) payload.__clientIp = getClientIp(req);
+                if (isArGenerate || routePath === '/api/leads') payload.__clientIp = getClientIp(req);
                 const response = await routeManager(routePath, payload);
                 
                 if (response) {

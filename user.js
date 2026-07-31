@@ -22,7 +22,7 @@ const STORAGE_KEYS = {
 };
 
 const DEFAULT_MASTER_ALGORITHM = {
-  paidAdsBoost: 20,
+  paidAdsBoost: 0,
   staleListingPenalty: -50,
   highYieldInvestorPriority: 35
 };
@@ -39,7 +39,7 @@ const BASE_PROPERTIES = window.RealtyGeniusPropertyListings || [];
 const FORCE_BACKEND_BUYER_FEED = ["realitygenius.company", "www.realitygenius.company"].includes(window.location.hostname);
 const AGENT_LISTING_LAUNCH_CUTOFF = "2026-06-18T08:25:00.000Z";
 const BUYER_FEED_VERSION_KEY = "rg_buyer_feed_version";
-const BUYER_FEED_VERSION = "agent-live-only-2026-06-18";
+const BUYER_FEED_VERSION = "evidence-led-live-feed-2026-07-30";
 let backendListingFeedReady = FORCE_BACKEND_BUYER_FEED;
 
 function readJsonStore(key, fallback) {
@@ -287,19 +287,42 @@ function isPostLaunchAgentListing(item) {
 }
 
 function cleanListingLabel(value = "") {
-  return String(value || "")
+  const source = String(value || "");
+  let repaired = source;
+  if (/[ÃÂâð]/.test(source) && typeof TextDecoder !== "undefined") {
+    try {
+      const bytes = Uint8Array.from([...source].map((character) => character.charCodeAt(0) & 255));
+      repaired = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    } catch {
+      repaired = source;
+    }
+  }
+  return repaired
     .replace(/[*_`]+/g, "")
+    .replace(/[\u0000-\u001f\u007f-\u009f]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
+function usefulSummaryLines(item = {}) {
+  return String(item.summary || item.description || "")
+    .split(/\r?\n/)
+    .map(cleanListingLabel)
+    .filter((line) => line
+      && line.length >= 8
+      && line.length <= 110
+      && !/^(available|wts|listing|property|untitled|for sale|for rent)\W*$/i.test(line)
+      && !/^(asking|selling|rental|reserve)?\s*price\b/i.test(line)
+      && !/^[=\-_.|]+$/.test(line));
+}
+
 function getPropertyTitleLabel(item = {}) {
   const original = cleanListingLabel(item.title);
-  if (original && !/^(available|listing|property|untitled)(\s|$)/i.test(original)) return original.slice(0, 110);
-  const fallback = [item.location, item.address, item.summary, item.description]
+  if (original && !/^(available|wts|listing|property|untitled)(\s|$)/i.test(original)) return original.slice(0, 110);
+  const fallback = [...usefulSummaryLines(item), item.location, item.address]
     .map(cleanListingLabel)
-    .find((value) => value && value.length >= 8 && value.length <= 110);
-  return (fallback || original || "Verified Malaysian property").replace(/^available\s*/i, "").trim().slice(0, 110);
+    .find((value) => value && value.length >= 8 && value.length <= 110 && value.toLowerCase() !== "malaysia");
+  return (fallback || original || "Malaysian property listing").replace(/^available\s*/i, "").trim().slice(0, 110);
 }
 
 function getPropertyAreaLabel(item = {}) {
@@ -308,22 +331,152 @@ function getPropertyAreaLabel(item = {}) {
     .map(cleanListingLabel)
     .find((value) => value
       && value.length <= 62
+      && value.toLowerCase() !== "malaysia"
       && value.toLowerCase() !== title
       && !/(available|for sale|for rent|bedroom|bathroom|asking price)/i.test(value));
   if (direct) return direct;
 
   const source = cleanListingLabel(item.summary || item.description);
-  const locationMatch = source.match(/(?:location|lokasi)\s*:\s*([^|]+?)(?=\s(?:type|land size|built-up|bedroom|bathroom|selling price)\s*:|$)/i);
-  return cleanListingLabel(locationMatch?.[1] || "Malaysia")
+  const locationMatch = source.match(/(?:location|lokasi|address)\s*:\s*([^|]+?)(?=\s(?:type|land size|built-up|condition|bedroom|bathroom|selling price|rental)\s*:|$)/i);
+  const knownArea = [
+    "Setia Alam",
+    "Port Klang",
+    "Kuala Selangor",
+    "Bangsar South",
+    "Bukit Kerinchi",
+    "Bukit Tinggi",
+    "Bandar Putera Klang",
+    "Klang",
+    "Rawang",
+    "Mont Kiara",
+    "Shah Alam",
+    "Petaling Jaya",
+    "KLCC"
+  ].find((area) => source.toLowerCase().includes(area.toLowerCase()));
+  return cleanListingLabel(locationMatch?.[1] || knownArea || "Location pending")
     .replace(/[\p{So}\p{Sk}\uFE0F]+$/gu, "")
     .trim()
     .slice(0, 62);
 }
 
+function parseCompactRmAmount(value, suffix = "") {
+  const amount = Number(String(value || "").replace(/,/g, ""));
+  if (!Number.isFinite(amount) || amount <= 0) return 0;
+  const unit = String(suffix || "").toLowerCase();
+  if (["m", "mil", "million", "juta"].includes(unit)) return Math.round(amount * 1000000);
+  if (["k", "ribu"].includes(unit)) return Math.round(amount * 1000);
+  return Math.round(amount);
+}
+
+function listingSourceText(item = {}) {
+  return cleanListingLabel(`${item.title || ""} ${item.summary || ""} ${item.description || ""}`);
+}
+
+function inferListingPurpose(item = {}) {
+  const leadingText = listingSourceText(item).slice(0, 850);
+  if (/\bfor\s+rent\b|rental(?:\s+price)?\s*[:|]|monthly\s+rent/i.test(leadingText)) return "rent";
+  if (/\bfor\s+sale\b|selling(?:\s+price)?\s*[:|]|asking\s+price\s*[:|]|reserve\s+price\s*[:|]/i.test(leadingText)) return "sale";
+  return String(item.purpose || "").toLowerCase() === "rent" ? "rent" : "sale";
+}
+
+function extractPriceFromText(item = {}) {
+  const source = listingSourceText(item);
+  const labelled = source.match(/(?:rental(?:\s+price)?|rent|selling(?:\s+price)?|asking(?:\s+price)?|reserve(?:\s+price)?|price)\s*(?:\||:|-)?\s*rm\s*([\d,.]+)\s*(million|mil|juta|ribu|m|k)?/i);
+  const general = source.match(/\brm\s*([\d,.]+)\s*(million|mil|juta|ribu|m|k)?/i);
+  const match = labelled || general;
+  return match ? parseCompactRmAmount(match[1], match[2]) : 0;
+}
+
+function extractRenNumber(item = {}) {
+  const direct = cleanListingLabel(item.renNumber || item.renId || item.ren_id);
+  if (direct) return direct.replace(/^ren\s*[-:]?\s*/i, "").trim();
+  return listingSourceText(item).match(/\bREN\s*[-:]?\s*(\d{4,6})\b/i)?.[1] || "";
+}
+
+function extractListingNumber(item = {}, patterns = []) {
+  const source = listingSourceText(item);
+  for (const pattern of patterns) {
+    const value = Number(source.match(pattern)?.[1] || 0);
+    if (Number.isFinite(value) && value > 0 && value < 20) return value;
+  }
+  return 0;
+}
+
+function extractBuiltUpSqft(item = {}) {
+  const direct = Number(item.sqft || item.builtUp || item.built_up || 0);
+  if (Number.isFinite(direct) && direct > 0 && direct < 1000000) return Math.round(direct);
+  const source = listingSourceText(item);
+  const match = source.match(/(?:built[\s-]*up(?:\s+area)?|b\/u)\s*:?\s*([\d,]+)\s*(?:sq\.?\s*ft|sqft|sq\s+feet)/i);
+  return match ? Number(match[1].replace(/,/g, "")) : 0;
+}
+
+function normalizeLiveListingRecord(item = {}) {
+  const purpose = inferListingPurpose(item);
+  const rawPrice = Number(item.price || 0);
+  const sourcePrice = extractPriceFromText(item);
+  const rawPriceValid = purpose === "rent"
+    ? rawPrice >= 100 && rawPrice <= 100000
+    : rawPrice >= 10000 && rawPrice <= 100000000;
+  const sourcePriceValid = purpose === "rent"
+    ? sourcePrice >= 100 && sourcePrice <= 100000
+    : sourcePrice >= 10000 && sourcePrice <= 100000000;
+  const price = sourcePriceValid && (!rawPriceValid || Math.max(rawPrice, sourcePrice) / Math.min(rawPrice, sourcePrice) > 50)
+    ? sourcePrice
+    : rawPrice;
+  const bedrooms = Number(item.bedrooms || item.beds || 0) || extractListingNumber(item, [
+    /\bbedrooms?\s*:?\s*(\d+)/i,
+    /\brooms?\s*:?\s*(\d+)/i
+  ]);
+  const bathrooms = Number(item.bathrooms || item.baths || 0) || extractListingNumber(item, [
+    /\bbathrooms?\s*:?\s*(\d+)/i,
+    /\bbaths?\s*:?\s*(\d+)/i
+  ]);
+  const sqft = extractBuiltUpSqft(item);
+  const renNumber = extractRenNumber(item);
+  return {
+    ...item,
+    title: getPropertyTitleLabel(item),
+    area: getPropertyAreaLabel(item),
+    location: getPropertyAreaLabel(item),
+    summary: cleanListingLabel(item.summary || item.description || "Listing details pending."),
+    purpose,
+    price,
+    priceDataSource: sourcePriceValid && price === sourcePrice ? "source_text" : "structured_field",
+    bedrooms,
+    bathrooms,
+    beds: bedrooms,
+    baths: bathrooms,
+    sqft,
+    psf: price > 0 && sqft > 0 ? Math.round(price / sqft) : 0,
+    renNumber,
+    renVerified: item.renVerified === true || item.ren_verified === true
+  };
+}
+
+function isPlausibleListingPrice(item = {}) {
+  const price = Number(item.price || 0);
+  return item.purpose === "rent"
+    ? price >= 100 && price <= 100000
+    : price >= 10000 && price <= 100000000;
+}
+
+function deduplicateLiveListings(items = []) {
+  const seen = new Set();
+  return [...items]
+    .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0))
+    .filter((item) => {
+      const key = `${cleanListingLabel(item.title).toLowerCase()}|${item.price}|${cleanListingLabel(item.area).toLowerCase()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
 function mergeLiveProperties(baseProperties = BASE_PROPERTIES) {
   const liveSourceKey = backendListingFeedReady ? STORAGE_KEYS.backendBuyerListings : STORAGE_KEYS.buyerLiveListings;
   const liveListings = readJsonStore(liveSourceKey, [])
-    .filter((item) => item && item.title && Number(item.price || 0) > 0 && isAdminApprovedLiveListing(item) && isPostLaunchAgentListing(item))
+    .map(normalizeLiveListingRecord)
+    .filter((item) => item && item.title && isPlausibleListingPrice(item) && isAdminApprovedLiveListing(item) && isPostLaunchAgentListing(item))
     .map((item) => {
       const title = getPropertyTitleLabel(item);
       const area = getPropertyAreaLabel(item);
@@ -342,13 +495,14 @@ function mergeLiveProperties(baseProperties = BASE_PROPERTIES) {
         adminApproved: true,
         approvalStatus: "approved",
         liveStatus: "approved_live",
-        summary: item.summary || "Fresh live listing approved by RealityGenius admin QC."
+        summary: item.summary || "Live listing reviewed by RealityGenius admin QC."
       };
     });
-  const liveIds = new Set(liveListings.map((item) => String(item.id)));
-  if (backendListingFeedReady) return liveListings;
+  const deduplicatedListings = deduplicateLiveListings(liveListings);
+  const liveIds = new Set(deduplicatedListings.map((item) => String(item.id)));
+  if (backendListingFeedReady) return deduplicatedListings;
   return [
-    ...liveListings,
+    ...deduplicatedListings,
     ...baseProperties.filter((item) => !liveIds.has(String(item.id)))
   ];
 }
@@ -424,7 +578,14 @@ const els = {
   mortgageDownPayment: document.getElementById("mortgageDownPayment"),
   mortgageRate: document.getElementById("mortgageRate"),
   mortgageYears: document.getElementById("mortgageYears"),
+  mortgageIncome: document.getElementById("mortgageIncome"),
+  mortgageCommitments: document.getElementById("mortgageCommitments"),
   mortgageResult: document.getElementById("mortgageResult"),
+  priceEvidenceForm: document.getElementById("priceEvidenceForm"),
+  priceEvidenceArea: document.getElementById("priceEvidenceArea"),
+  priceEvidencePrice: document.getElementById("priceEvidencePrice"),
+  priceEvidenceSqft: document.getElementById("priceEvidenceSqft"),
+  priceEvidenceResult: document.getElementById("priceEvidenceResult"),
   gridFeedButton: document.getElementById("gridFeedButton"),
   videoFeedButton: document.getElementById("videoFeedButton"),
   propertyGrid: document.getElementById("propertyGrid"),
@@ -491,6 +652,10 @@ const els = {
   bookingPhone: document.getElementById("bookingPhone"),
   bookingDate: document.getElementById("bookingDate"),
   bookingTime: document.getElementById("bookingTime"),
+  bookingBudget: document.getElementById("bookingBudget"),
+  bookingTimeline: document.getElementById("bookingTimeline"),
+  bookingFinancing: document.getElementById("bookingFinancing"),
+  bookingConsent: document.getElementById("bookingConsent"),
   bookingStatus: document.getElementById("bookingStatus"),
   negotiationState: document.getElementById("negotiationState"),
   negotiationSuggestion: document.getElementById("negotiationSuggestion"),
@@ -547,12 +712,12 @@ const LOCATION_INTENT_RULES = [
   {
     terms: ["school", "hospital", "mall", "university", "college", "office", "landmark"],
     label: "Landmark insight",
-    body: "This looks landmark-led. The right move is to benchmark surrounding homes against the landmark, then shortlist nearby stock that already has verified listing data."
+    body: "This looks landmark-led. The right move is to benchmark surrounding homes against the landmark, then shortlist nearby stock with visible QC and source states."
   },
   {
     terms: ["jalan", "jln", "taman", "lorong", "persiaran", "residence", "residensi", "condo", "apartment"],
     label: "Address insight",
-    body: "This looks like a specific address. We should treat it as a sourcing request and use nearby verified listings as price and lifestyle anchors while agents chase exact supply."
+    body: "This looks like a specific address. We should treat it as a sourcing request and use nearby reviewed listings as asking-price and lifestyle anchors while agents chase exact supply."
   }
 ];
 const PROPERTY_CLIP_LIBRARY = [
@@ -636,11 +801,13 @@ async function hydrateBackendLiveListings() {
     if (!response.ok) return;
     const payload = await response.json();
     backendListingFeedReady = true;
-    const remoteLive = (Array.isArray(payload) ? payload : payload.items || [])
+    const remoteLive = deduplicateLiveListings((Array.isArray(payload) ? payload : payload.items || [])
       .filter((item) => {
         if (item?.source === "telegram_ai_import") return isAdminApprovedLiveListing(item);
         return item?.source === "agent_live_upload" || item?.badge === "live-agent" || isAdminApprovedLiveListing(item);
-      });
+      })
+      .map(normalizeLiveListingRecord)
+      .filter(isPlausibleListingPrice));
     writeStore(STORAGE_KEYS.backendBuyerListings, remoteLive);
     writeStore(STORAGE_KEYS.buyerLiveListings, remoteLive);
     refreshLiveBuyerListings(false);
@@ -659,35 +826,6 @@ function refreshLiveBuyerListings(shouldRender = false) {
   resetFeedWindow();
   renderDashboard();
   showToast("Live agent listings updated");
-}
-
-function readSession() {
-  try {
-    return JSON.parse(localStorage.getItem("rg_session") || "null");
-  } catch {
-    return null;
-  }
-}
-
-function hasBuyerSession() {
-  const session = readSession();
-  const token = String(session?.token || "");
-  return Boolean(session && token && session.role === "user");
-}
-
-function loginForCurrentExplore() {
-  const next = `${window.location.pathname || "/user.html"}${window.location.search || ""}${window.location.hash || ""}`;
-  const query = new URLSearchParams({
-    role: "user",
-    next
-  });
-  window.location.assign(`/login.html?${query.toString()}`);
-}
-
-function requireBuyerSessionForExplore() {
-  if (hasBuyerSession()) return true;
-  loginForCurrentExplore();
-  return false;
 }
 
 function writeStore(key, value) {
@@ -755,6 +893,87 @@ function money(value) {
 
 function fullMoney(value) {
   return `RM ${Number(value).toLocaleString("en-MY")}`;
+}
+
+function listingPriceLabel(property = {}) {
+  const value = fullMoney(Math.round(Number(property.price || 0)));
+  return property.purpose === "rent" ? `${value} / month` : value;
+}
+
+function getAskingPsf(property = {}) {
+  const price = Number(property.price || 0);
+  const sqft = Number(property.sqft || 0);
+  return price > 0 && sqft > 0 ? price / sqft : 0;
+}
+
+function median(values = []) {
+  const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
+  if (!sorted.length) return 0;
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+function normalizedArea(value = "") {
+  return cleanListingLabel(value)
+    .toLowerCase()
+    .replace(/\b(sel[a-z]*|kuala lumpur|malaysia)\b/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function listingAreaMatches(property = {}, area = "") {
+  const query = normalizedArea(area);
+  if (!query) return true;
+  const candidate = normalizedArea(`${property.area || ""} ${property.location || ""}`);
+  return candidate.includes(query) || query.includes(candidate);
+}
+
+function getComparableListings(property = {}, options = {}) {
+  const purpose = options.purpose || property.purpose || "sale";
+  const area = options.area ?? property.area ?? "";
+  return feedProperties.filter((candidate) => {
+    if (String(candidate.id) === String(options.excludeId ?? property.id)) return false;
+    if ((candidate.purpose || "sale") !== purpose) return false;
+    if (!listingAreaMatches(candidate, area)) return false;
+    return getAskingPsf(candidate) > 0;
+  });
+}
+
+function getSourcedTransactions(property = {}) {
+  const candidates = Array.isArray(property.transactions)
+    ? property.transactions
+    : Array.isArray(property.transactionEvidence)
+      ? property.transactionEvidence
+      : [];
+  return candidates.filter((item) => (
+    Number(item?.price || 0) > 0
+    && Boolean(item?.date || item?.transactionDate)
+    && Boolean(item?.source || item?.sourceName)
+    && item?.verified !== false
+  ));
+}
+
+function listingReviewDate(property = {}) {
+  const value = property.adminApprovedAt || property.approvedAt || property.updatedAt || property.createdAt;
+  const date = new Date(value || "");
+  if (!Number.isFinite(date.getTime())) return "";
+  return date.toLocaleDateString("en-MY", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function getListingEvidence(property = {}) {
+  const renNumber = extractRenNumber(property);
+  const renVerified = Boolean(renNumber && property.renVerified === true);
+  return {
+    qcApproved: isAdminApprovedLiveListing(property),
+    renNumber,
+    renVerified,
+    renLabel: renVerified
+      ? `REN ${renNumber} verified`
+      : renNumber
+        ? `REN ${renNumber} supplied`
+        : "REN not supplied",
+    reviewDate: listingReviewDate(property)
+  };
 }
 
 function escapeHtml(value = "") {
@@ -937,6 +1156,7 @@ function buildLeadAutomationPayload(property, overrides = {}) {
   const profile = getInterestProfile();
   return {
     propertyId: property?.id,
+    agentListingId: property?.agentListingId || "",
     propertyTitle: property?.title,
     propertyArea: property?.area || property?.location,
     propertyPrice: property?.price,
@@ -947,6 +1167,9 @@ function buildLeadAutomationPayload(property, overrides = {}) {
     source: overrides.source || "user_dashboard",
     bookingDate: overrides.bookingDate || "",
     bookingTime: overrides.bookingTime || "",
+    buyerBudget: Number(overrides.buyerBudget || 0),
+    purchaseTimeline: overrides.purchaseTimeline || "",
+    financingStage: overrides.financingStage || "",
     offerPrice: overrides.offerPrice || null,
     behaviorIntent: profile.intent || state.filter,
     behaviorPreference: getPreferenceLine(),
@@ -990,7 +1213,7 @@ function getPropertyClipUrl(property) {
 
 function getPropertyClipLabel(property) {
   if (property.intent === "luxury") return "Luxury walkthrough reel";
-  if (property.intent === "investment") return "AI yield and neighborhood reel";
+  if (property.intent === "investment") return "Asking-price and neighborhood reel";
   if (property.intent === "family") return "Family-lifestyle tour";
   return "Street-to-suite property reel";
 }
@@ -1224,54 +1447,53 @@ function getGuessResult(propertyId) {
 
 function renderPropertyCardMarkup(property, index) {
   trackListingAnalytics(property, "impression", { source: "buyer_feed" });
-  const pack = getDecision(property);
   const saved = state.favorites.includes(property.id);
   const { verified, total } = getGalleryCompleteness(property);
   const heroImage = getHeroImage(property);
-  const interestCount = sessionInterestForProperty(property);
+  const evidence = getListingEvidence(property);
+  const askingPsf = getAskingPsf(property);
   return `
-    <article class="property-card property-card--reveal" style="animation-delay:${index * 70}ms" data-tilt-card data-click-card data-id="${property.id}" role="button" tabindex="0" aria-label="Explore ${property.title}">
+    <article class="property-card property-card--reveal" style="animation-delay:${index * 70}ms" data-tilt-card data-click-card data-id="${property.id}" role="button" tabindex="0" aria-label="Explore ${escapeAttr(property.title)}">
       <div class="feed-media">
-        <img src="${heroImage}" alt="${property.title}" loading="lazy">
+        <img src="${escapeAttr(heroImage)}" alt="${escapeAttr(property.title)}" loading="lazy">
         <div class="feed-topleft-tags">
-          <span class="area-pill">${property.area}</span>
+          <span class="area-pill">${escapeHtml(property.area)}</span>
           <span class="purpose-pill ${(property.purpose || "sale") === "rent" ? "is-rent" : "is-sale"}">${(property.purpose || "sale") === "rent" ? "For Rent" : "For Sale"}</span>
         </div>
-        <span class="score-pill score-pill--match">AI ${property.aiScore}% Match</span>
-        <span class="interest-pill" title="Session-based buyer interest estimate, not a live viewer count"><i class="fa-solid fa-users-viewfinder"></i> ${interestCount} interest estimate</span>
+        <span class="score-pill score-pill--match">Match estimate ${Math.round(Number(property.aiScore || 0))}%</span>
         <span class="photo-count-pill"><i class="fa-solid fa-images"></i> ${verified}/${total}</span>
         ${(property.panoramas || []).length ? `<span class="rg-360-badge"><i class="fa-solid fa-panorama"></i> 360° Tour</span>` : ""}
-        ${["elite", "dedicated"].includes(property.agentTier) ? `<span class="rg-frontline-badge"><i class="fa-solid fa-medal"></i> ${property.agentTierLabel || "Dedicated Agent"}</span>` : ""}
       </div>
       <div class="card-body">
         <div class="price-row">
           <div>
-            <div class="price">${money(property.price)}</div>
-            <div class="title">${property.title}</div>
+            <div class="price">${listingPriceLabel(property)}</div>
+            <div class="title">${escapeHtml(property.title)}</div>
           </div>
           <button class="ghost-button save-button ${saved ? "is-saved" : ""}" data-action="toggle-save" data-id="${property.id}" type="button">
             <i class="fa-solid fa-heart"></i>
             ${saved ? "Saved" : "Save"}
           </button>
         </div>
-        <div class="location"><i class="fa-solid fa-location-dot"></i> ${property.location}</div>
+        <div class="location"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(property.location)}</div>
         <div class="mini-stats">
-          <span class="mini-stat"><i class="fa-solid fa-bed"></i> ${property.bedrooms} bed</span>
-          <span class="mini-stat"><i class="fa-solid fa-ruler-combined"></i> ${property.sqft} sqft</span>
-          <span class="mini-stat"><i class="fa-solid fa-chart-line"></i> ${property.yield}% yield</span>
+          <span class="mini-stat"><i class="fa-solid fa-bed"></i> ${property.bedrooms ? `${property.bedrooms} bed` : "Beds pending"}</span>
+          <span class="mini-stat"><i class="fa-solid fa-ruler-combined"></i> ${property.sqft ? `${Number(property.sqft).toLocaleString("en-MY")} sqft` : "Size pending"}</span>
+          <span class="mini-stat"><i class="fa-solid fa-scale-balanced"></i> ${askingPsf ? `RM ${askingPsf.toFixed(property.purpose === "rent" ? 2 : 0)} / sqft${property.purpose === "rent" ? " monthly" : ""}` : "Price / sqft pending"}</span>
         </div>
         ${renderFeedGalleryMarkup(property)}
         <p class="summary">${escapeHtml(property.summary)}</p>
-        <div class="card-tags">
-          <span class="tag">${pack.roi}% ROI</span>
-          <span class="tag">${pack.risk} Risk</span>
+        <div class="listing-proof-row" aria-label="Listing evidence">
+          <span class="tag is-qc"><i class="fa-solid fa-list-check"></i> ${evidence.qcApproved ? "QC approved" : "QC pending"}</span>
+          <span class="tag ${evidence.renVerified ? "is-ren-verified" : ""}"><i class="fa-solid fa-id-card"></i> ${escapeHtml(evidence.renLabel)}</span>
+          <span class="tag"><i class="fa-regular fa-clock"></i> ${evidence.reviewDate ? `Reviewed ${evidence.reviewDate}` : "Review date unavailable"}</span>
         </div>
         <div class="card-actions">
           <button class="ghost-button" data-action="open-details" data-id="${property.id}" type="button">Explore</button>
-          <a class="primary-button quick-contact-card" href="${getWhatsAppLink(property, "feed")}" target="_blank" rel="noopener noreferrer">
+          ${getWhatsAppPhone(property) ? `<a class="primary-button quick-contact-card" href="${getWhatsAppLink(property, "feed")}" target="_blank" rel="noopener noreferrer">
             <i class="fa-brands fa-whatsapp"></i>
             Contact
-          </a>
+          </a>` : `<button class="primary-button" data-action="open-details" data-id="${property.id}" type="button">Request viewing</button>`}
         </div>
       </div>
     </article>
@@ -1307,7 +1529,7 @@ function renderGuessCardMarkup(property) {
             <span>Actual price</span>
             <strong>${fullMoney(property.price)}</strong>
           </div>
-          <p>${closeHit ? "That was dangerously accurate. The market cannot hide from you today." : `Not bad. The AI fair value here is ${fullMoney(decision.fairValue)}, so your instinct is still useful.`}</p>
+          <p>${closeHit ? "That was dangerously accurate. The asking price did not fool you today." : decision.benchmarkPrice ? `The current asking-price benchmark is ${fullMoney(decision.benchmarkPrice)}. It is context, not a valuation.` : "There is not enough comparable asking-price evidence to publish a benchmark yet."}</p>
         </div>
       ` : `
         <div class="guess-choice-row">
@@ -1322,7 +1544,7 @@ function renderGuessCardMarkup(property) {
 
 function renderVideoFeedMarkup(property) {
   const saved = state.favorites.includes(property.id);
-  const decision = getDecision(property);
+  const evidence = getListingEvidence(property);
   const heroImage = getHeroImage(property);
   return `
     <article class="video-feed-card">
@@ -1340,16 +1562,16 @@ function renderVideoFeedMarkup(property) {
       <div class="video-feed-overlay">
         <div class="video-feed-topline">
           <span class="reel-pill">${getPropertyClipLabel(property)}</span>
-          <span class="reel-pill">Verified listing</span>
+          <span class="reel-pill">${evidence.qcApproved ? "QC approved" : "QC pending"}</span>
         </div>
         <div class="video-feed-copy">
           <span class="video-feed-location">${escapeHtml(property.area)}</span>
           <h4>${escapeHtml(property.title)}</h4>
           <p>${escapeHtml(property.summary)}</p>
           <div class="video-feed-tags">
-            <span>${money(property.price)}</span>
-            <span>${decision.roi}% ROI</span>
-            <span>${property.aiScore}% AI match</span>
+            <span>${listingPriceLabel(property)}</span>
+            <span>${escapeHtml(evidence.renLabel)}</span>
+            <span>${Math.round(Number(property.aiScore || 0))}% match estimate</span>
           </div>
         </div>
         <div class="video-feed-actions">
@@ -1448,7 +1670,7 @@ function buildRoast(property) {
   if (property.psf > 1000) roastLines.push("This place is priced like it already includes a private jet and a founder exit.");
   if (property.bedrooms === 1) roastLines.push("Calling this a one-bedroom is generous. It feels emotionally like a very stylish shoebox.");
   if (property.intent === "luxury") roastLines.push("It wants to be a power move so badly that even the walls look like they are networking.");
-  if (property.yield < 4.2) roastLines.push("The rental yield is so polite it practically apologizes before entering the room.");
+  if (!getSourcedTransactions(property).length) roastLines.push("The price wants confidence, but no sourced transaction evidence has joined the conversation yet.");
   if (!roastLines.length) roastLines.push("Honestly, this one is annoyingly hard to roast. It seems to know exactly what it is doing.");
   roastLines.push(`Still, the ${property.vibe.toLowerCase()} energy is the kind of thing that makes people ignore their own budgets.`);
   return roastLines.join(" ");
@@ -1603,23 +1825,44 @@ function getViewCount(id) {
 }
 
 function getDecision(property) {
-  const viewBoost = Math.min(getViewCount(property.id), 6) * 0.18;
-  const saveBoost = state.favorites.includes(property.id) ? 0.7 : 0;
-  const roi = Number((property.yield + property.growth * 0.62 + viewBoost + saveBoost).toFixed(1));
-  const fairValue = Math.round(property.price * (1 + property.growth / 100 * 0.52));
-  const offer = Math.round(Math.min(property.price * 0.976, fairValue * 0.964) / 1000) * 1000;
-  const riskScore = (property.yield < 4 ? 1 : 0) + (property.growth > 8.2 ? 1 : 0) + (property.price > 1350000 ? 1 : 0);
-  const risk = riskScore <= 1 ? "Low" : riskScore === 2 ? "Medium" : "High";
+  const askingPsf = getAskingPsf(property);
+  const comparables = getComparableListings(property);
+  const benchmarkPsf = comparables.length >= 2 ? median(comparables.map(getAskingPsf)) : 0;
+  const benchmarkPrice = benchmarkPsf && Number(property.sqft || 0)
+    ? Math.round((benchmarkPsf * Number(property.sqft)) / 1000) * 1000
+    : 0;
+  const transactions = getSourcedTransactions(property);
+  const evidence = getListingEvidence(property);
+  const coverage = transactions.length
+    ? "Sourced transactions"
+    : comparables.length >= 2
+      ? "Asking-price context"
+      : "Limited";
+  const gapPercent = askingPsf && benchmarkPsf ? ((askingPsf - benchmarkPsf) / benchmarkPsf) * 100 : 0;
+  const askingContext = benchmarkPsf
+    ? `The asking price is ${Math.abs(gapPercent).toFixed(1)}% ${gapPercent >= 0 ? "above" : "below"} the median asking price per sq ft from ${comparables.length} comparable live listings.`
+    : "There are not enough comparable live asking prices in this area to publish a benchmark.";
+  const transactionContext = transactions.length
+    ? `${transactions.length} sourced transaction record${transactions.length === 1 ? "" : "s"} include a named source and date. Review them before relying on the comparison.`
+    : "No sourced transaction evidence is linked, so this is not a valuation or proof of fair market value.";
 
   return {
-    roi,
-    fairValue,
-    offer,
-    risk,
+    roi: 0,
+    fairValue: benchmarkPrice || Number(property.price || 0),
+    offer: benchmarkPrice || Number(property.price || 0),
+    risk: coverage,
+    coverage,
+    askingPsf,
+    benchmarkPsf,
+    benchmarkPrice,
+    comparableCount: comparables.length,
+    transactionCount: transactions.length,
     reasons: [
-      `Why this deserves attention: estimated fair value sits near ${fullMoney(fairValue)}, so you have a cleaner anchor than the public asking price.`,
-      `Why this can make money: ${property.yield}% yield plus ${property.growth}% growth gives it stronger upside than a generic lifestyle-first unit.`,
-      `Why it fits now: the ${property.vibe.toLowerCase()} profile aligns well with ${property.intent} demand in ${property.area}.`
+      evidence.qcApproved
+        ? `Listing QC was recorded${evidence.reviewDate ? ` on ${evidence.reviewDate}` : ""}. QC covers listing completeness, not ownership, title, availability or legal fitness.`
+        : "No admin QC record is visible for this listing.",
+      askingContext,
+      `${evidence.renLabel}. ${transactionContext}`
     ]
   };
 }
@@ -1635,7 +1878,7 @@ function getPreferenceLine() {
 
   const top = viewed[0]?.property || getFavorites()[0];
   if (!top) return "";
-  if (top.intent === "investment") return `higher-yield homes around ${top.area}`;
+  if (top.intent === "investment") return `investment-focused homes around ${top.area}`;
   if (top.intent === "family") return `family-led space with lower-regret downside`;
   if (top.intent === "luxury") return `premium city inventory with stronger prestige value`;
   return `${top.type} stock around ${top.area}`;
@@ -1701,7 +1944,7 @@ function scorePersonalizedProperty(property, profile) {
 
 function getPersonalizationLabel(profile) {
   if (!profile.hasSignals) return "";
-  if (profile.intent === "investment") return `higher-yield ${profile.type || "property"} options`;
+  if (profile.intent === "investment") return `investment-focused ${profile.type || "property"} options`;
   if (profile.intent === "family") return "family-friendly space and practical layouts";
   if (profile.intent === "luxury") return "premium listings with stronger status value";
   return `${profile.type || "property"} stock${profile.area ? ` around ${profile.area}` : ""}`;
@@ -1725,9 +1968,15 @@ function getPersonalizedReason(property, profile) {
   return "A nearby alternative with similar price logic and stronger shortlist potential.";
 }
 
+function getWhatsAppPhone(property) {
+  const collab = listingCollabAgents(property).find((agent) => agent.phone);
+  return String(collab?.phone || property.whatsapp || property.agentPhone || "").replace(/\D/g, "");
+}
+
 function getWhatsAppLink(property, source = "dashboard") {
   const collab = listingCollabAgents(property).find((agent) => agent.phone);
-  const phone = collab?.phone || property.whatsapp || property.agentPhone || "60123456789";
+  const phone = getWhatsAppPhone(property);
+  if (!phone) return "#bookingForm";
   const routingLine = collab ? ` Please route me to ${collab.name}.` : "";
   const text = `Hi, I want more details about ${property.title} in ${property.area}. I found it through the ${source} view on RealityGenius.${routingLine}`;
   return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
@@ -1737,25 +1986,17 @@ function getMasterAlgorithmControls() {
   return readStore(STORAGE_KEYS.algorithmControls, DEFAULT_MASTER_ALGORITHM);
 }
 
-function isDeveloperPaidAd(property) {
-  return [3, 5, 8].includes(property.id);
-}
-
 function getListingAgeDays(property) {
   return 14 + property.id * 9;
 }
 
 function hasInvestorIntent() {
-  return state.filter === "investment" || getPreferenceLine().includes("higher-yield");
+  return state.filter === "investment" || getPreferenceLine().includes("investment-focused");
 }
 
 function getMasterFeedScore(property) {
   const controls = getMasterAlgorithmControls();
   let score = property.aiScore + getViewCount(property.id) * 0.9 + (state.favorites.includes(property.id) ? 8 : 0);
-
-  if (isDeveloperPaidAd(property)) {
-    score += controls.paidAdsBoost;
-  }
 
   if (getListingAgeDays(property) > 60) {
     score += controls.staleListingPenalty;
@@ -1780,8 +2021,6 @@ function filteredProperties() {
   return list.sort((a, b) => {
     if (state.sort === "price-low") return a.price - b.price;
     if (state.sort === "price-high") return b.price - a.price;
-    if (state.sort === "yield-high") return b.yield - a.yield;
-    if (state.sort === "growth-high") return b.growth - a.growth;
     return getMasterFeedScore(b) - getMasterFeedScore(a);
   });
 }
@@ -1887,6 +2126,7 @@ function runAiPropertyMatch(prompt) {
     els.mortgagePrice.value = Math.round(profile.budget);
     renderMortgageEstimate();
   }
+  if (matches[0]?.property) primePriceEvidenceFromProperty(matches[0].property);
   els.aiMatchOutput.innerHTML = `
     <div class="ai-match-summary">
       <strong>${profile.budget ? `Budget ${money(profile.budget)}` : "Budget flexible"}</strong>
@@ -1895,12 +2135,12 @@ function runAiPropertyMatch(prompt) {
     ${matches.map(({ property }, index) => `
       <article class="ai-match-result">
         <div>
-          <span>Match ${index + 1} · AI ${Math.round(scorePromptMatch(property, profile))}</span>
+          <span>Match ${index + 1} · relevance estimate ${Math.round(scorePromptMatch(property, profile))}</span>
           <strong>${escapeHtml(property.title)}</strong>
           <p>${escapeHtml(getNearbySuggestionReason(property, prompt, profile.area))}</p>
         </div>
         <div>
-          <b>${money(property.price)}</b>
+          <b>${listingPriceLabel(property)}</b>
           <button class="ghost-button" data-action="open-details" data-id="${property.id}" type="button">View</button>
         </div>
       </article>
@@ -1914,16 +2154,98 @@ function renderMortgageEstimate() {
   const downPct = Number(els.mortgageDownPayment?.value || 10);
   const annualRate = Number(els.mortgageRate?.value || 4.2);
   const years = Number(els.mortgageYears?.value || 35);
+  const income = Number(els.mortgageIncome?.value || 0);
+  const commitments = Number(els.mortgageCommitments?.value || 0);
+  if (
+    price <= 0
+    || downPct < 0
+    || downPct >= 100
+    || annualRate < 0
+    || annualRate > 20
+    || years < 1
+    || years > 40
+    || income < 0
+    || commitments < 0
+  ) {
+    els.mortgageResult.innerHTML = `
+      <strong>Check the inputs</strong>
+      <p>Use a positive price, 0-99% down payment, 0-20% rate, 1-40 years, and non-negative income and commitments.</p>
+    `;
+    return;
+  }
   const loan = Math.max(price * (1 - downPct / 100), 0);
   const months = Math.max(years * 12, 1);
   const monthlyRate = annualRate / 100 / 12;
   const payment = monthlyRate
     ? loan * monthlyRate * Math.pow(1 + monthlyRate, months) / (Math.pow(1 + monthlyRate, months) - 1)
     : loan / months;
+  const dsr = income > 0 ? ((commitments + payment) / income) * 100 : 0;
+  const dsrLabel = !income
+    ? "Add income to estimate DSR"
+    : dsr <= 40
+      ? "Lower estimated commitment load"
+      : dsr <= 60
+        ? "Higher estimated commitment load"
+        : "Elevated estimated commitment load";
   els.mortgageResult.innerHTML = `
     <span>Estimated monthly instalment</span>
-    <strong>${money(Math.round(payment || 0))}</strong>
-    <p>Loan amount ${money(Math.round(loan))}. Estimate only; final approval depends on bank, DSR, documents, and legal checks.</p>
+    <strong>${fullMoney(Math.round(payment || 0))}</strong>
+    <span>${income ? `Estimated DSR ${dsr.toFixed(1)}%` : "DSR not calculated"}</span>
+    <b class="mortgage-dsr-status">${dsrLabel}</b>
+    <p>Loan ${fullMoney(Math.round(loan))}; commitments ${fullMoney(Math.round(commitments))}. Educational estimate only. Each lender applies its own income definitions, DSR limits, valuation, documents and approval rules.</p>
+  `;
+}
+
+function primePriceEvidenceFromProperty(property) {
+  if (!property || !els.priceEvidenceForm) return;
+  if (els.priceEvidenceArea) els.priceEvidenceArea.value = property.area || "";
+  if (els.priceEvidencePrice) els.priceEvidencePrice.value = Math.round(Number(property.price || 0));
+  if (els.priceEvidenceSqft) els.priceEvidenceSqft.value = Math.round(Number(property.sqft || 0));
+  els.priceEvidenceForm.dataset.excludeId = String(property.id || "");
+  els.priceEvidenceForm.dataset.purpose = property.purpose || "sale";
+  renderPriceEvidence();
+}
+
+function renderPriceEvidence() {
+  if (!els.priceEvidenceResult) return;
+  const area = cleanListingLabel(els.priceEvidenceArea?.value || "");
+  const price = Number(els.priceEvidencePrice?.value || 0);
+  const sqft = Number(els.priceEvidenceSqft?.value || 0);
+  const purpose = els.priceEvidenceForm?.dataset.purpose === "rent" ? "rent" : "sale";
+  const excludeId = els.priceEvidenceForm?.dataset.excludeId || "__manual__";
+  if (!area || price <= 0 || sqft <= 0) {
+    els.priceEvidenceResult.innerHTML = `
+      <strong>Add area, asking price and built-up size</strong>
+      <p>We need all three fields before comparing price per square foot.</p>
+      <small>No fair-price claim is made without usable evidence.</small>
+    `;
+    return;
+  }
+
+  const askingPsf = price / sqft;
+  const comparables = getComparableListings(
+    { id: excludeId, purpose, area, price, sqft },
+    { excludeId, purpose, area }
+  );
+  const comparablePsf = comparables.map(getAskingPsf).filter((value) => value > 0);
+  if (comparablePsf.length < 2) {
+    els.priceEvidenceResult.innerHTML = `
+      <span>Your asking price</span>
+      <strong>RM ${askingPsf.toFixed(purpose === "rent" ? 2 : 0)} / sq ft${purpose === "rent" ? " monthly" : ""}</strong>
+      <p>Not enough comparable live asking prices in ${escapeHtml(area)} to publish a benchmark. Widen the area or wait for more inventory.</p>
+      <small>This is not a valuation. No sourced transaction evidence is attached to this comparison.</small>
+    `;
+    return;
+  }
+
+  const benchmarkPsf = median(comparablePsf);
+  const gap = ((askingPsf - benchmarkPsf) / benchmarkPsf) * 100;
+  const direction = gap >= 0 ? "above" : "below";
+  els.priceEvidenceResult.innerHTML = `
+    <span>Asking-price comparison</span>
+    <strong>${Math.abs(gap).toFixed(1)}% ${direction} current median</strong>
+    <p>Your ask is RM ${askingPsf.toFixed(purpose === "rent" ? 2 : 0)} / sq ft. The median is RM ${benchmarkPsf.toFixed(purpose === "rent" ? 2 : 0)} from ${comparablePsf.length} live asking prices matching ${escapeHtml(area)}.</p>
+    <small>Asking-price evidence only, across currently available property types. It is not transaction evidence, a registered valuation, bank valuation or legal advice.</small>
   `;
 }
 
@@ -1938,7 +2260,7 @@ function getLocationInsight(query) {
 
   return matchedRule || {
     label: "Area insight",
-    body: "We do not have exact live stock for this search yet. The useful next step is to map the area, compare nearby verified listings, and turn this search into a sourcing signal for agents."
+    body: "We do not have exact live stock for this search yet. The useful next step is to map the area, compare nearby reviewed listings, and turn this search into a sourcing signal for agents."
   };
 }
 
@@ -1990,15 +2312,15 @@ function getNearbySuggestionReason(property, query, knownArea) {
   const nearbyAreas = knownArea ? AREA_NEARBY_MAP[knownArea] || [] : [];
 
   if (knownArea && property.area === knownArea) {
-    return `This is verified stock inside ${escapeHtml(knownArea)}, so it should be checked before we request more exact matches for "${safeSearch}".`;
+    return `This listing has a visible QC state inside ${escapeHtml(knownArea)}, so it can be checked before we request more exact matches for "${safeSearch}".`;
   }
 
   if (knownArea && nearbyAreas.includes(property.area)) {
-    return `${escapeHtml(property.area)} is a nearby verified pocket to ${escapeHtml(knownArea)}. It gives you a real price anchor while we source the exact address.`;
+    return `${escapeHtml(property.area)} is a nearby reviewed pocket to ${escapeHtml(knownArea)}. It gives you asking-price context while we source the exact address.`;
   }
 
   if (property.intent === "investment") {
-    return `Worth viewing as a yield benchmark: ${property.yield}% projected yield and verified listing data beat waiting blindly for "${safeSearch}".`;
+    return `Worth viewing as an asking-price benchmark while we source "${safeSearch}". Check the QC, REN and evidence states before relying on it.`;
   }
 
   if (property.intent === "family") {
@@ -2082,14 +2404,14 @@ function renderLocationFallback(query) {
             <i class="fa-solid fa-shield-halved"></i>
             <div>
               <strong>Trust check</strong>
-              <span>Until a listing is verified, we show it as an area insight, not fake live inventory.</span>
+              <span>Until a listing has a visible QC state, we show it as an area insight rather than live inventory.</span>
             </div>
           </div>
           <div class="scan-row">
             <i class="fa-solid fa-route"></i>
             <div>
               <strong>Nearby strategy</strong>
-              <span>Use verified nearby homes below to compare budget, commute, and lifestyle fit before requesting a custom shortlist.</span>
+              <span>Use nearby reviewed homes below to compare budget, commute, and lifestyle fit before requesting a custom shortlist.</span>
             </div>
           </div>
         </div>
@@ -2122,7 +2444,7 @@ function renderLocationFallback(query) {
         </div>
       </div>
       <div class="nearby-suggestion-head">
-        <span>Nearby verified options</span>
+        <span>Nearby reviewed options</span>
         <strong>Use these while we source "${safeQuery}"</strong>
       </div>
       <div class="nearby-suggestion-grid">
@@ -2134,9 +2456,9 @@ function renderLocationFallback(query) {
               <h4>${escapeHtml(property.title)}</h4>
               <p>${reason}</p>
               <div class="nearby-suggestion-meta">
-                <span>${money(property.price)}</span>
-                <span>${property.yield}% yield</span>
-                <span>AI ${property.aiScore}%</span>
+                <span>${listingPriceLabel(property)}</span>
+                <span>${getListingEvidence(property).qcApproved ? "QC approved" : "QC pending"}</span>
+                <span>${escapeHtml(getListingEvidence(property).renLabel)}</span>
               </div>
               <button class="ghost-button" data-action="open-details" data-id="${property.id}" type="button">
                 View reason ${index + 1}
@@ -2164,6 +2486,7 @@ function renderDashboard() {
   renderNotifications();
   renderLifestyleSignals(filteredProperties()[0]?.area || "");
   renderMortgageEstimate();
+  renderPriceEvidence();
   setupInfiniteFeed();
 }
 
@@ -2240,7 +2563,7 @@ function renderDailyMatches() {
     <div class="daily-match-media">
       <img src="${heroImage}" alt="${escapeAttr(current.title)}">
       <span class="daily-match-position">Match ${position} of ${total}</span>
-      <span class="score-pill score-pill--match">AI ${current.aiScore}% Match</span>
+      <span class="score-pill score-pill--match">Match estimate ${Math.round(Number(current.aiScore || 0))}%</span>
     </div>
     <div class="daily-match-copy">
       <div class="daily-match-title-row">
@@ -2248,13 +2571,13 @@ function renderDailyMatches() {
           <span>${escapeHtml(current.area)}</span>
           <h4>${escapeHtml(current.title)}</h4>
         </div>
-        <strong>${money(current.price)}</strong>
+        <strong>${listingPriceLabel(current)}</strong>
       </div>
       <p>${escapeHtml(decision.reasons[0] || current.summary)}</p>
       <div class="daily-match-facts">
         <span><i class="fa-solid fa-bed"></i> ${current.bedrooms} bed</span>
         <span><i class="fa-solid fa-ruler-combined"></i> ${current.sqft} sqft</span>
-        <span><i class="fa-solid fa-chart-line"></i> ${decision.roi}% ROI</span>
+        <span><i class="fa-solid fa-scale-balanced"></i> ${decision.askingPsf ? `RM ${decision.askingPsf.toFixed(0)} / sqft asking` : "Price context pending"}</span>
       </div>
       <div class="daily-match-actions">
         <button class="ghost-button" data-action="daily-pass" data-id="${escapeAttr(current.id)}" type="button"><i class="fa-solid fa-forward"></i> Pass</button>
@@ -2266,7 +2589,6 @@ function renderDailyMatches() {
 }
 
 function handleDailyMatch(action, propertyId) {
-  if (!requireBuyerSessionForExplore()) return;
   normalizeDailyMatches();
   const property = properties.find((item) => String(item.id) === String(propertyId));
   if (!property) return;
@@ -2328,7 +2650,6 @@ function renderSearchAlerts() {
 }
 
 function saveCurrentSearchAlert() {
-  if (!requireBuyerSessionForExplore()) return;
   const query = state.search.trim();
   if (!query && state.filter === "all") {
     showToast("Search an area or choose a filter first");
@@ -2570,9 +2891,9 @@ function renderRecommendations() {
   const decision = getDecision(primary);
   els.recommendationTitle.textContent = preference ? "Analyzing your preferences..." : "Waiting for your first signal";
   els.recommendationText.textContent = preference
-    ? `Based on your behavior, we refined your strategy. You keep leaning toward ${preference}, so the next cards are weighted toward stronger match confidence and cleaner upside.`
+    ? `Based on your behavior, we refined your strategy. You keep leaning toward ${preference}, so the next cards are weighted toward relevance and available evidence.`
     : `Open, save, and revisit properties so the shortlist brain can start building a sharper recommendation trail.`;
-  els.recommendationMeta.textContent = `${primary.area} - ${decision.roi}% projected blended ROI - Suggested offer ${money(decision.offer)}`;
+  els.recommendationMeta.textContent = `${primary.area} - ${decision.coverage} - ${getListingEvidence(primary).renLabel}`;
 
   els.recommendationGrid.innerHTML = displayPicks.map((property, index) => {
     const pack = getDecision(property);
@@ -2583,15 +2904,15 @@ function renderRecommendations() {
         <div class="card-media">
           <img src="${heroImage}" alt="${property.title}" loading="lazy">
           <span class="area-pill">${property.secretOnly ? "Highly Recommended" : `Pick ${index + 1}`}</span>
-          <span class="score-pill">${pack.risk} Risk</span>
+          <span class="score-pill">${pack.coverage}</span>
         </div>
         <div class="card-body">
-          <div class="price">${money(property.price)}</div>
+          <div class="price">${listingPriceLabel(property)}</div>
           <div class="title">${property.title}</div>
           <p class="summary">${property.secretOnly ? "Unlocked from your saved behavior. This one is meant to feel like an insider reveal, not a public feed card." : pack.reasons[0]}</p>
           <div class="card-tags">
-            <span class="tag">${pack.roi}% ROI</span>
-            <span class="tag">Offer ${money(pack.offer)}</span>
+            <span class="tag">${getListingEvidence(property).qcApproved ? "QC approved" : "QC pending"}</span>
+            <span class="tag">${escapeHtml(getListingEvidence(property).renLabel)}</span>
           </div>
         </div>
       </article>
@@ -2626,9 +2947,9 @@ function renderPersonalizedMatches() {
           <h4>${escapeHtml(property.title)}</h4>
           <p>${escapeHtml(getPersonalizedReason(property, profile))}</p>
           <div class="personalized-meta">
-            <span>${money(property.price)}</span>
-            <span>AI ${property.aiScore}%</span>
-            <span>${decision.roi}% ROI</span>
+            <span>${listingPriceLabel(property)}</span>
+            <span>${Math.round(Number(property.aiScore || 0))}% match estimate</span>
+            <span>${decision.coverage}</span>
           </div>
         </div>
       </article>
@@ -2734,17 +3055,17 @@ function renderSaved() {
             </button>
           </div>
           <div class="saved-meta">
-            <span>${money(property.price)}</span>
-            <span>${property.yield}% yield</span>
-            <span>${property.growth}% growth</span>
+            <span>${listingPriceLabel(property)}</span>
+            <span>${getListingEvidence(property).qcApproved ? "QC approved" : "QC pending"}</span>
+            <span>${escapeHtml(getListingEvidence(property).renLabel)}</span>
           </div>
           <p class="summary">${latestBooking ? `Last viewing request: ${latestBooking.date} at ${latestBooking.time}.` : "No viewing request sent yet. Keep this ready for a quick next move."}</p>
           <div class="card-actions">
             <button class="ghost-button" data-action="open-details" data-id="${property.id}" type="button">Review</button>
-            <a class="primary-button quick-contact-card" href="${getWhatsAppLink(property, "saved")}" target="_blank" rel="noopener noreferrer">
+            ${getWhatsAppPhone(property) ? `<a class="primary-button quick-contact-card" href="${getWhatsAppLink(property, "saved")}" target="_blank" rel="noopener noreferrer">
               <i class="fa-brands fa-whatsapp"></i>
               Quick Contact
-            </a>
+            </a>` : `<button class="primary-button" data-action="open-details" data-id="${property.id}" type="button">Request viewing</button>`}
           </div>
         </div>
       </article>
@@ -2759,7 +3080,7 @@ function renderFavoritesDrawerLegacy() {
         <article class="drawer-item">
           <strong>${property.title}</strong>
           <p>${property.location}</p>
-          <time>${money(property.price)} • ${property.yield}% yield • ${property.growth}% growth</time>
+          <time>${listingPriceLabel(property)} • ${escapeHtml(getListingEvidence(property).renLabel)}</time>
         </article>
       `).join("")
     : `<div class="empty-state">Your saved properties will appear here.</div>`;
@@ -2780,7 +3101,6 @@ function renderNotifications() {
 }
 
 function toggleFavorite(id) {
-  if (!requireBuyerSessionForExplore()) return;
   const exists = state.favorites.includes(id);
   const property = properties.find((item) => item.id === id);
   state.favorites = exists ? state.favorites.filter((item) => item !== id) : [...state.favorites, id];
@@ -2832,6 +3152,7 @@ function openPropertyModal(id) {
   trackListingAnalytics(property, "view", { source: "property_detail_modal", active: true });
 
   const decision = getDecision(property);
+  primePriceEvidenceFromProperty(property);
   els.modalBadge.textContent = `${property.area} · ${(property.purpose || "sale") === "rent" ? "For Rent" : "For Sale"}`;
   els.modalTitle.textContent = property.title;
   els.modalLocation.textContent = property.location;
@@ -2839,21 +3160,28 @@ function openPropertyModal(id) {
   renderModalGallery(property);
   const { verified, total } = getGalleryCompleteness(property);
   const monthlyEstimate = estimateMonthlyInstallment(property.price);
+  const evidence = getListingEvidence(property);
+  const askingPsf = getAskingPsf(property);
   els.modalStats.innerHTML = `
-    <span>${property.bedrooms} bed / ${property.bathrooms} bath</span>
-    <span>${property.sqft} sqft</span>
-    <span>${property.yield}% yield</span>
-    <span>${property.growth}% growth</span>
+    <span>${property.bedrooms || "?"} bed / ${property.bathrooms || "?"} bath</span>
+    <span>${property.sqft ? `${Number(property.sqft).toLocaleString("en-MY")} sqft` : "Size pending"}</span>
+    <span>${askingPsf ? `RM ${askingPsf.toFixed(property.purpose === "rent" ? 2 : 0)} / sqft asking${property.purpose === "rent" ? " monthly" : ""}` : "Price / sqft pending"}</span>
+    <span>${evidence.qcApproved ? "QC approved" : "QC pending"}</span>
+    <span>${escapeHtml(evidence.renLabel)}</span>
+    <span>${evidence.reviewDate ? `Reviewed ${evidence.reviewDate}` : "Review date unavailable"}</span>
     <span>${verified}/${total} photos ready</span>
-    ${monthlyEstimate ? `<span title="Estimate: 10% down, 4.3% p.a., 35 years">&asymp; RM ${monthlyEstimate.toLocaleString("en-MY")}/mo</span>` : ""}
+    ${property.purpose !== "rent" && monthlyEstimate ? `<span title="Estimate: 10% down, 4.3% p.a., 35 years">&asymp; RM ${monthlyEstimate.toLocaleString("en-MY")}/mo</span>` : ""}
   `;
   els.modalAiReasons.innerHTML = decision.reasons.map((item) => `<li>${item}</li>`).join("");
-  els.modalRisk.textContent = `Risk: ${decision.risk}`;
-  els.modalOffer.textContent = fullMoney(decision.offer);
-  els.modalRoi.textContent = `${decision.roi}%`;
+  els.modalRisk.textContent = `Coverage: ${decision.coverage}`;
+  els.modalOffer.textContent = decision.benchmarkPrice ? fullMoney(decision.benchmarkPrice) : "Not enough evidence";
+  els.modalRoi.textContent = decision.askingPsf
+    ? `RM ${decision.askingPsf.toFixed(property.purpose === "rent" ? 2 : 0)}`
+    : "Not available";
   els.modalSaveAction.innerHTML = `<i class="fa-solid fa-heart"></i> ${state.favorites.includes(property.id) ? "Saved" : "Save Property"}`;
   els.modalSaveAction.classList.toggle("is-saved", state.favorites.includes(property.id));
   els.modalContactAction.href = getWhatsAppLink(property, "modal");
+  els.modalContactAction.hidden = !getWhatsAppPhone(property);
 
   els.bookingStatus.textContent = "";
   els.bookingForm.reset();
@@ -2929,33 +3257,28 @@ function createDealShell(property) {
     createdAt: now,
     updatedAt: now,
     escrow: {
-      amount: 10000,
+      amount: null,
       status: "not_started",
       reference: null,
-      paidAt: null,
-      releasedAt: null
+      requestedAt: null
     },
     loan: {
       status: "not_started",
-      bank: "Maybank Partner Bank",
-      rateDiscount: 0.1,
-      referralFeeEstimate: Math.round(property.price * 0.9 * 0.01),
       startedAt: null,
-      submittedAt: null
+      introductionRequestedAt: null
     },
     offer: {
       status: "not_started",
       reference: null,
       offerPrice: null,
       generatedAt: null,
-      buyerSignedAt: null,
-      agentSignedAt: null
+      buyerAcknowledgedAt: null
     },
     timeline: [
       {
         id: Date.now(),
-        title: "Deal room created",
-        message: "Escrow, loan vault, and offer paperwork are now tracked in RealtyGenius.",
+        title: "Private checklist created",
+        message: "This preview records questions and planning steps on this device. It does not move money, submit a loan, or create a legal signature.",
         createdAt: now
       }
     ]
@@ -3016,8 +3339,8 @@ function ensureOfferLetter(property, reason = "manual") {
     ...deal,
     offer: {
       ...deal.offer,
-      status: alreadyGenerated ? deal.offer.status : "generated",
-      reference: deal.offer.reference || dealReference("LOO", property.id),
+      status: alreadyGenerated ? deal.offer.status : "draft_generated",
+      reference: deal.offer.reference || dealReference("DRAFT", property.id),
       offerPrice,
       generatedAt: deal.offer.generatedAt || new Date().toISOString()
     }
@@ -3025,10 +3348,10 @@ function ensureOfferLetter(property, reason = "manual") {
   if (!alreadyGenerated) {
     deal = appendDealEvent(
       deal,
-      "Letter of Offer generated",
+      "Offer planning draft created",
       reason === "accepted"
-        ? "Accepted offer triggered the e-sign document automatically."
-        : "Buyer generated the e-sign offer pack inside the deal room."
+        ? "The accepted negotiation amount was copied into a planning draft. It is not a binding acceptance or signed legal document."
+        : "A planning draft was created on this device. Review it with the named agent and lawyer before relying on it."
     );
   }
   return saveLeakProofDeal(deal);
@@ -3037,56 +3360,67 @@ function ensureOfferLetter(property, reason = "manual") {
 function renderDealRoom(property) {
   if (!property || !els.dealRoomStatus) return;
   const deal = findLeakProofDeal(property, false);
-  const escrow = deal?.escrow || { amount: 10000, status: "not_started", reference: null };
-  const loan = deal?.loan || { status: "not_started", bank: "Maybank Partner Bank", rateDiscount: 0.1, referralFeeEstimate: Math.round(property.price * 0.9 * 0.01) };
+  const escrow = deal?.escrow || { amount: null, status: "not_started", reference: null };
+  const loan = deal?.loan || { status: "not_started" };
   const offer = deal?.offer || { status: "not_started", reference: null, offerPrice: null };
-  const signedCount = Number(Boolean(offer.buyerSignedAt)) + Number(Boolean(offer.agentSignedAt));
-
   const activeCount = [escrow.status !== "not_started", loan.status !== "not_started", offer.status !== "not_started"].filter(Boolean).length;
-  els.dealRoomStatus.textContent = activeCount ? `${activeCount}/3 retention locks active` : "Not started";
-  els.escrowStatus.textContent =
-    escrow.status === "released" ? "Released after the signed paperwork checkpoint."
-      : escrow.status === "held" ? "RM 10,000 is safely held in RealtyGenius escrow."
-        : "No booking fee held yet.";
-  els.escrowAmount.textContent = `${money(escrow.amount || 10000)} protected deposit`;
-  els.escrowReference.textContent = escrow.reference || "Reference pending";
-  els.payBookingFeeButton.textContent = escrow.status === "held" ? "Escrow Held" : escrow.status === "released" ? "Escrow Released" : "Pay Booking Fee";
-  els.payBookingFeeButton.disabled = escrow.status === "held" || escrow.status === "released";
+  const hasLegacyPaymentState = ["held", "released"].includes(escrow.status);
+  const checklistStarted = ["checklist_started", "vault_started", "introduction_requested", "discount_secured"].includes(loan.status);
+  const introductionRequested = ["introduction_requested", "discount_secured"].includes(loan.status);
+  const buyerAcknowledged = Boolean(offer.buyerAcknowledgedAt);
+  const hasLegacySignatureState = Boolean(offer.buyerSignedAt || offer.agentSignedAt || ["buyer_signed", "agent_signed", "fully_signed"].includes(offer.status));
 
-  els.loanStatus.textContent =
-    loan.status === "discount_secured" ? `${loan.bank} path submitted. Estimated referral fee: ${money(loan.referralFeeEstimate)}.`
-      : loan.status === "vault_started" ? "AI Document Vault started. DSR files stay inside RealtyGenius."
-        : "Start the DSR vault to unlock the 0.1% mortgage-rate route.";
-  els.startLoanPackButton.textContent = loan.status === "not_started" ? "Start Loan Pack" : "Loan Pack Started";
-  els.submitPartnerBankButton.textContent = loan.status === "discount_secured" ? "Bank Submitted" : "Submit to Partner Bank";
+  els.dealRoomStatus.textContent = activeCount ? `${activeCount}/3 checklist steps active` : "Not started";
+  els.escrowStatus.textContent = hasLegacyPaymentState
+    ? "A legacy demo payment state exists. It is not proof of payment, escrow, receipt or stakeholder confirmation."
+    : escrow.status === "instructions_requested"
+      ? "Payment instructions were requested. Confirm the stakeholder, account holder, written terms and receipt outside this preview."
+      : "RealityGenius does not accept or hold booking fees in this preview.";
+  els.escrowAmount.textContent = "Confirm any amount against signed terms";
+  els.escrowReference.textContent = escrow.status === "instructions_requested" && escrow.reference
+    ? `Request ${escrow.reference}`
+    : "No payment reference issued";
+  els.payBookingFeeButton.textContent = escrow.status === "instructions_requested"
+    ? "Instructions Requested"
+    : "Request Payment Instructions";
+  els.payBookingFeeButton.disabled = escrow.status === "instructions_requested";
 
-  els.offerStatus.textContent =
-    offer.status === "fully_signed" ? "Buyer and agent signed. Escrow can be released safely."
-      : offer.status === "agent_signed" ? "Agent signed. Waiting for buyer e-sign."
-        : offer.status === "buyer_signed" ? "Buyer signed. Waiting for agent e-sign."
-          : offer.status === "generated" ? `Letter ${offer.reference} generated at ${money(offer.offerPrice)}.`
-            : "Accept an offer to generate the e-sign paper trail.";
+  els.loanStatus.textContent = introductionRequested
+    ? "A lender introduction was requested. No lender submission or approval is claimed."
+    : checklistStarted
+      ? "Loan readiness checklist started on this device. Documents have not been sent to a lender."
+      : "Prepare a DSR checklist before requesting an introduction to a named lender.";
+  els.startLoanPackButton.textContent = checklistStarted ? "Checklist Started" : "Prepare Checklist";
+  els.submitPartnerBankButton.textContent = introductionRequested ? "Introduction Requested" : "Request Lender Introduction";
+
+  els.offerStatus.textContent = hasLegacySignatureState
+    ? "A legacy demo signature state exists. It is not a legal signature or binding acceptance."
+    : buyerAcknowledged
+      ? "Buyer marked this planning draft as reviewed. Legal acceptance and signing must happen through the appointed stakeholders."
+      : offer.status !== "not_started"
+        ? `Planning draft ${offer.reference || ""} created at ${listingPriceLabel({ price: offer.offerPrice || property.price, purpose: property.purpose })}.`
+        : "Create a planning draft. It is not a signed contract or legal acceptance.";
   els.offerPreview.innerHTML = offer.status === "not_started"
     ? "No offer generated yet."
     : `
-      <strong>${offer.reference}</strong>
-      <span>${property.title}</span>
-      <span>Offer: ${money(offer.offerPrice || getAcceptedOfferPrice(property))}</span>
-      <span>${signedCount}/2 digital signatures captured</span>
+      <strong>${escapeHtml(offer.reference || "Planning draft")}</strong>
+      <span>${escapeHtml(property.title)}</span>
+      <span>Planning amount: ${fullMoney(offer.offerPrice || getAcceptedOfferPrice(property))}</span>
+      <span>${buyerAcknowledged ? "Buyer marked as reviewed" : "Buyer acknowledgement pending"}</span>
     `;
-  els.generateOfferButton.textContent = offer.status === "not_started" ? "Generate Offer" : "Offer Generated";
-  els.buyerSignOfferButton.textContent = offer.buyerSignedAt ? "Buyer Signed" : "Buyer E-Sign";
-  els.buyerSignOfferButton.disabled = Boolean(offer.buyerSignedAt) || offer.status === "not_started";
+  els.generateOfferButton.textContent = offer.status === "not_started" ? "Generate Draft" : "Draft Ready";
+  els.buyerSignOfferButton.textContent = buyerAcknowledged ? "Buyer Acknowledged" : "Mark Buyer Acknowledged";
+  els.buyerSignOfferButton.disabled = buyerAcknowledged || offer.status === "not_started";
 
   els.dealRoomTimeline.innerHTML = deal?.timeline?.length
     ? deal.timeline.map((item) => `
         <article class="deal-timeline-item">
-          <strong>${item.title}</strong>
-          <p>${item.message}</p>
+          <strong>${escapeHtml(/escrow|e-sign|discount|partner bank/i.test(item.title || "") ? "Legacy demo event" : item.title)}</strong>
+          <p>${escapeHtml(/escrow|e-sign|rate discount|Maybank|partner bank|signature captured/i.test(item.message || "") ? "This legacy demo event is not evidence of payment, lender submission or legal signing." : item.message)}</p>
           <time>${new Date(item.createdAt).toLocaleString("en-MY", { dateStyle: "medium", timeStyle: "short" })}</time>
         </article>
       `).join("")
-    : `<div class="empty-state">Use escrow, loan pack, or offer e-sign to start the in-platform paper trail.</div>`;
+    : `<div class="empty-state">Use the payment questions, loan checklist or offer draft to start a private planning record on this device.</div>`;
 }
 
 function payBookingFee() {
@@ -3097,16 +3431,17 @@ function payBookingFee() {
     ...deal,
     escrow: {
       ...deal.escrow,
-      status: "held",
-      reference: deal.escrow.reference || dealReference("ESC", property.id),
-      paidAt: deal.escrow.paidAt || new Date().toISOString()
+      amount: null,
+      status: "instructions_requested",
+      reference: dealReference("REQ", property.id),
+      requestedAt: new Date().toISOString()
     }
   };
-  deal = appendDealEvent(deal, "Booking fee escrowed", `${money(deal.escrow.amount)} is now held by RealtyGenius until signed paperwork is complete.`);
+  deal = appendDealEvent(deal, "Payment instructions requested", "No payment was collected. Confirm the named stakeholder, account holder, written terms and receipt before transferring money.");
   saveLeakProofDeal(deal);
-  pushUserNotification("Booking fee protected", `${property.title}: your booking fee is held in RealtyGenius escrow.`);
+  pushUserNotification("Payment questions saved", `${property.title}: your request for stakeholder payment instructions was recorded on this device.`);
   renderDealRoom(property);
-  showToast("Booking fee held in escrow");
+  showToast("Payment instruction request recorded");
 }
 
 function startLoanPack() {
@@ -3117,14 +3452,14 @@ function startLoanPack() {
     ...deal,
     loan: {
       ...deal.loan,
-      status: deal.loan.status === "not_started" ? "vault_started" : deal.loan.status,
+      status: deal.loan.status === "not_started" ? "checklist_started" : deal.loan.status,
       startedAt: deal.loan.startedAt || new Date().toISOString()
     }
   };
-  deal = appendDealEvent(deal, "AI loan pack started", "The buyer stays in-platform because DSR documents, OCR, and loan routing are now tied to this deal.");
+  deal = appendDealEvent(deal, "Loan readiness checklist started", "The checklist is stored on this device. No documents were uploaded or sent to a lender.");
   saveLeakProofDeal(deal);
   renderDealRoom(property);
-  showToast("Loan pack started");
+  showToast("Loan readiness checklist started");
 }
 
 function submitPartnerBank() {
@@ -3135,16 +3470,16 @@ function submitPartnerBank() {
     ...deal,
     loan: {
       ...deal.loan,
-      status: "discount_secured",
+      status: "introduction_requested",
       startedAt: deal.loan.startedAt || new Date().toISOString(),
-      submittedAt: new Date().toISOString()
+      introductionRequestedAt: new Date().toISOString()
     }
   };
-  deal = appendDealEvent(deal, "Partner bank path submitted", `Buyer can pursue a 0.1% rate discount while the agent keeps full commission.`);
+  deal = appendDealEvent(deal, "Lender introduction requested", "This records a request only. No lender, rate, eligibility or approval is promised.");
   saveLeakProofDeal(deal);
-  pushUserNotification("Partner bank path submitted", `${property.title}: your loan pack is queued for the discounted mortgage route.`);
+  pushUserNotification("Lender introduction requested", `${property.title}: your request was recorded. Confirm the lender and consent before sharing documents.`);
   renderDealRoom(property);
-  showToast("Partner bank submission created");
+  showToast("Lender introduction request recorded");
 }
 
 function generateOfferLetter() {
@@ -3152,7 +3487,7 @@ function generateOfferLetter() {
   if (!property) return;
   ensureOfferLetter(property);
   renderDealRoom(property);
-  showToast("Letter of Offer generated");
+  showToast("Offer planning draft created");
 }
 
 function buyerSignOffer() {
@@ -3160,20 +3495,19 @@ function buyerSignOffer() {
   if (!property) return;
   let deal = ensureOfferLetter(property);
   if (!deal) return;
-  const agentSigned = Boolean(deal.offer.agentSignedAt);
   deal = {
     ...deal,
     offer: {
       ...deal.offer,
-      status: agentSigned ? "fully_signed" : "buyer_signed",
-      buyerSignedAt: deal.offer.buyerSignedAt || new Date().toISOString()
+      status: "buyer_acknowledged",
+      buyerAcknowledgedAt: deal.offer.buyerAcknowledgedAt || new Date().toISOString()
     }
   };
-  deal = appendDealEvent(deal, "Buyer e-signed Letter of Offer", `${deal.offer.reference} now has the buyer signature inside RealtyGenius.`);
+  deal = appendDealEvent(deal, "Buyer reviewed planning draft", `${deal.offer.reference} was marked as reviewed. This is not a legal signature or binding acceptance.`);
   saveLeakProofDeal(deal);
-  pushUserNotification("Letter of Offer signed", `${property.title}: your e-signature was recorded.`);
+  pushUserNotification("Offer draft acknowledged", `${property.title}: the planning draft was marked as reviewed on this device.`);
   renderDealRoom(property);
-  showToast(agentSigned ? "Offer fully signed" : "Buyer signature captured");
+  showToast("Buyer acknowledgement recorded");
 }
 
 function getNegotiationThread(propertyId) {
@@ -3448,7 +3782,6 @@ function configureAr(property, reset = false) {
 
 function submitBooking(event) {
   event.preventDefault();
-  if (!requireBuyerSessionForExplore()) return;
   if (!state.activePropertyId) return;
 
   const property = properties.find((item) => item.id === state.activePropertyId);
@@ -3460,18 +3793,27 @@ function submitBooking(event) {
     phone: els.bookingPhone.value.trim(),
     date: els.bookingDate.value,
     time: els.bookingTime.value,
+    budget: Number(els.bookingBudget.value || 0),
+    purchaseTimeline: els.bookingTimeline.value,
+    financingStage: els.bookingFinancing.value,
+    consent: Boolean(els.bookingConsent.checked),
     createdAt: new Date().toISOString()
   };
 
-  if (!booking.name || !booking.phone || !booking.date || !booking.time) {
+  if (!booking.name || !booking.phone || !booking.date || !booking.time || !booking.budget || !booking.purchaseTimeline || !booking.financingStage || !booking.consent) {
     els.bookingStatus.textContent = "Please complete all booking fields first.";
+    return;
+  }
+  if (booking.phone.replace(/\D/g, "").length < 8) {
+    els.bookingStatus.textContent = "Enter a valid WhatsApp number so the listing representative can reply.";
     return;
   }
 
   state.bookings = [booking, ...state.bookings];
   writeStore(STORAGE_KEYS.bookings, state.bookings);
   trackListingAnalytics(property, "booking", { source: "buyer_booking_form", active: true });
-  pushUserNotification("Viewing request sent", `Your request for ${property.title} on ${booking.date} at ${booking.time} is now in motion.`);
+  pushUserNotification("Viewing request saved", `Your request for ${property.title} on ${booking.date} at ${booking.time} was saved on this device.`);
+  els.bookingStatus.textContent = "Sending your request to the listing representative...";
 
   sendLeadAutomation(buildLeadAutomationPayload(property, {
     buyerName: booking.name,
@@ -3480,16 +3822,22 @@ function submitBooking(event) {
     source: "user_booking_form",
     bookingDate: booking.date,
     bookingTime: booking.time,
-    message: `Viewing request for ${property.title} on ${booking.date} at ${booking.time}.`
+    buyerBudget: booking.budget,
+    purchaseTimeline: booking.purchaseTimeline,
+    financingStage: booking.financingStage,
+    message: `Viewing request for ${property.title} on ${booking.date} at ${booking.time}. Budget RM ${booking.budget.toLocaleString("en-MY")}; timeline ${booking.purchaseTimeline}; financing ${booking.financingStage}.`
   })).then((result) => {
     if (result?.assignedAgent?.name) {
-      els.bookingStatus.textContent = `Viewing request sent. ${result.assignedAgent.name} received the lead with a ${result.lead.score}/100 score.`;
+      els.bookingStatus.textContent = `Viewing request sent to ${result.assignedAgent.name}. Intent score ${result.lead.intentScore}/100, based on the details you submitted.`;
+    } else if (result?.success) {
+      els.bookingStatus.textContent = "Viewing request recorded. RealityGenius will route it after the listing representative is confirmed.";
+    } else {
+      els.bookingStatus.textContent = "Saved on this device, but delivery could not be confirmed. Use the WhatsApp contact button for an immediate follow-up.";
     }
   });
 
-  els.bookingStatus.textContent = `Viewing request sent for ${property.title}. Check your alerts for updates.`;
   renderDashboard();
-  showToast("Booking request sent");
+  showToast("Booking request saved");
   checkGamificationMilestones("booking");
 }
 
@@ -3500,7 +3848,7 @@ function renderFavoritesDrawer() {
         <article class="drawer-item">
           <strong>${property.title}</strong>
           <p>${property.location}</p>
-          <time>${money(property.price)} - ${property.yield}% yield - ${property.growth}% growth</time>
+          <time>${listingPriceLabel(property)} - ${escapeHtml(getListingEvidence(property).renLabel)}</time>
         </article>
       `).join("")
     : `<div class="empty-state">Your saved properties will appear here.</div>`;
@@ -3643,8 +3991,20 @@ function bindEvents() {
     const prompt = els.aiMatchPrompt?.value.trim() || "";
     runAiPropertyMatch(prompt || "I need a family home under RM800k near schools");
   });
-  [els.mortgagePrice, els.mortgageDownPayment, els.mortgageRate, els.mortgageYears].forEach((input) => {
+  [els.mortgagePrice, els.mortgageDownPayment, els.mortgageRate, els.mortgageYears, els.mortgageIncome, els.mortgageCommitments].forEach((input) => {
     input?.addEventListener("input", renderMortgageEstimate);
+  });
+  els.priceEvidenceForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    renderPriceEvidence();
+  });
+  [els.priceEvidenceArea, els.priceEvidencePrice, els.priceEvidenceSqft].forEach((input) => {
+    input?.addEventListener("input", () => {
+      if (els.priceEvidenceForm) {
+        delete els.priceEvidenceForm.dataset.excludeId;
+        delete els.priceEvidenceForm.dataset.purpose;
+      }
+    });
   });
 
   els.gridFeedButton.addEventListener("click", () => setFeedMode("grid"));
@@ -3702,7 +4062,7 @@ function bindEvents() {
       if (action === "open-favorites-drawer") openDrawer("favoritesDrawer");
       if (action === "open-alerts-drawer") openDrawer("notificationsDrawer");
       if (action === "open-details") {
-        if (requireBuyerSessionForExplore()) openPropertyModal(id);
+        openPropertyModal(id);
       }
       if (action === "select-gallery-image") selectModalGalleryImage(Number(actionTarget.dataset.index));
       if (action === "guess-price") handleGuessPrice(id, Number(actionTarget.dataset.guess));
@@ -3717,16 +4077,12 @@ function bindEvents() {
     const interactiveTarget = target?.closest("a, button, input, select, textarea, label");
     const contactTarget = target?.closest(".quick-contact-card");
     if (contactTarget) {
-      if (!requireBuyerSessionForExplore()) {
-        event.preventDefault();
-        return;
-      }
       const contactCard = contactTarget.closest("[data-click-card]");
       const property = properties.find((item) => String(item.id) === String(contactCard?.dataset.id));
       if (property) trackListingAnalytics(property, "contact", { source: "buyer_feed_whatsapp", active: true });
     }
     if (cardTarget && !interactiveTarget) {
-      if (requireBuyerSessionForExplore()) openPropertyModal(Number(cardTarget.dataset.id));
+      openPropertyModal(Number(cardTarget.dataset.id));
       return;
     }
 
@@ -3770,7 +4126,7 @@ function bindEvents() {
     const interactiveTarget = target?.closest("a, button, input, select, textarea, label");
     if (!cardTarget || interactiveTarget) return;
     event.preventDefault();
-    if (requireBuyerSessionForExplore()) openPropertyModal(Number(cardTarget.dataset.id));
+    openPropertyModal(Number(cardTarget.dataset.id));
   });
 
   els.favoritesButton.addEventListener("click", () => openDrawer("favoritesDrawer"));
@@ -3953,7 +4309,7 @@ function getGrowthElements() {
 
 function buildGrowthPlan() {
   const channels = growthState.channels.length ? growthState.channels.join(", ") : "WhatsApp";
-  return `${growthState.role} plan: ${growthState.goal} using RealityGenius AI match scoring, verified property cards, agent trust signals, and ${channels} follow-up. Start by saving 3 listings, request 1 viewing, then invite 2 people to unlock stronger property recommendations.`;
+  return `${growthState.role} plan: ${growthState.goal} using RealityGenius match estimates, visible QC and REN states, and ${channels} follow-up. Start by saving 3 listings, request 1 viewing, then invite 2 people to improve property recommendations.`;
 }
 
 function updateGrowthPlan() {
@@ -3984,7 +4340,7 @@ function getShareCardData() {
     title: growthEls.shareTitle?.value.trim() || "RealityGenius Featured Home",
     price: growthEls.sharePrice?.value.trim() || "Price on request",
     location: growthEls.shareLocation?.value.trim() || "Malaysia",
-    highlights: growthEls.shareHighlights?.value.trim() || "Verified photos, AI match score, and WhatsApp-ready viewing flow.",
+    highlights: growthEls.shareHighlights?.value.trim() || "Visible QC and REN states, asking-price context, and a WhatsApp-ready viewing flow.",
     agent: growthEls.shareAgent?.value.trim() || "RealityGenius Concierge",
     phone: growthEls.sharePhone?.value.trim() || "+60"
   };
@@ -4028,7 +4384,7 @@ function useTopListingForShareCard() {
   if (growthEls.sharePrice) growthEls.sharePrice.value = money(property.price);
   if (growthEls.shareLocation) growthEls.shareLocation.value = property.location || property.area || "Malaysia";
   if (growthEls.shareHighlights) {
-    growthEls.shareHighlights.value = `${property.beds || 0} bed, ${property.baths || 0} bath, ${property.yield || 0}% yield, ${property.growth || 0}% growth. ${property.summary || "Verified listing with AI match context."}`;
+    growthEls.shareHighlights.value = `${property.beds || 0} bed, ${property.baths || 0} bath. ${getListingEvidence(property).renLabel}. ${property.summary || "Listing with visible QC and asking-price context."}`;
   }
   updateSharePreview();
   showToast("Top listing loaded into share card");

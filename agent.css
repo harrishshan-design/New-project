@@ -4717,7 +4717,22 @@ body{
 }
 
 .agentos-pricing-grid{
-  grid-template-columns:repeat(5,minmax(0,1fr));
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+
+.agentos-commercial-note{
+  margin:18px 0 0;
+  padding:18px 20px;
+  border:1px solid rgba(65,255,202,0.22);
+  border-radius:18px;
+  background:rgba(65,255,202,0.07);
+  color:#d8f8ef;
+  line-height:1.65;
+}
+
+.agentos-commercial-note a{
+  color:#8cf4dc;
+  font-weight:800;
 }
 
 .agentos-pricing-grid article{

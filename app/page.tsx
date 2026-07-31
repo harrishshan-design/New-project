@@ -4,55 +4,56 @@ import Script from "next/script";
 import { useEffect, useRef } from "react";
 import "./landing.css";
 
-const AREAS = ["KLCC", "Mont Kiara", "Shah Alam", "Petaling Jaya", "Penang", "Johor Bahru"];
+const AREAS = ["KLCC", "Mont Kiara", "Shah Alam", "Petaling Jaya", "Subang Jaya", "Klang"];
 
 const STATS = [
-  { num: "360°", label: "Immersive tours on ready listings" },
-  { num: "60s", label: "Agent listing upload, start to live" },
-  { num: "94%", label: "AI match scoring on every fit" },
-  { num: "0", label: "Unreviewed listings shown" }
+  { num: "Browse", label: "No account needed to search" },
+  { num: "QC", label: "Review status shown on listings" },
+  { num: "REN", label: "Agent ID state shown when supplied" },
+  { num: "Source", label: "Evidence labelled by type and date" }
 ];
 
 const BENEFITS = [
-  { no: "01", title: "Verified homes, not noise", body: "Cleaner property information: the listing, price, location and agent in one confident flow — every listing through admin review first." },
-  { no: "02", title: "AI that understands fit", body: "Tell it your budget, preferred area and lifestyle. It surfaces better-fit homes instead of making you start from zero." },
-  { no: "03", title: "A shorter path to a viewing", body: "Save favourites, estimate affordability and contact the listing agent directly the moment a home is worth seeing." }
+  { no: "01", title: "Verification you can inspect", body: "See listing QC, source, last review date and REN status separately. Admin review is never presented as legal or ownership verification." },
+  { no: "02", title: "Affordability before pressure", body: "Check estimated instalment and DSR before sharing your details. Assumptions stay visible and bank approval is never implied." },
+  { no: "03", title: "Evidence before an offer", body: "Compare asking price per square foot and view transaction evidence only when a named source and date are available." }
 ];
 
 const HOMES = [
   { src: "https://www.pexels.com/download/video/34593442/", title: "Skyline Residence", area: "Mont Kiara, KL", spec: "3 bed · 2,150 sq ft", match: "94%", price: "RM 2.4M" },
   { src: "https://www.pexels.com/download/video/18293320/", title: "Twin Towers View Suites", area: "KLCC, KL", spec: "2 bed · 1,180 sq ft", match: "91%", price: "RM 1.68M" },
   { src: "https://www.pexels.com/download/video/7578546/", title: "Garden Family Home", area: "Petaling Jaya", spec: "4 bed · 2,800 sq ft", match: "89%", price: "RM 1.35M" },
-  { src: "https://www.pexels.com/download/video/31617692/", title: "Modern Straits Suites", area: "George Town, Penang", spec: "3 bed · 1,540 sq ft", match: "87%", price: "RM 980K" }
+  { src: "https://www.pexels.com/download/video/31617692/", title: "Putrajaya Lake Suites", area: "Putrajaya", spec: "3 bed · 1,540 sq ft", match: "87%", price: "RM 980K" }
 ];
 
 const TOOLS = [
-  { no: "T‐01", title: "AI property search", body: "Describe the home you need in plain language — “3-bedroom under RM700k near KL” — and get relevant Malaysian listings back." },
-  { no: "T‐02", title: "Smart shortlist", body: "Save favourites and keep the homes you are seriously considering in one place, ready when you return." },
-  { no: "T‐03", title: "Affordability tools", body: "Estimate mortgage affordability and compare the practical fit before arranging a viewing." },
-  { no: "T‐04", title: "Friday auction night", body: "Selected homes become weekly live offer events — with safer, non-binding highest-offer wording." },
-  { no: "T‐05", title: "Verified listing flow", body: "Admin review and visible agent details, so you always know who and what you are dealing with." },
-  { no: "T‐06", title: "Agent workspace", body: "Agents get listing, AI content, Telegram import and buyer-lead tools in a separate, focused workspace." }
+  { no: "T-01", title: "Search without login", body: "Browse available Klang Valley inventory, open details and contact the listing representative without creating an account." },
+  { no: "T-02", title: "REN and QC states", body: "Agent ID supplied, REN verified and listing QC are separate labels, each with a clear meaning." },
+  { no: "T-03", title: "Free DSR estimate", body: "Compare income, commitments and the estimated instalment before arranging a viewing." },
+  { no: "T-04", title: "Is this price fair?", body: "Compare asking price per square foot with current asking-price evidence. Transaction data appears only with a source and date." },
+  { no: "T-05", title: "Private deal checklist", body: "Keep questions, documents and offer steps together. Payments and legal signing stay with named licensed stakeholders." },
+  { no: "T-06", title: "Agent closing workspace", body: "Agents get listing QC, content, Telegram import, lead follow-up and viewing tools in one focused workspace." }
 ];
 
 const PERKS = [
   { title: "Free AI match", body: "Search around your budget and lifestyle." },
   { title: "Saved shortlist", body: "Keep serious options together." },
   { title: "Property alerts", body: "Return when a relevant home appears." },
-  { title: "Affordability", body: "Estimate before you arrange a viewing." }
+  { title: "DSR + price context", body: "Estimate before you arrange a viewing." }
 ];
 
 const STEPS = [
   { no: "01", title: "Tell us what you need", body: "Budget, location, property type and must-haves — in plain language." },
-  { no: "02", title: "Compare better-fit homes", body: "Verified details, AI match signals and affordability in one cleaner shortlist." },
-  { no: "03", title: "Save or book a viewing", body: "Create a free account to save favourites, get alerts and contact the agent directly." }
+  { no: "02", title: "Compare evidence and affordability", body: "Review QC status, REN state, asking-price context and your estimated DSR." },
+  { no: "03", title: "Contact or save", body: "Open details and contact the representative without an account. Sign in only for cross-device saving and alerts." }
 ];
 
 const FAQS = [
-  { q: "Can I explore without an account?", a: "Yes. Browse available homes freely. Create a free buyer account when you want to save favourites, receive alerts or continue a viewing request." },
-  { q: "What does the AI match do?", a: "It uses your budget, preferred area, property type and lifestyle needs to prioritise more relevant homes — so you compare fits, not just filters." },
+  { q: "Can I explore without an account?", a: "Yes. Search, open details, use affordability tools and contact the listing representative without an account. Login is optional for cross-device saves and alerts." },
+  { q: "What does verified mean here?", a: "We show separate states for admin listing QC, agent identity supplied and REN verification. QC checks listing completeness; it is not proof of ownership, legal title or guaranteed availability." },
+  { q: "Is the price report a valuation?", a: "No. It is an asking-price comparison unless a named transaction source and date are shown. It does not replace a registered valuer, bank valuation or legal due diligence." },
   { q: "Are auction bids automatic purchases?", a: "No. A winning bid means you submitted the highest offer. Final purchase is still subject to owner approval, booking fee, loan eligibility, agreement terms and legal documentation." },
-  { q: "Does RealityGenius support agents too?", a: "Yes. Agents have a separate workspace for listings, AI content, Telegram import, leads and admin verification." }
+  { q: "Does RealityGenius hold booking fees?", a: "Not in the current buyer preview. Never transfer money based only on a screen status. Confirm the named stakeholder, account holder, written terms and receipt before paying." }
 ];
 
 export default function Home() {
@@ -264,7 +265,7 @@ export default function Home() {
           <div className="rg-hero-grid" style={{ maxWidth: 1240, margin: "0 auto", width: "100%", display: "grid", gridTemplateColumns: "minmax(0,7fr) minmax(0,4fr)", gap: 48, alignItems: "end" }}>
             <div ref={heroContentRef} style={{ willChange: "transform,opacity" }}>
               <span style={{ display: "block", fontSize: 13, letterSpacing: ".1em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-accent-300)", marginBottom: 12 }}>
-                Malaysia&#8217;s smarter property search
+                Klang Valley property search with visible trust states
               </span>
               <hr style={{ height: 1, border: 0, margin: "0 0 24px", background: "var(--color-divider)", maxWidth: 420 }} />
               <h1 className="rg-hero-h1" style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(52px,7.6vw,108px)", lineHeight: 1.02, letterSpacing: ".01em", textTransform: "uppercase", margin: "0 0 0 -0.05em" }}>
@@ -276,10 +277,10 @@ export default function Home() {
                 </span>
               </h1>
               <p style={{ fontSize: 17, lineHeight: 1.55, maxWidth: "56ch", margin: "26px 0 0", color: "color-mix(in srgb, var(--color-text) 82%, transparent)" }}>
-                Verified sale, rent, new-project and auction listings across Malaysia &mdash; scored by AI against your budget and lifestyle, toured in 360&deg;, and one message away from the listing agent.
+                Search available homes without an account. Check listing QC, REN status, estimated DSR and asking-price evidence before you contact the listing representative.
               </p>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 30 }}>
-                <a className="rg-btn rg-btn-primary" href="/user.html" style={{ textDecoration: "none", fontSize: 15 }}>Get AI match</a>
+                <a className="rg-btn rg-btn-primary" href="/user.html#explore" style={{ textDecoration: "none", fontSize: 15 }}>Search homes</a>
                 <a className="rg-btn rg-btn-secondary" href="/login.html?role=user" style={{ textDecoration: "none", fontSize: 15 }}>Login / Sign up</a>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 28 }}>
@@ -292,13 +293,13 @@ export default function Home() {
             <div ref={heroCardRef} className="rg-hero-card" style={{ alignSelf: "center", marginBottom: "8vh", willChange: "transform,opacity" }}>
               <div className="rg-blueprint rg-float-a" style={{ background: "color-mix(in srgb, var(--color-bg) 78%, transparent)", backdropFilter: "blur(8px)", padding: 20, animation: "rg-float 7s ease-in-out infinite" }}>
                 <i className="corner tl" /><i className="corner tr" /><i className="corner bl" /><i className="corner br" />
-                <span style={{ display: "block", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--color-accent-300)", fontWeight: 600 }}>Live property skyline</span>
+                <span style={{ display: "block", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--color-accent-300)", fontWeight: 600 }}>Buyer evidence preview</span>
                 <hr style={{ height: 1, border: 0, margin: "10px 0 14px", background: "var(--color-divider)" }} />
                 <p style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 22, textTransform: "uppercase", letterSpacing: ".02em", margin: 0 }}>Mont Kiara, Kuala Lumpur</p>
-                <p style={{ fontSize: 13, margin: "6px 0 14px", color: "color-mix(in srgb, var(--color-text) 70%, transparent)" }}>AI-matched luxury residence &middot; 360&deg; immersive view ready</p>
+                <p style={{ fontSize: 13, margin: "6px 0 14px", color: "color-mix(in srgb, var(--color-text) 70%, transparent)" }}>QC state &middot; REN state &middot; DSR estimate &middot; price context</p>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                  <span className="rg-tag rg-tag-accent">94% match</span>
-                  <a href="/user.html" style={{ fontSize: 12, letterSpacing: ".06em", textTransform: "uppercase", fontWeight: 600, textDecoration: "none" }}>View listing &rarr;</a>
+                  <span className="rg-tag rg-tag-accent">No login to browse</span>
+                  <a href="/user.html#explore" style={{ fontSize: 12, letterSpacing: ".06em", textTransform: "uppercase", fontWeight: 600, textDecoration: "none" }}>Open search &rarr;</a>
                 </div>
               </div>
             </div>
@@ -350,7 +351,7 @@ export default function Home() {
                 <span style={{ display: "block", fontSize: 13, letterSpacing: ".1em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-accent-300)", marginBottom: 12 }}>Featured homes</span>
                 <hr style={{ height: 1, border: 0, margin: "0 0 24px", background: "color-mix(in srgb, #f2f2f3 22%, transparent)" }} />
                 <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(38px,4vw,60px)", lineHeight: 1.04, textTransform: "uppercase", letterSpacing: ".01em", margin: "0 0 14px" }}>Homes worth stopping for.</h2>
-                <p style={{ fontSize: 16, lineHeight: 1.55, margin: 0, maxWidth: "40ch", color: "color-mix(in srgb, #f2f2f3 68%, transparent)" }}>A scroll through this week&#8217;s stand-outs &mdash; every one admin-reviewed, AI-scored and ready for a 360&deg; tour.</p>
+                <p style={{ fontSize: 16, lineHeight: 1.55, margin: 0, maxWidth: "40ch", color: "color-mix(in srgb, #f2f2f3 68%, transparent)" }}>A visual preview of the browsing experience. Open the live inventory to see current availability, source and review status.</p>
                 <p style={{ fontSize: 11, letterSpacing: ".14em", textTransform: "uppercase", margin: "26px 0 0", color: "color-mix(in srgb, #f2f2f3 45%, transparent)" }}>Keep scrolling &rarr;</p>
               </div>
               {HOMES.map((h) => (
@@ -363,8 +364,8 @@ export default function Home() {
                     {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
                     <video className="rg-vid-el" src={h.src} loop playsInline preload="metadata" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                     <div className="rg-vid-tint" style={{ position: "absolute", inset: 0, background: "var(--color-accent)", mixBlendMode: "color", pointerEvents: "none" }} />
-                    <span className="rg-tag rg-tag-accent" style={{ position: "absolute", top: 14, left: 14 }}>{h.match} match</span>
-                    <span style={{ position: "absolute", top: 16, right: 14, fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "color-mix(in srgb, #f2f2f3 80%, transparent)" }}>360&deg; ready</span>
+                    <span className="rg-tag rg-tag-accent" style={{ position: "absolute", top: 14, left: 14 }}>Experience preview</span>
+                    <span style={{ position: "absolute", top: 16, right: 14, fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "color-mix(in srgb, #f2f2f3 80%, transparent)" }}>Sample media</span>
                   </div>
                   <figcaption style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, padding: "16px 18px", flexWrap: "wrap" }}>
                     <span>
@@ -376,15 +377,15 @@ export default function Home() {
                 </figure>
               ))}
               <div style={{ flex: "none", width: "min(34vw,420px)", textAlign: "left" }}>
-                <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(28px,2.8vw,40px)", lineHeight: 1.08, textTransform: "uppercase", letterSpacing: ".01em", margin: "0 0 18px" }}>And 4,000 more,<br />all verified.</h3>
-                <a className="rg-btn" href="/user.html" style={{ textDecoration: "none", fontSize: 15, color: "var(--color-accent-900)", background: "#f2f2f3", borderColor: "#f2f2f3" }}>See every listing &rarr;</a>
+                <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(28px,2.8vw,40px)", lineHeight: 1.08, textTransform: "uppercase", letterSpacing: ".01em", margin: "0 0 18px" }}>See what is live,<br />and what was checked.</h3>
+                <a className="rg-btn" href="/user.html#explore" style={{ textDecoration: "none", fontSize: 15, color: "var(--color-accent-900)", background: "#f2f2f3", borderColor: "#f2f2f3" }}>Open live inventory &rarr;</a>
               </div>
             </div>
             <div style={{ position: "absolute", left: "clamp(20px,5vw,72px)", right: "clamp(20px,5vw,72px)", bottom: 30 }}>
               <div style={{ height: 1, background: "color-mix(in srgb, #f2f2f3 20%, transparent)" }}>
                 <div ref={stripBarRef} style={{ height: 1, background: "var(--color-accent-300)", transform: "scaleX(0)", transformOrigin: "left", willChange: "transform" }} />
               </div>
-              <p style={{ fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", margin: "10px 0 0", color: "color-mix(in srgb, #f2f2f3 40%, transparent)" }}>Sample listings &middot; preview footage via Pexels</p>
+              <p style={{ fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", margin: "10px 0 0", color: "color-mix(in srgb, #f2f2f3 40%, transparent)" }}>Product preview only &middot; sample footage via Pexels &middot; not live inventory</p>
             </div>
           </div>
         </section>
@@ -459,8 +460,8 @@ export default function Home() {
         </section>
 
         <div style={{ height: "60vh", display: "grid", placeItems: "center", position: "relative", overflow: "hidden" }}>
-          <span data-plx="0.14" style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(70px,12vw,190px)", letterSpacing: ".06em", textTransform: "uppercase", color: "color-mix(in srgb, var(--color-accent) 26%, transparent)", whiteSpace: "nowrap", willChange: "transform" }}>Verified</span>
-          <span className="rg-tag rg-tag-outline" style={{ background: "var(--color-bg)", letterSpacing: ".12em", textTransform: "uppercase", padding: "6px 16px", position: "relative" }}>Every listing, admin-reviewed</span>
+          <span data-plx="0.14" style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(70px,12vw,190px)", letterSpacing: ".06em", textTransform: "uppercase", color: "color-mix(in srgb, var(--color-accent) 26%, transparent)", whiteSpace: "nowrap", willChange: "transform" }}>Evidence</span>
+          <span className="rg-tag rg-tag-outline" style={{ background: "var(--color-bg)", letterSpacing: ".12em", textTransform: "uppercase", padding: "6px 16px", position: "relative" }}>QC, REN and source shown separately</span>
         </div>
 
         <section style={{ background: "color-mix(in srgb, var(--color-bg) 94%, transparent)", backdropFilter: "blur(6px)", padding: "96px clamp(20px,5vw,72px)" }}>
@@ -490,7 +491,7 @@ export default function Home() {
             <div data-reveal={0} style={{ maxWidth: "60ch" }}>
               <span style={{ display: "block", fontSize: 12, letterSpacing: ".12em", textTransform: "uppercase", fontWeight: 600, color: "color-mix(in srgb, #f2f2f3 58%, transparent)", marginBottom: 10 }}>For property agents</span>
               <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(26px,2.6vw,38px)", lineHeight: 1.1, textTransform: "uppercase", letterSpacing: ".01em", margin: "0 0 8px" }}>List, create content and manage leads faster.</h2>
-              <p style={{ fontSize: 15, lineHeight: 1.55, margin: 0, color: "color-mix(in srgb, #f2f2f3 70%, transparent)" }}>Listing upload in 60 seconds, AI content, Telegram import and buyer-lead tools &mdash; in a workspace of its own.</p>
+              <p style={{ fontSize: 15, lineHeight: 1.55, margin: 0, color: "color-mix(in srgb, #f2f2f3 70%, transparent)" }}>Structured listing upload, AI content, Telegram import, QC feedback and buyer-lead follow-up &mdash; in a workspace of its own.</p>
             </div>
             <a className="rg-btn" data-reveal={1} href="/agents.html" style={{ textDecoration: "none", fontSize: 15, color: "#f2f2f3", borderColor: "color-mix(in srgb, #f2f2f3 45%, transparent)" }}>Explore Agent OS &rarr;</a>
           </div>

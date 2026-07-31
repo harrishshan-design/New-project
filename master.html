@@ -34,7 +34,7 @@
         </button>
         <button class="nav-item" data-section="money" type="button">
           <i class="fa-solid fa-money-bill-transfer"></i>
-          <span>Revenue & Escrow</span>
+          <span>Revenue & Records</span>
         </button>
         <button class="nav-item" data-section="algorithm" type="button">
           <i class="fa-solid fa-sliders"></i>
@@ -56,8 +56,8 @@
 
       <div class="sidebar-card">
         <div class="eyebrow soft">Owner Doctrine</div>
-        <h3>Read everything. Follow every ringgit. Control every emergency.</h3>
-        <p>The master console is designed for legal disputes, revenue truth, and platform-level intervention.</p>
+        <h3>Inspect access, approved inventory, revenue, and platform risk.</h3>
+        <p>The master console distinguishes live provider data from browser-only legacy records.</p>
       </div>
     </aside>
 
@@ -137,23 +137,23 @@
         </div>
 
         <div class="pulse-leaderboard">
-          <div class="eyebrow soft">Frontline Leaderboard</div>
+          <div class="eyebrow soft">Workflow Consistency</div>
           <div class="leaderboard-list" id="pulseLeaderboard"></div>
         </div>
       </section>
 
       <section class="hero">
         <div class="hero-copy">
-          <div class="hero-pill">God Mode Active</div>
-          <h3>Absolute visibility over conversations, money, AI ranking, and emergency control.</h3>
-          <p>Built for the owner: legal-grade logs, escrow visibility, subscription revenue, bank referral tracking, algorithm dials, and global kill switches.</p>
+          <div class="hero-pill">Owner Controls</div>
+          <h3>Platform visibility without pretending demos are financial records.</h3>
+          <p>Subscription and Supabase metrics can be live. Escrow, legal e-signing, title verification, and lender approval are not connected in this release.</p>
         </div>
 
         <div class="hero-metrics">
           <article class="metric-card">
-            <span>Live Escrow</span>
-            <strong id="liveEscrowMetric">RM 0</strong>
-            <p>Held booking fees</p>
+            <span>Payment Holding Provider</span>
+            <strong id="liveEscrowMetric">Not connected</strong>
+            <p>RealityGenius holds no booking fees</p>
           </article>
           <article class="metric-card">
             <span>SaaS Revenue Today</span>
@@ -161,12 +161,12 @@
             <p>RM 299 agent plans</p>
           </article>
           <article class="metric-card">
-            <span>Bank Referral Pending</span>
+            <span>Referral Records</span>
             <strong id="bankReferralMetric">RM 0</strong>
-            <p>1% loan referral fees</p>
+            <p>Recorded pipeline only</p>
           </article>
           <article class="metric-card">
-            <span>Surveillance Logs</span>
+            <span>Audit Events</span>
             <strong id="logMetric">0</strong>
             <p>Searchable interactions</p>
           </article>
@@ -196,7 +196,7 @@
             <option value="negotiation">Negotiations</option>
             <option value="voice">AI Voice Calls</option>
             <option value="cobroke">Co-Broke Agreements</option>
-            <option value="escrow">Escrow Events</option>
+            <option value="escrow">Legacy payment demo events</option>
           </select>
         </div>
 
@@ -209,11 +209,11 @@
       <section class="section-panel" data-panel="money">
         <div class="panel-head">
           <div>
-            <div class="eyebrow">Macro Revenue & Escrow Engine</div>
-            <h3>Follow the money in real time</h3>
+            <div class="eyebrow">Revenue & Payment Records</div>
+            <h3>Separate live provider data from legacy demos</h3>
           </div>
           <div class="chip-row">
-            <span class="chip">Holding account</span>
+            <span class="chip">No holding provider connected</span>
             <span class="chip">SaaS MRR</span>
             <span class="chip">Bank referrals</span>
           </div>
@@ -221,14 +221,14 @@
 
         <div class="money-grid">
           <article class="money-card">
-            <span>Live escrow balance</span>
-            <strong id="escrowHeldValue">RM 0</strong>
-            <p>Booking fees currently held in company escrow.</p>
+            <span>Held booking fees</span>
+            <strong id="escrowHeldValue">Not connected</strong>
+            <p>RealityGenius does not hold booking fees in this release.</p>
           </article>
           <article class="money-card">
-            <span>Released escrow</span>
-            <strong id="escrowReleasedValue">RM 0</strong>
-            <p>Deposits released after signed paperwork checkpoint.</p>
+            <span>Released booking fees</span>
+            <strong id="escrowReleasedValue">Not connected</strong>
+            <p>No payment release workflow is connected.</p>
           </article>
           <article class="money-card">
             <span>Agent subscriptions today</span>
@@ -263,12 +263,12 @@
             <div class="dial-head">
               <div>
                 <span>Dial 1</span>
-                <strong>Developer Paid Ads Visibility</strong>
+                <strong>Paid Organic Feed Boost</strong>
               </div>
-              <output id="paidAdsValue" for="paidAdsSlider">+20%</output>
+              <output id="paidAdsValue" for="paidAdsSlider">Off</output>
             </div>
-            <input id="paidAdsSlider" type="range" min="-50" max="80" step="5" aria-label="Developer paid ads visibility boost percent">
-            <p>Boost or suppress paid developer inventory in buyer feeds.</p>
+            <input id="paidAdsSlider" type="range" min="0" max="0" value="0" step="1" aria-label="Paid organic feed boost disabled" disabled>
+            <p>Disabled. Payment cannot change organic position, listing QC, or REN status.</p>
           </article>
 
           <article class="dial-card">
@@ -333,10 +333,10 @@
 
           <article class="kill-card">
             <span class="kill-icon"><i class="fa-solid fa-vault"></i></span>
-            <h4>Freeze Escrow</h4>
-            <p>Halts all money transfers in case of suspected hack or banking error.</p>
-            <button class="danger-button" id="freezeEscrowButton" type="button">Freeze Escrow</button>
-            <button class="ghost-button" id="unfreezeEscrowButton" type="button">Unfreeze Escrow</button>
+            <h4>Disable Legacy Payment Demo</h4>
+            <p>Stops browser-only demo actions. This is not a banking or escrow control.</p>
+            <button class="danger-button" id="freezeEscrowButton" type="button">Disable Demo</button>
+            <button class="ghost-button" id="unfreezeEscrowButton" type="button">Enable Demo</button>
           </article>
 
           <article class="kill-card">

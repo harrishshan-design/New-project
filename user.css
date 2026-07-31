@@ -570,13 +570,14 @@ body{
 
 .buyer-wow-grid{
   display:grid;
-  grid-template-columns:1.2fr .9fr .8fr;
+  grid-template-columns:repeat(2,minmax(0,1fr));
   gap:16px;
 }
 
 .ai-chat-card,
 .lifestyle-map-card,
-.mortgage-card{
+.mortgage-card,
+.price-evidence-card{
   display:grid;
   align-content:start;
   gap:14px;
@@ -617,13 +618,15 @@ body{
 
 .ai-chat-form,
 .mortgage-form,
+.price-evidence-form,
 .ai-match-output{
   display:grid;
   gap:10px;
 }
 
 .ai-chat-form textarea,
-.mortgage-form input{
+.mortgage-form input,
+.price-evidence-form input{
   width:100%;
   border:1px solid rgba(49,95,56,0.12);
   border-radius:16px;
@@ -745,24 +748,28 @@ body{
   grid-template-columns:repeat(2,minmax(0,1fr));
 }
 
-.mortgage-form label{
+.mortgage-form label,
+.price-evidence-form label{
   display:grid;
   gap:6px;
 }
 
-.mortgage-form input{
+.mortgage-form input,
+.price-evidence-form input{
   min-height:44px;
   padding:0 12px;
 }
 
-.mortgage-result{
+.mortgage-result,
+.price-evidence-result{
   padding:16px;
   border-radius:20px;
   background:var(--surface-dark);
   color:#fff;
 }
 
-.mortgage-result strong{
+.mortgage-result strong,
+.price-evidence-result strong{
   display:block;
   margin:6px 0;
   font-family:"Libre Caslon Display","Space Grotesk",serif;
@@ -770,10 +777,89 @@ body{
   color:#fff;
 }
 
-.mortgage-result p{
+.mortgage-result p,
+.price-evidence-result p{
   margin:0;
   color:rgba(255,255,255,0.72);
   line-height:1.5;
+}
+
+.mortgage-dsr-status{
+  display:block;
+  margin:4px 0 8px;
+  color:#d6f3e8;
+  font-size:.92rem;
+}
+
+.price-evidence-form{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+
+.price-evidence-form label:first-child{
+  grid-column:1/-1;
+}
+
+.price-evidence-form button{
+  grid-column:1/-1;
+}
+
+.price-evidence-result{
+  min-height:112px;
+}
+
+.price-evidence-result small{
+  display:block;
+  margin-top:10px;
+  color:rgba(255,255,255,0.58);
+  line-height:1.45;
+}
+
+.verification-standard{
+  display:grid;
+  gap:22px;
+  padding:clamp(22px,3vw,36px);
+  border:1px solid rgba(49,95,56,0.12);
+  border-radius:32px;
+  background:rgba(255,255,255,0.78);
+  box-shadow:0 24px 70px rgba(45,67,38,0.09);
+}
+
+.verification-standard-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:14px;
+}
+
+.verification-standard-grid article{
+  min-width:0;
+  padding:18px;
+  border:1px solid rgba(49,95,56,0.12);
+  border-radius:22px;
+  background:rgba(248,250,244,0.9);
+}
+
+.verification-icon{
+  width:42px;
+  height:42px;
+  display:grid;
+  place-items:center;
+  margin-bottom:18px;
+  border-radius:14px;
+  background:var(--brand-soft);
+  color:var(--brand-strong);
+}
+
+.verification-standard-grid strong{
+  display:block;
+  color:var(--text);
+  font-size:1rem;
+}
+
+.verification-standard-grid p{
+  margin:8px 0 0;
+  color:var(--muted);
+  font-size:.88rem;
+  line-height:1.55;
 }
 
 .template-marquee{
@@ -2660,11 +2746,33 @@ a{
 
 .mini-stats,
 .card-tags,
+.listing-proof-row,
 .saved-meta,
 .card-actions{
   display:flex;
   gap:10px;
   flex-wrap:wrap;
+}
+
+.listing-proof-row{
+  margin-top:16px;
+  padding-top:14px;
+  border-top:1px solid var(--line);
+}
+
+.listing-proof-row .tag{
+  max-width:100%;
+  line-height:1.35;
+}
+
+.listing-proof-row .is-qc{
+  background:#e7f4ea;
+  color:#245d2f;
+}
+
+.listing-proof-row .is-ren-verified{
+  background:#e6f5f3;
+  color:#0f6b64;
 }
 
 .mini-stat,
@@ -3614,6 +3722,24 @@ model-viewer{
 .booking-form{
   grid-template-columns:repeat(2,minmax(0,1fr));
   margin-top:12px;
+}
+
+.booking-consent{
+  grid-column:1 / -1;
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  color:var(--muted);
+  font-size:.82rem;
+  line-height:1.45;
+}
+
+.booking-consent input{
+  flex:0 0 auto;
+  width:17px;
+  height:17px;
+  margin-top:2px;
+  accent-color:var(--accent);
 }
 
 .booking-submit{
@@ -5148,11 +5274,17 @@ model-viewer{
   .buyer-wow-grid{
     grid-template-columns:1fr;
   }
+
+  .verification-standard-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
 }
 
 @media (max-width:760px){
   .nearby-signal-grid,
-  .mortgage-form{
+  .mortgage-form,
+  .price-evidence-form,
+  .verification-standard-grid{
     grid-template-columns:1fr;
   }
 

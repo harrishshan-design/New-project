@@ -15,12 +15,42 @@ test.describe("RealityGenius role access", () => {
     });
   }
 
-  test("buyer page is browseable before login but protected actions ask for login", async ({ page }) => {
+  test("buyer can search, open details, save, and create a local alert before login", async ({ page }) => {
     await page.goto("/user.html");
     await expect(page.locator("#searchInput")).toBeVisible();
+    await page.locator('[data-action="open-details"]').first().click();
+    await expect(page.locator("#propertyModal")).toHaveClass(/is-open/);
+    await page.locator("#modalSaveAction").click();
+    await expect(page.locator("#favoritesCount")).toHaveText("1");
+    await page.locator('[data-close="propertyModal"]').click();
+    await page.locator("#searchInput").fill("Shah Alam");
     await page.locator("#saveSearchButton").click();
-    await expect(page).toHaveURL(/\/login\.html\?/);
-    await expect(page.locator("#loginForm")).toBeVisible();
+    await expect(page).toHaveURL(/\/user\.html/);
+    await expect(page.locator("#searchAlertStrip")).toContainText(/saved alert/i);
+  });
+
+  test("buyer viewing request captures consented intent details without login", async ({ page }) => {
+    await page.goto("/user.html");
+    await page.locator('[data-action="open-details"]').first().click();
+    await expect(page.locator("#bookingBudget")).toBeVisible();
+    await expect(page.locator("#bookingTimeline")).toBeVisible();
+    await expect(page.locator("#bookingFinancing")).toBeVisible();
+    await expect(page.locator("#bookingConsent")).toBeVisible();
+  });
+
+  test("public agent page explains the commercial and trust model", async ({ page }) => {
+    await page.goto("/agents.html");
+    await expect(page.locator("#agentModel")).toContainText("Trust cannot be bought");
+    await expect(page.locator("#agentPricing")).toContainText("not a trust badge or feed position");
+    await expect(page.locator("body")).toContainText("does not hold booking fees");
+  });
+
+  test("public buyer and agent pages do not overflow horizontally", async ({ page }) => {
+    for (const path of ["/user.html", "/agents.html"]) {
+      await page.goto(path);
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      expect(overflow).toBeLessThanOrEqual(1);
+    }
   });
 
   test("invalid login fails and stays on login page", async ({ page }) => {
@@ -43,6 +73,18 @@ test.describe("RealityGenius API fail-closed checks", () => {
 
   test("agent profile endpoint requires auth", async ({ request }) => {
     const res = await request.get("/api/agent/me");
+    expect(res.status()).toBe(401);
+  });
+
+  test("agent listing write requires auth", async ({ request }) => {
+    const res = await request.post("/api/agent/listings", {
+      data: { title: "Unauthorized listing", area: "Shah Alam", price: 500000, galleryUrls: [] }
+    });
+    expect(res.status()).toBe(401);
+  });
+
+  test("assigned agent leads require auth", async ({ request }) => {
+    const res = await request.get("/api/agent/leads");
     expect(res.status()).toBe(401);
   });
 
