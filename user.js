@@ -486,7 +486,7 @@ function mergeLiveProperties(baseProperties = BASE_PROPERTIES) {
         area,
         location: area,
         source: item.source || "admin_approved_agent_listing",
-        verifiedType: item.verifiedType || "agent",
+        verifiedType: item.verifiedType || "listing_qc",
         verificationSource: item.verificationSource || "admin_approved",
         freshnessStatus: item.freshnessStatus || "fresh",
         confidenceScore: Number(item.confidenceScore || item.aiScore || 88),

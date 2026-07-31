@@ -1557,6 +1557,15 @@ function numericPublicId(id) {
     return 700000 + (parseInt(hash, 16) % 200000);
 }
 
+function importedListingDisplayTitle(item = {}, area = "") {
+    const title = String(item.title || "").trim();
+    const normalized = title.replace(/[^a-z]/gi, "").toLowerCase();
+    if (!title || ["available", "wts", "forsale", "forrent"].includes(normalized)) {
+        return String(area || item.property_type || "Klang Valley property").trim();
+    }
+    return title;
+}
+
 function importedListingToPublicProperty(item) {
     const sqft = Number(item.built_up_sqft || 0);
     const price = Number(item.price || 0);
@@ -1572,7 +1581,7 @@ function importedListingToPublicProperty(item) {
         importId: item.id,
         source: "telegram_ai_import",
         badge: "qc-approved",
-        title: item.title || "AI Imported Property",
+        title: importedListingDisplayTitle(item, area),
         area,
         location: item.location || area,
         type: inferPropertyType(propertyType).toLowerCase(),
@@ -1590,7 +1599,7 @@ function importedListingToPublicProperty(item) {
             required: index === 0,
             url,
             source: "Telegram AI import",
-            status: "needs_admin_verification"
+            status: "listing_qc_reviewed"
         })),
         galleryCount: Math.max(1, imageUrls.length),
         whatsapp: agentProfile.phone || item.contact_phone || "",
@@ -1602,8 +1611,10 @@ function importedListingToPublicProperty(item) {
         summary: item.description || "AI-imported listing reviewed by RealityGenius admin.",
         vibe: "Telegram-imported listing, admin reviewed",
         tags: ["telegram-import", inferPropertyType(propertyType).toLowerCase(), "admin-approved"],
-        verifiedType: "agent",
+        verifiedType: "listing_qc",
         verificationSource: "admin_approved",
+        qcScope: "Listing completeness, media presence and contactability reviewed by an admin.",
+        qcLimitations: "QC does not prove ownership, legal title, current availability or market value.",
         adminApproved: true,
         approvalStatus: "approved",
         liveStatus: "approved_live",
@@ -2053,8 +2064,10 @@ function agentListingToPublicProperty(item) {
         }),
         vibe: "Admin-approved agent listing",
         tags: ["agent-upload", type, "admin-approved", purpose === "rent" ? "for-rent" : "for-sale"],
-        verifiedType: "agent",
+        verifiedType: "listing_qc",
         verificationSource: "admin_approved",
+        qcScope: "Listing completeness, media presence and contactability reviewed by an admin.",
+        qcLimitations: "QC does not prove ownership, legal title, current availability or market value.",
         adminApproved: true,
         approvalStatus: "approved",
         liveStatus: "approved_live",
@@ -3350,7 +3363,7 @@ async function getMasterPulse() {
 
 function isKlangValleyPublicListing(item = {}) {
     const place = `${item.title || ''} ${item.area || ''} ${item.location || ''} ${item.address || ''}`.toLowerCase();
-    return /kuala lumpur|\bkl\b|\bklcc\b|\bpj\b|selangor|putrajaya|cyberjaya|shah alam|petaling jaya|subang|klang|puchong|cheras|kajang|ampang|gombak|setapak|kepong|damansara|bangsar|mont kiara|bukit jalil|sri petaling|sentul|serdang|sri kembangan|rawang|semenyih|bandar utama|sungai buloh|ara damansara/.test(place);
+    return /kuala lumpur|\bkl\b|\bklcc\b|\bpj\b|putrajaya|cyberjaya|shah alam|petaling jaya|subang|klang|puchong|cheras|kajang|ampang|gombak|setapak|kepong|damansara|bangsar|mont kiara|bukit jalil|sri petaling|sentul|serdang|sri kembangan|rawang|semenyih|bandar utama|sungai buloh|ara damansara/.test(place);
 }
 
 async function listPublicProperties() {

@@ -1,4 +1,9 @@
 const { test, expect } = require("@playwright/test");
+const apiBase = String(process.env.RG_API_BASE || "").replace(/\/$/, "");
+
+function apiPath(path) {
+  return `${apiBase}${path}`;
+}
 
 const protectedRoutes = [
   { path: "/agent.html", role: "agent" },
@@ -64,32 +69,50 @@ test.describe("RealityGenius role access", () => {
 });
 
 test.describe("RealityGenius API fail-closed checks", () => {
+  test("public inventory stays inside the declared Klang Valley wedge", async ({ request }) => {
+    const res = await request.get(apiPath("/api/properties"));
+    expect(res.status()).toBe(200);
+
+    const payload = await res.json();
+    const items = Array.isArray(payload) ? payload : (payload.items || payload.properties || []);
+    expect(items.length).toBeGreaterThan(0);
+
+    const klangValleyPlace = /kuala lumpur|\bkl\b|\bklcc\b|\bpj\b|putrajaya|cyberjaya|shah alam|petaling jaya|subang|klang|puchong|cheras|kajang|ampang|gombak|setapak|kepong|damansara|bangsar|mont kiara|bukit jalil|sri petaling|sentul|serdang|sri kembangan|rawang|semenyih|bandar utama|sungai buloh|ara damansara/i;
+    for (const item of items) {
+      expect(`${item.title || ""} ${item.area || ""} ${item.location || ""}`).toMatch(klangValleyPlace);
+      expect(item.badge).toBe("qc-approved");
+      expect(item.qcScope).toMatch(/reviewed by an admin/i);
+      expect(item.qcLimitations).toMatch(/does not prove ownership/i);
+      expect(String(item.title || "").replace(/[^a-z]/gi, "").toLowerCase()).not.toBe("available");
+    }
+  });
+
   test("agent subscription endpoint requires auth", async ({ request }) => {
-    const res = await request.post("/api/billing/create-checkout-session", {
+    const res = await request.post(apiPath("/api/billing/create-checkout-session"), {
       data: { plan: "starter_rg" }
     });
     expect(res.status()).toBe(401);
   });
 
   test("agent profile endpoint requires auth", async ({ request }) => {
-    const res = await request.get("/api/agent/me");
+    const res = await request.get(apiPath("/api/agent/me"));
     expect(res.status()).toBe(401);
   });
 
   test("agent listing write requires auth", async ({ request }) => {
-    const res = await request.post("/api/agent/listings", {
+    const res = await request.post(apiPath("/api/agent/listings"), {
       data: { title: "Unauthorized listing", area: "Shah Alam", price: 500000, galleryUrls: [] }
     });
     expect(res.status()).toBe(401);
   });
 
   test("assigned agent leads require auth", async ({ request }) => {
-    const res = await request.get("/api/agent/leads");
+    const res = await request.get(apiPath("/api/agent/leads"));
     expect(res.status()).toBe(401);
   });
 
   test("stripe webhook rejects unsigned payloads", async ({ request }) => {
-    const res = await request.post("/api/stripe/webhook", {
+    const res = await request.post(apiPath("/api/stripe/webhook"), {
       data: { type: "checkout.session.completed", data: { object: {} } }
     });
     expect(res.status()).toBe(400);
