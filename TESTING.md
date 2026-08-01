@@ -66,8 +66,8 @@ Store passwords in a password manager or local `.env.test`, not in committed fil
 - Use AI Content Creator.
 - Check leads panel.
 - Edit/delete listing where UI supports it.
-- Confirm launch mode opens all features for now.
-- When paid mode is restored, confirm locked features stay locked until Stripe webhook updates the profile.
+- Confirm every approved agent can open all AgentOS features for free.
+- Confirm no pricing, upgrade, checkout, or product-key prompt appears in the active agent flow.
 - Logout and confirm `agent.html` redirects to login.
 
 ## Admin Flow Checklist
@@ -100,22 +100,20 @@ Store passwords in a password manager or local `.env.test`, not in committed fil
 - Pending agent cannot access approved agent dashboard.
 - LocalStorage-only fake sessions redirect to login.
 - API routes validate JWT/session before returning private data.
-- Agent billing requires a real approved agent profile.
+- Agent tools require a real approved agent profile.
 - Admin APIs require admin protection and should not rely only on localStorage.
 - Supabase RLS is enabled on exposed tables.
 - Frontend contains no `service_role`, Stripe secret, webhook secret, Telegram token, or admin API key.
 - Forms validate required fields and safe input lengths.
 
-## Payment Flow Checklist
+## Free Agent Access Checklist
 
-- Stripe Checkout button opens only for approved agent sessions when paid mode is enabled.
-- Missing price IDs return a clear error.
-- Success URL returns to `agent.html?payment=success`.
-- Cancel URL returns to `agent.html?payment=cancelled`.
-- Webhook rejects unsigned calls.
-- Signed `checkout.session.completed` updates agent subscription profile.
-- Subscription update/delete changes plan status.
-- Free users cannot use paid features after launch mode is disabled.
+- Public agent page shows one `Join as an Agent for Free` action.
+- Agent signup asks for name, phone, email, and password, with no product key.
+- New agents remain pending until admin approval.
+- Approved agents receive AI content, AR, lead, viewing, co-broke, referral, and auction tools.
+- Free access does not bypass listing QC, REN review, or role guards.
+- Legacy Stripe endpoints remain protected but are not linked from the active agent experience.
 
 ## Telegram Import Checklist
 

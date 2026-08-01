@@ -21,63 +21,6 @@ const STORAGE_KEYS = {
   globalAlert: "rg_global_platform_alert"
 };
 
-const FREE_LAUNCH_MODE = true;
-
-// Direct Stripe Payment Links - agents redirect straight to Stripe's
-// hosted page (client_reference_id + prefilled_email appended at click
-// time so the webhook can match the payment back to this agent).
-const AGENT_PLAN_TIERS = [
-  {
-    id: "starter",
-    billingPlan: "starter_rg",
-    name: "Starter RG",
-    price: 29,
-    trialDays: 0,
-    paymentLinkUrl: "https://buy.stripe.com/3cI5kwbHJ2Hgf7r1TG3Nm00",
-    tagline: "For solo agents who want content and faster listing preparation.",
-    badge: "Entry",
-    features: ["Everything in Free", "AI Content Creator", "WhatsApp follow-up drafts", "Excel and Telegram listing workflow", "AI AR Builder demo preview", "Smart listing checklist"]
-  },
-  {
-    id: "pro",
-    billingPlan: "pro_agent",
-    name: "Pro Agent",
-    price: 59,
-    trialDays: 30,
-    paymentLinkUrl: "https://buy.stripe.com/4gMbIU5jla9I9N769W3Nm01",
-    tagline: "For active agents running serious buyer pipelines and premium listings.",
-    badge: "Recommended",
-    features: ["Everything in Starter RG", "Buyer intent scoring with visible inputs", "DSR conversation worksheet", "Smart viewing itinerary", "Co-broke preparation", "1 Friday Auction Night submission", "30 days free trial"]
-  },
-  {
-    id: "elite",
-    billingPlan: "elite_agent",
-    name: "Elite Agent",
-    price: 99,
-    trialDays: 30,
-    paymentLinkUrl: "https://buy.stripe.com/8x2cMY5jlepY1gB1TG3Nm02",
-    tagline: "For agents who want the full automation engine.",
-    badge: "Best Value",
-    features: ["Everything in Pro Agent", "4 Friday Auction Night submissions", "Referral lifecycle drafts", "Team inquiry routing", "30 days free trial"]
-  }
-];
-
-const EXTRA_AUCTION_SLOT = {
-  name: "Extra Auction Slot",
-  price: 49,
-  trialDays: 30,
-  paymentLinkUrl: "https://buy.stripe.com/dRm9AMcLN1Dce3n1TG3Nm03"
-};
-
-const FREE_AGENT_PLAN = {
-  id: "free",
-  name: "Free Agent",
-  price: 0,
-  tagline: "Basic dashboard access",
-  badge: "Free",
-  features: ["Upload listings", "Basic profile", "Normal dashboard"]
-};
-
 const PLAN_FEATURES = {
   free: {
     addListing: true,
@@ -86,48 +29,7 @@ const PLAN_FEATURES = {
     leadHeat: true,
     auctionSlot: true,
     premiumBadge: true
-  },
-  starter: {
-    addListing: true,
-    aiCaption: true,
-    aiNegotiation: false,
-    leadHeat: false,
-    auctionSlot: false,
-    premiumBadge: false
-  },
-  pro: {
-    addListing: true,
-    aiCaption: true,
-    aiNegotiation: true,
-    leadHeat: true,
-    auctionSlot: false,
-    premiumBadge: true
-  },
-  elite: {
-    addListing: true,
-    aiCaption: true,
-    aiNegotiation: true,
-    leadHeat: true,
-    auctionSlot: true,
-    premiumBadge: true
   }
-};
-
-const FEATURE_UNLOCK_COPY = {
-  aiCaption: { plan: "starter", label: "AI Content Creator", message: "AI Content Creator unlocks with Starter, Pro, or Elite." },
-  aiNegotiation: { plan: "pro", label: "AI Negotiation", message: "AI Negotiation unlocks with Pro or Elite." },
-  leadHeat: { plan: "pro", label: "Lead Heat", message: "Lead scoring and hot lead tools unlock with Pro or Elite." },
-  auctionSlot: { plan: "elite", label: "Friday Auction Night", message: "Auction Night slots unlock with Elite." },
-  premiumBadge: { plan: "pro", label: "Premium Badge", message: "Premium agent badge unlocks with Pro or Elite." }
-};
-
-const BACKEND_PLAN_TO_AGENT_PLAN = {
-  free: "free",
-  starter_rg: "starter",
-  pro_agent: "pro",
-  elite_agent: "elite",
-  best_closers: "elite",
-  founder_free: "elite"
 };
 
 const seedSubscription = {
@@ -2258,68 +2160,12 @@ function pushUserNotification(title, message) {
   ]);
 }
 
-function activePlanTier() {
-  const storedPlan = normalizeAgentPlan(localStorage.getItem("agent_plan") || state.subscription?.planId);
-  if (storedPlan === "free") return FREE_AGENT_PLAN;
-  return AGENT_PLAN_TIERS.find((plan) => plan.id === storedPlan) || FREE_AGENT_PLAN;
-}
-
-function normalizeAgentPlan(plan = "") {
-  const normalized = String(plan || "").trim().toLowerCase();
-  if (BACKEND_PLAN_TO_AGENT_PLAN[normalized]) return BACKEND_PLAN_TO_AGENT_PLAN[normalized];
-  if (normalized === "premium") return "elite";
-  if (["free", "starter", "pro", "elite"].includes(normalized)) return normalized;
-  return "free";
-}
-
-function setAgentPlan(plan, status = state.subscription?.status || "active") {
-  const normalized = normalizeAgentPlan(plan);
-  const tier = normalized === "free" ? FREE_AGENT_PLAN : AGENT_PLAN_TIERS.find((item) => item.id === normalized) || FREE_AGENT_PLAN;
-  localStorage.setItem("agent_plan", normalized);
-  state.subscription = {
-    ...state.subscription,
-    planId: tier.id,
-    planName: tier.name,
-    amount: tier.price,
-    currency: "MYR",
-    status,
-    testMode: false,
-    startedAt: state.subscription?.startedAt || new Date().toISOString()
-  };
-  writeStore(STORAGE_KEYS.agentSubscription, state.subscription);
-}
-
 function canUse(feature) {
-  const activeStatus = ["active", "live_active", "trialing"].includes(String(state.subscription?.status || "").toLowerCase());
-  const plan = activeStatus ? normalizeAgentPlan(localStorage.getItem("agent_plan") || state.subscription?.planId) : "free";
-  return PLAN_FEATURES[plan]?.[feature] === true;
-}
-
-function upgradeTargetForFeature(feature) {
-  const target = FEATURE_UNLOCK_COPY[feature]?.plan || "pro";
-  return AGENT_PLAN_TIERS.find((plan) => plan.id === target) || AGENT_PLAN_TIERS[1];
+  return Boolean(feature && PLAN_FEATURES.free?.[feature] === true);
 }
 
 function requirePlan(feature) {
-  if (canUse(feature)) return true;
-  const copy = FEATURE_UNLOCK_COPY[feature] || {};
-  const target = upgradeTargetForFeature(feature);
-  showToast(copy.message || "This feature is locked. Upgrade your plan to unlock it.");
-  if (window.confirm(`${copy.message || "This feature is locked."}\n\nUpgrade to ${target.name} now?`)) {
-    activateAgentPlan(target.id);
-  } else {
-    document.getElementById("agentPricing")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-  return false;
-}
-
-function billingStatusLabel() {
-  if (state.subscription?.status === "live_active" || state.subscription?.status === "active") return "Stripe active";
-  if (state.subscription?.status === "checkout_processing") return "Opening Stripe";
-  if (state.subscription?.status === "checkout_verifying") return "Verifying payment";
-  if (state.subscription?.status === "past_due") return "Payment past due";
-  if (state.subscription?.status === "checkout_cancelled") return "Checkout cancelled";
-  return "Free";
+  return canUse(feature);
 }
 
 function renderFounderPromoBanner() {
@@ -2389,10 +2235,8 @@ function agentMeApiUrl() {
 }
 
 // Same-origin (Vercel) is tried first; the Render backend is a resilient
-// fallback if Vercel's own Supabase/Stripe env vars aren't configured.
-// Session creation is idempotent from a billing standpoint - it never
-// charges anything by itself - so retrying against a second backend on
-// failure is safe.
+// fallback when the same-origin agent API is unavailable. Read requests are
+// safe to retry against the second backend.
 async function fetchJsonWithFallback(urls, options) {
   let lastError;
   for (const url of urls) {
@@ -2425,21 +2269,15 @@ async function refreshAgentSubscription({ silent = false } = {}) {
     if (!payload.agent) throw new Error(payload.error || "Unable to refresh subscription");
 
     const agent = payload.agent;
-    const planId = normalizeAgentPlan(agent.subscription_plan);
-    const active = ["active", "trialing"].includes(String(agent.subscription_status || "").toLowerCase());
-    if (active) {
-      setAgentPlan(planId, "active");
-    } else {
-      localStorage.setItem("agent_plan", "free");
-      state.subscription = {
-        ...seedSubscription,
-        status: agent.subscription_status || "inactive"
-      };
-      writeStore(STORAGE_KEYS.agentSubscription, state.subscription);
-    }
+    localStorage.setItem("agent_plan", "free");
+    state.subscription = {
+      ...seedSubscription,
+      status: "active",
+      planName: "Free AgentOS Access"
+    };
+    writeStore(STORAGE_KEYS.agentSubscription, state.subscription);
     state.subscription.permissions = agent.permissions || {};
     state.subscription.auctionSlotsMonthly = Number(agent.auction_slots_monthly || 0);
-    renderLaunchPricingGrid();
     state.founderPromo = {
       active: Boolean(agent.founder_promo),
       listingsRequired: Number(agent.founder_listings_required || 0),
@@ -2506,80 +2344,19 @@ async function refreshAgentLeads({ silent = true } = {}) {
 }
 
 function renderAgentBilling() {
-  const plan = activePlanTier();
-  const featureCards = [
-    { feature: "aiCaption", title: "AI Content Creator", body: "Listing descriptions, SEO keywords, captions, scripts, and WhatsApp copy.", planId: "starter" },
-    { feature: "aiNegotiation", title: "AI Negotiation", body: "Offer analysis, counter-price suggestions, and buyer response guidance.", planId: "pro" },
-    { feature: "leadHeat", title: "Lead Heat", body: "Hot lead scoring, priority pipeline, and faster follow-up workflow.", planId: "pro" },
-    { feature: "auctionSlot", title: "Friday Auction Night", body: "Submit premium listings into weekly live buyer bidding.", planId: "elite" }
-  ];
-  const activeAt = state.subscription?.startedAt
-    ? new Date(state.subscription.startedAt).toLocaleString("en-MY", { dateStyle: "medium", timeStyle: "short" })
-    : "Not started";
-
   if (els.agentBillingStrip) {
-    const launchCopy = FREE_LAUNCH_MODE
-      ? {
-          label: "Launch access",
-          title: "All agent tools are free for now",
-          detail: "AI Content Creator, AR Builder, AI Negotiation, Lead Heat, Auction Night, document tools, and listing workflows are open during launch.",
-          button: "View Tools"
-        }
-      : {
-          label: "Agent subscription",
-          title: `${plan.name} - ${money(plan.price)}/month`,
-          detail: `${billingStatusLabel()} - ${activeAt} - Premium unlocks lead alerts, captions, reports, and follow-up automation.`,
-          button: "Manage Plan"
-        };
     els.agentBillingStrip.innerHTML = `
       <div class="billing-strip-copy">
-        <span><i class="fa-solid ${FREE_LAUNCH_MODE ? "fa-unlock-keyhole" : "fa-credit-card"}"></i> ${escapeHtml(launchCopy.label)}</span>
-        <strong>${escapeHtml(launchCopy.title)}</strong>
-        <small>${escapeHtml(launchCopy.detail)}</small>
+        <span><i class="fa-solid fa-unlock-keyhole"></i> Free Agent Access</span>
+        <strong>Every AgentOS tool is unlocked</strong>
+        <small>Use listings, AI content, AR staging, buyer intent, viewing, co-broke, and Auction Night workflows without payment.</small>
       </div>
-      <button class="primary-button" data-action="open-agent-billing" type="button">
-        <i class="fa-solid fa-gem"></i>
-        ${escapeHtml(launchCopy.button)}
+      <button class="primary-button" data-action="open-listing-modal" type="button">
+        <i class="fa-solid fa-plus"></i>
+        Add a Listing
       </button>
     `;
   }
-
-  if (!els.agentTierGrid) return;
-  els.agentTierGrid.innerHTML = featureCards.map((card) => {
-    const unlocked = canUse(card.feature);
-    return `
-      <article class="feature-card ${unlocked ? "unlocked" : "locked"}">
-        <span>${unlocked ? "Unlocked" : "Locked"}</span>
-        <h3>${escapeHtml(card.title)}</h3>
-        <p>${escapeHtml(card.body)}</p>
-        <button class="${unlocked ? "ghost-button" : "primary-button"}" data-action="select-agent-plan" data-plan-id="${escapeAttr(card.planId)}" type="button">
-          ${unlocked ? "Available now" : `Upgrade to ${escapeHtml(upgradeTargetForFeature(card.feature).name)}`}
-        </button>
-      </article>
-    `;
-  }).join("") + AGENT_PLAN_TIERS.map((tier) => {
-    const isActive = tier.id === plan.id && ["live_active", "active"].includes(state.subscription?.status);
-    return `
-      <article class="billing-tier-card ${tier.id === "elite" ? "recommended" : ""} ${isActive ? "active" : ""}">
-        <div class="billing-tier-head">
-          <span>${escapeHtml(tier.badge)}</span>
-          ${isActive ? `<strong><i class="fa-solid fa-circle-check"></i> Active</strong>` : ""}
-        </div>
-        <h4>${escapeHtml(tier.name)}</h4>
-        <p>${escapeHtml(tier.tagline)}</p>
-        <div class="billing-price">
-          <strong>${money(tier.price)}</strong>
-          <span>/ month</span>
-        </div>
-        <ul>
-          ${tier.features.map((feature) => `<li><i class="fa-solid fa-check"></i>${escapeHtml(feature)}</li>`).join("")}
-        </ul>
-        <button class="${isActive ? "ghost-button" : "primary-button"} full-width" data-action="select-agent-plan" data-plan-id="${escapeAttr(tier.id)}" type="button">
-          ${isActive ? "Current Plan" : tier.id === "elite" ? "Upgrade to Elite Agent" : `Choose ${escapeHtml(tier.name)}`}
-        </button>
-      </article>
-    `;
-  }).join("");
 }
 
 function readAgentSession() {
@@ -2610,123 +2387,6 @@ async function readAgentAuthToken() {
   }
 
   return "";
-}
-
-// Appends client_reference_id (the real Supabase user id) and
-// prefilled_email to a static Stripe Payment Link URL. Stripe carries
-// client_reference_id straight through to the resulting Checkout
-// Session, which is how the webhook knows which agent paid - a plain
-// Payment Link has no other way to identify who clicked it.
-function buildStripePaymentLinkUrl(baseUrl, { agentId = "", email = "" } = {}) {
-  const url = new URL(baseUrl);
-  if (agentId) url.searchParams.set("client_reference_id", agentId);
-  if (email) url.searchParams.set("prefilled_email", email);
-  return url.toString();
-}
-
-async function goToStripePaymentLink(paymentLinkUrl, context = {}) {
-  const token = await readAgentAuthToken();
-  if (!token) {
-    showToast("Login as an approved agent before upgrading");
-    window.location.href = "/login.html?role=agent&next=/agent.html";
-    return;
-  }
-  const profile = readLiveAgentProfile();
-  const agentId = window.RealtyGeniusSession?.authUserId || profile.id || "";
-  const email = window.RealtyGeniusSession?.email || profile.email || "";
-  persistAll();
-  showToast(context.toastMessage || "Opening secure Stripe checkout");
-  window.location.assign(buildStripePaymentLinkUrl(paymentLinkUrl, { agentId, email }));
-}
-
-function renderLaunchPricingGrid() {
-  const grid = document.getElementById("agentPricing");
-  if (!grid) return;
-
-  const priceCuts = { starter: "RM29", pro: "RM59", elite: "RM99" };
-  const activeStatus = ["active", "trialing"].includes(String(state.subscription?.status || "").toLowerCase());
-  const currentTier = activeStatus ? normalizeAgentPlan(localStorage.getItem("agent_plan") || state.subscription?.planId) : "free";
-
-  grid.querySelectorAll("article[data-tier]").forEach((article) => {
-    const tier = article.dataset.tier;
-    const isCurrent = FREE_LAUNCH_MODE && tier === currentTier && currentTier !== "free";
-    article.classList.toggle("is-current-plan", isCurrent);
-
-    if (FREE_LAUNCH_MODE && priceCuts[tier]) {
-      const priceTag = document.getElementById(`${tier}PriceTag`);
-      if (priceTag && !priceTag.dataset.launchApplied) {
-        priceTag.dataset.launchApplied = "true";
-        priceTag.innerHTML = `<span class="launch-price-was">${priceCuts[tier]}</span><span class="launch-price-now">FREE</span> <small>/ mo for now</small><span class="launch-price-badge"><i class="fa-solid fa-bolt"></i> Launch price cut</span>`;
-      }
-    }
-
-    const button = article.querySelector('[data-action="select-agent-plan"]');
-    if (button) {
-      if (!button.dataset.originalLabel) button.dataset.originalLabel = button.textContent;
-      if (button.dataset.originalWasPrimary === undefined) {
-        button.dataset.originalWasPrimary = String(button.classList.contains("primary-button"));
-      }
-      if (isCurrent) {
-        button.textContent = "Current Plan";
-        button.disabled = true;
-        button.classList.add("ghost-button");
-        button.classList.remove("primary-button");
-      } else {
-        button.textContent = button.dataset.originalLabel;
-        button.disabled = false;
-        button.classList.toggle("primary-button", button.dataset.originalWasPrimary === "true");
-        button.classList.toggle("ghost-button", button.dataset.originalWasPrimary !== "true");
-      }
-    }
-  });
-}
-
-async function activateAgentPlan(planId) {
-  const plan = AGENT_PLAN_TIERS.find((tier) => tier.id === planId);
-  if (!plan) return;
-
-  if (FREE_LAUNCH_MODE) {
-    const token = await readAgentAuthToken();
-    if (!token) {
-      showToast("Login as an approved agent before activating a plan");
-      window.location.href = "/login.html?role=agent&next=/agent.html";
-      return;
-    }
-    try {
-      await fetchJsonWithFallback([agentApiUrl("/agent/activate-free-plan")], {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ plan: plan.billingPlan || plan.id })
-      });
-      showToast(`${plan.name} tools are open for free during launch - no payment needed`);
-      await refreshAgentSubscription({ silent: true });
-      renderWorkspace();
-      renderLaunchPricingGrid();
-    } catch (error) {
-      showToast(error.message || "Could not activate this plan right now");
-    }
-    return;
-  }
-
-  state.subscription = {
-    ...state.subscription,
-    planId: plan.id,
-    planName: plan.name,
-    amount: plan.price,
-    currency: "MYR",
-    status: "checkout_processing",
-    testMode: false
-  };
-  renderAgentBilling();
-  await goToStripePaymentLink(plan.paymentLinkUrl, { toastMessage: `Opening ${plan.name} checkout` });
-}
-
-async function purchaseExtraAuctionSlot() {
-  if (FREE_LAUNCH_MODE) {
-    showToast("Auction slot add-ons are paused during free launch - included plans still work as normal.");
-    return;
-  }
-  await goToStripePaymentLink(EXTRA_AUCTION_SLOT.paymentLinkUrl, { toastMessage: "Opening Extra Auction Slot checkout" });
 }
 
 function readLeakProofDeals() {
@@ -3020,16 +2680,6 @@ function handleNegotiationAction(threadId, action) {
 }
 
 function renderLeadList() {
-  if (!canUse("leadHeat")) {
-    els.leadList.innerHTML = `
-      <article class="feature-card locked">
-        <h3>Lead Heat is locked</h3>
-        <p>Upgrade to Pro or Elite to prioritise inquiries from submitted contact, budget, timeline, financing, viewing, and on-site activity signals.</p>
-        <button class="primary-button" data-action="select-agent-plan" data-plan-id="pro" type="button">Upgrade to Pro</button>
-      </article>
-    `;
-    return;
-  }
   const leads = leadListForFilter();
   els.leadList.innerHTML = leads.map((lead) => `
     <article class="lead-card">
@@ -3062,16 +2712,6 @@ function renderLeadList() {
 }
 
 function renderNegotiationDesk() {
-  if (!canUse("aiNegotiation")) {
-    els.agentNegotiationList.innerHTML = `
-      <article class="feature-card locked">
-        <h3>AI Negotiation is locked</h3>
-        <p>Upgrade to Pro or Elite to unlock buyer offer analysis, AI counter suggestions, and negotiation desk actions.</p>
-        <button class="primary-button" data-action="select-agent-plan" data-plan-id="pro" type="button">Upgrade to Pro</button>
-      </article>
-    `;
-    return;
-  }
   const threads = getNegotiationThreads()
     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
@@ -5491,11 +5131,6 @@ function generateLocalListingEnhancement(payload) {
 }
 
 async function requestAiContentGeneration(payload) {
-  if (!canUse("aiCaption")) {
-    const error = new Error("Upgrade required");
-    error.code = "upgrade_required";
-    throw error;
-  }
   const token = localStorage.getItem("rg_token");
   if (!token) return null;
 
@@ -5733,11 +5368,6 @@ async function submitEnhancedListingForReview() {
 
 async function generateAgentContent(event) {
   event.preventDefault();
-  if (!requirePlan("aiCaption")) {
-    setContentStatus("Upgrade required", "warning");
-    return;
-  }
-
   const payload = collectContentPayload();
   if (!payload.originalTitle || !payload.location || !payload.originalDescription || !payload.price) {
     setContentStatus("Missing details", "error");
@@ -5773,7 +5403,7 @@ async function generateAgentContent(event) {
 
 function renderContentCreator() {
   if (!els.contentOutput) return;
-  const locked = !canUse("aiCaption");
+  const locked = false;
 
   els.contentTypeButtons.forEach((button) => {
     button.classList.toggle("active", button.dataset.contentType === state.contentCreator.contentType);
@@ -5781,11 +5411,9 @@ function renderContentCreator() {
   });
 
   const enhancement = state.contentCreator.lastEnhancement;
-  els.contentStatus.textContent = locked ? "Locked - Starter required" : state.contentCreator.status || "Ready";
-  els.contentStatus.className = `content-status ${locked ? "warning" : state.contentCreator.statusType || ""}`.trim();
-  els.contentOutput.textContent = locked
-    ? "Upgrade to Starter, Pro, or Elite to generate listing descriptions, SEO keywords, captions, TikTok scripts, and WhatsApp marketing messages."
-    : enhancement?.optimizedDescription || state.contentCreator.output || "Your optimized listing will appear here.";
+  els.contentStatus.textContent = state.contentCreator.status || "Ready";
+  els.contentStatus.className = `content-status ${state.contentCreator.statusType || ""}`.trim();
+  els.contentOutput.textContent = enhancement?.optimizedDescription || state.contentCreator.output || "Your optimized listing will appear here.";
   if (els.enhancerOriginal) {
     els.enhancerOriginal.textContent = enhancement?.originalDescription || "Your original listing will appear here.";
   }
@@ -5830,22 +5458,10 @@ function renderContentCreator() {
   }
   if (els.generateContentButton) {
     els.generateContentButton.disabled = locked;
-    els.generateContentButton.innerHTML = locked
-      ? `<i class="fa-solid fa-lock"></i> Upgrade to Generate`
-      : `<i class="fa-solid fa-wand-magic-sparkles"></i> Generate Listing Content`;
+    els.generateContentButton.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Generate Listing Content`;
   }
 
   const history = state.contentCreator.history || [];
-  if (locked) {
-    els.contentHistory.innerHTML = `
-      <article class="feature-card locked">
-        <h3>AI Content Creator</h3>
-        <p>Unlock with Starter, Pro, or Elite. Free agents can still upload listings and use the basic dashboard.</p>
-        <button class="primary-button" data-action="select-agent-plan" data-plan-id="starter" type="button">Upgrade to Starter</button>
-      </article>
-    `;
-    return;
-  }
   if (!history.length) {
     els.contentHistory.innerHTML = `
       <div class="excel-import-status">
@@ -6088,7 +5704,6 @@ function bindEvents() {
   els.listingExcelQuickInput?.addEventListener("change", importListingsFromExcel);
   els.quickDeviceListingUpload?.addEventListener("click", openListingDeviceUpload);
   els.routineQuickList?.addEventListener("click", openListingDeviceUpload);
-  document.getElementById("buyExtraAuctionSlotButton")?.addEventListener("click", purchaseExtraAuctionSlot);
   els.routineRepeatListing?.addEventListener("click", duplicateLastListing);
   els.routineCheckListing?.addEventListener("click", () => {
     if (!listingUploadedToday()) openListingDeviceUpload();
@@ -6186,7 +5801,7 @@ function bindEvents() {
     if (action === "play-recap") showToast(actionTarget.dataset.message || "Call recap ready");
     if (action === "open-lead-modal") openModal("leadModal");
     if (action === "open-listing-modal") openModal("listingModal");
-    if (action === "open-agent-billing") openModal("billingModal");
+    if (action === "open-agent-billing") openModal("listingModal");
     if (action === "load-top-listing-content") loadContentFromTopListing();
     if (action === "open-document-vault") {
       renderDocumentVault();
@@ -6229,7 +5844,6 @@ function bindEvents() {
     if (action === "agent-open-vault-for-deal") openVaultForDeal(rawId);
     if (action === "agent-sign-offer") signDealOffer(rawId);
     if (action === "agent-release-escrow") releaseEscrow(rawId);
-    if (action === "select-agent-plan") activateAgentPlan(actionTarget.dataset.planId);
   });
 
   document.addEventListener("keydown", (event) => {
@@ -6291,51 +5905,6 @@ function bindEvents() {
   });
 }
 
-function applyBillingReturn() {
-  const params = new URLSearchParams(window.location.search);
-  let billing = params.get("payment") || params.get("billing");
-  if (!billing && params.get("success") === "true") billing = "success";
-  if (!billing && params.get("cancelled") === "true") billing = "cancelled";
-  if (!billing) return;
-
-  if (billing === "success") {
-    state.subscription = {
-      ...state.subscription,
-      status: "checkout_verifying",
-      checkoutId: params.get("session_id") || state.subscription?.checkoutId || ""
-    };
-    persistAll();
-    showToast("Payment successful. Verifying subscription...");
-    refreshAgentSubscription({ silent: true }).then((agent) => {
-      if (agent?.features_unlocked) {
-        pushNotifications("Premium agent activated", `${activePlanTier().name} is active. Stripe confirmed your checkout and automation features are unlocked.`);
-        showToast(`${activePlanTier().name} active`);
-      } else {
-        showToast("Payment received. Waiting for Stripe confirmation.");
-      }
-    });
-  }
-
-  if (billing === "cancelled") {
-    state.subscription = {
-      ...seedSubscription,
-      status: "checkout_cancelled"
-    };
-    localStorage.setItem("agent_plan", "free");
-    persistAll();
-    showToast("Payment cancelled");
-  }
-
-  params.delete("payment");
-  params.delete("billing");
-  params.delete("success");
-  params.delete("cancelled");
-  params.delete("plan");
-  params.delete("session_id");
-  const cleanUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}${window.location.hash || ""}`;
-  window.history.replaceState({}, document.title, cleanUrl);
-}
-
 function applyFounderPromoRedirect() {
   const params = new URLSearchParams(window.location.search);
   if (params.get("founderPromo") !== "1") return;
@@ -6346,7 +5915,6 @@ function applyFounderPromoRedirect() {
   setTimeout(() => openModal("listingModal"), 400);
 }
 
-applyBillingReturn();
 applyFounderPromoRedirect();
 removeAgentDemoRows();
 bindEvents();
@@ -6354,7 +5922,6 @@ renderListingDevicePhotoPreview();
 renderListingEnhancerPhotoPreview();
 updateListingDescriptionCount();
 renderWorkspace();
-renderLaunchPricingGrid();
 refreshAgentSubscription({ silent: true });
 refreshAgentLeads({ silent: true });
 performDailyCheckin();

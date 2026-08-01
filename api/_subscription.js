@@ -2,17 +2,17 @@ const Stripe = require("stripe");
 
 const PLAN_FEATURES = {
   free: {
-    ai_content_creator: false,
-    whatsapp_followups: false,
-    ar_builder_demo: false,
-    ar_builder_saved: false,
-    document_vault: false,
-    dsr_calculator: false,
-    viewing_itinerary: false,
-    co_broke_matchmaker: false,
-    auction_slots: 0,
-    referral_autopilot: false,
-    team_setup: false
+    ai_content_creator: true,
+    whatsapp_followups: true,
+    ar_builder_demo: true,
+    ar_builder_saved: true,
+    document_vault: true,
+    dsr_calculator: true,
+    viewing_itinerary: true,
+    co_broke_matchmaker: true,
+    auction_slots: 4,
+    referral_autopilot: true,
+    team_setup: true
   },
   starter_rg: {
     ai_content_creator: true,

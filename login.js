@@ -11,8 +11,6 @@
   const nameField = document.getElementById("signupNameField");
   const phoneInput = document.getElementById("signupPhone");
   const phoneField = document.getElementById("signupPhoneField");
-  const agentProductKeyInput = document.getElementById("agentProductKey");
-  const agentProductKeyField = document.getElementById("agentProductKeyField");
   const status = document.getElementById("sharedStatus");
   const button = document.getElementById("loginButton");
   const modeButtons = document.querySelectorAll("[data-auth-mode]");
@@ -118,11 +116,9 @@
         item.hidden = !PUBLIC_SIGNUP_ROLES.includes(selectedRole);
       }
     });
-    const isAgentSignup = authMode === "signup" && selectedRole === "agent";
     const isResetMode = authMode === "reset";
     nameField?.classList.toggle("hidden", authMode !== "signup");
     phoneField?.classList.toggle("hidden", authMode !== "signup");
-    agentProductKeyField?.classList.toggle("hidden", !isAgentSignup);
     emailField?.classList.remove("hidden");
     passwordField?.classList.toggle("hidden", isResetMode);
     resetPasswordField?.classList.toggle("hidden", !isResetMode);
@@ -130,7 +126,6 @@
     if (passwordInput) passwordInput.required = !isResetMode;
     if (resetPasswordInput) resetPasswordInput.required = isResetMode;
     if (phoneInput) phoneInput.required = authMode === "signup";
-    if (agentProductKeyInput) agentProductKeyInput.required = false;
     forgotPasswordButton?.classList.toggle("hidden", isResetMode || authMode === "signup");
 
     const heading = document.querySelector(".auth-head p");
@@ -155,7 +150,7 @@
       } else if (authMode === "reset") {
         note.innerHTML = '<i class="fa-solid fa-key"></i><span>Enter your email and a new password. Buyer and agent reset opens the selected dashboard immediately.</span>';
       } else if (authMode === "signup" && selectedRole === "agent") {
-        note.innerHTML = '<i class="fa-solid fa-user-shield"></i><span>Agents enter name, phone, email, and optional launch key. Sign-up opens without email code confirmation.</span>';
+        note.innerHTML = '<i class="fa-solid fa-user-shield"></i><span>Join as an agent for free with your name, phone, and email. Admin approval protects the agent workspace.</span>';
       } else if (authMode === "signup") {
         note.innerHTML = '<i class="fa-solid fa-circle-check"></i><span>Buyers enter name, phone, and email, then start exploring without an email code.</span>';
       } else {
@@ -255,8 +250,7 @@
           password,
           name,
           phone,
-          role: selectedRole,
-          productKey: selectedRole === "agent" ? agentProductKeyInput?.value.trim() : ""
+          role: selectedRole
         });
         if (result.needsApproval) {
           setMode("login");

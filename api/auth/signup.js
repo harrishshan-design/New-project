@@ -151,16 +151,11 @@ module.exports = async function handler(req, res) {
     const role = normalizeRole(body.role || "user") || "user";
     const name = String(body.name || body.fullName || "").trim() || nameFromEmail(email);
     const phone = cleanPhone(body.phone || body.whatsapp || body.mobile || "");
-    const agentFullAccess = role === "agent" && hasAgentFullAccessKey(body.productKey);
-    let isFounderAgent = false;
-    if (role === "agent" && !agentFullAccess) {
-      const existingAgents = await countExistingAgentSignups().catch(() => FOUNDER_AGENT_SLOT_LIMIT);
-      isFounderAgent = existingAgents < FOUNDER_AGENT_SLOT_LIMIT;
-    }
-    const grantsFullAccess = agentFullAccess || isFounderAgent;
-    const status = role === "agent" && !grantsFullAccess ? "pending" : "active";
-    const subscriptionPlan = agentFullAccess ? "elite_agent" : (isFounderAgent ? "founder_free" : "free");
-    const subscriptionStatus = grantsFullAccess ? "active" : "inactive";
+    const status = role === "agent" ? "pending" : "active";
+    const subscriptionPlan = "free";
+    const subscriptionStatus = role === "agent" ? "active" : "inactive";
+    const grantsFullAccess = role === "agent";
+    const isFounderAgent = false;
 
     if (!isValidEmail(email)) return res.status(400).json({ error: "Enter a valid email address." });
     if (password.length < 6) return res.status(400).json({ error: "Use a password with at least 6 characters." });
@@ -179,13 +174,9 @@ module.exports = async function handler(req, res) {
       emailConfirmedByBackend: true,
       founderPromo: isFounderAgent,
       founderListingsRequired: isFounderAgent ? FOUNDER_LISTINGS_REQUIRED : null,
-      launchAccess: agentFullAccess ? {
-        productKey: normalizeProductKey(body.productKey),
+      launchAccess: role === "agent" ? {
         grantedAt: new Date().toISOString(),
-        source: "agent_signup_product_key"
-      } : isFounderAgent ? {
-        grantedAt: new Date().toISOString(),
-        source: "founder_agent_promo"
+        source: "free_agent_access"
       } : null
     };
 
@@ -197,7 +188,7 @@ module.exports = async function handler(req, res) {
       phone,
       role,
       status,
-      plan: grantsFullAccess ? "elite" : "free",
+      plan: "free",
       subscription_plan: subscriptionPlan,
       subscription_status: subscriptionStatus,
       features_unlocked: grantsFullAccess,
@@ -215,7 +206,7 @@ module.exports = async function handler(req, res) {
     return res.status(201).json({
       ok: true,
       confirmationRequired: false,
-      needsApproval: role === "agent" && !grantsFullAccess,
+      needsApproval: role === "agent",
       founderPromo: isFounderAgent,
       founderListingsRequired: isFounderAgent ? FOUNDER_LISTINGS_REQUIRED : null,
       profile: profileRow || userRow || profilePayload

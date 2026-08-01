@@ -703,10 +703,10 @@
     const normalizedRole = normalizeRole(role) || "user";
     const cleanName = String(name || "").trim() || nameFromEmail(normalizedEmail);
     const cleanPhoneValue = String(phone || "").trim().replace(/[^\d+]/g, "");
-    const agentFullAccess = normalizedRole === "agent" && hasAgentFullAccessKey(productKey);
-    const status = normalizedRole === "agent" && !agentFullAccess ? "pending" : "active";
-    const subscriptionPlan = agentFullAccess ? "elite_agent" : "free";
-    const subscriptionStatus = agentFullAccess ? "active" : "inactive";
+    const agentFullAccess = normalizedRole === "agent";
+    const status = normalizedRole === "agent" ? "pending" : "active";
+    const subscriptionPlan = "free";
+    const subscriptionStatus = normalizedRole === "agent" ? "active" : "inactive";
 
     if (!isValidEmail(normalizedEmail)) throw new Error("Enter a valid email address.");
     if (!password || String(password).length < 6) throw new Error("Use a password with at least 6 characters.");
@@ -786,7 +786,7 @@
         phone: cleanPhoneValue,
         role: normalizedRole,
         status,
-        plan: agentFullAccess ? "elite" : "free",
+        plan: "free",
         subscription_plan: subscriptionPlan,
         subscription_status: subscriptionStatus,
         features_unlocked: agentFullAccess,
@@ -803,7 +803,7 @@
         phone: cleanPhoneValue,
         role: normalizedRole,
         status,
-        plan: agentFullAccess ? "elite" : "free",
+        plan: "free",
         subscription_plan: subscriptionPlan,
         subscription_status: subscriptionStatus,
         features_unlocked: agentFullAccess,
@@ -820,14 +820,14 @@
       phone: cleanPhoneValue,
       role: normalizedRole,
       status,
-      plan: agentFullAccess ? "elite" : "free",
+      plan: "free",
       subscription_plan: subscriptionPlan,
       subscription_status: subscriptionStatus,
       features_unlocked: agentFullAccess,
       profile_json: metadata
     }, session);
 
-    if (normalizedRole === "agent" && !agentFullAccess) {
+    if (normalizedRole === "agent") {
       await signOut();
       return { session: null, profile, needsApproval: true, confirmationRequired: !session };
     }

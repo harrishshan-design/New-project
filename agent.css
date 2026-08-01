@@ -4486,6 +4486,7 @@ body{
 .agents-public .agentos-process-section,
 .agents-public .agentos-use-cases,
 .agents-public .agentos-pricing-section,
+.agents-public .agentos-join-section,
 .agents-public .agentos-faq,
 .agents-public .agentos-final-cta{
   width:min(1180px,100%);
@@ -4506,6 +4507,7 @@ body{
 .agentos-process-section,
 .agentos-use-cases,
 .agentos-pricing-section,
+.agentos-join-section,
 .agentos-faq,
 .agentos-final-cta{
   padding:34px;
@@ -4514,6 +4516,76 @@ body{
   background:rgba(18,18,24,0.78);
   box-shadow:0 28px 90px rgba(0,0,0,0.32);
   backdrop-filter:blur(18px);
+}
+
+.agentos-join-section{
+  display:grid;
+  grid-template-columns:minmax(0,1.18fr) minmax(280px,.82fr);
+  gap:28px;
+  align-items:center;
+  padding:40px;
+  border:1px solid rgba(65,255,202,.28);
+  border-radius:8px;
+  background:#11151a;
+  box-shadow:0 28px 90px rgba(0,0,0,.34);
+}
+
+.agentos-join-copy h2,
+.agentos-join-copy h3{
+  max-width:760px;
+  margin:8px 0 14px;
+  color:#fff;
+  font-size:clamp(2.2rem,4.8vw,4.8rem);
+  line-height:1;
+}
+
+.agentos-dashboard-join .agentos-join-copy h3{
+  font-size:clamp(2rem,3.8vw,3.8rem);
+}
+
+.agentos-join-copy p{
+  max-width:720px;
+  margin:0;
+  color:#d3d9dd;
+  line-height:1.7;
+}
+
+.agentos-join-copy small{
+  display:block;
+  margin-top:18px;
+  color:#9eabb2;
+  line-height:1.55;
+}
+
+.agentos-join-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  margin-top:24px;
+}
+
+.agentos-join-features{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.agentos-join-features span{
+  display:flex;
+  min-width:0;
+  align-items:center;
+  gap:10px;
+  padding:14px;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:8px;
+  background:#191f25;
+  color:#eef7f4;
+  font-weight:760;
+  line-height:1.4;
+}
+
+.agentos-join-features i{
+  color:#41ffca;
 }
 
 .agentos-section-head{
@@ -5038,9 +5110,15 @@ body{
     padding:58px 0 24px;
   }
 
-  .agentos-public-hero h1,
+  .agentos-public-hero h1{
+    max-width:100%;
+    font-size:clamp(2.6rem,12vw,3.6rem);
+    line-height:.98;
+    overflow-wrap:break-word;
+  }
+
   .hero h3{
-    font-size:clamp(3rem,17vw,4.9rem);
+    font-size:clamp(2.6rem,12vw,3.6rem);
   }
 
   .hero{
@@ -5086,12 +5164,22 @@ body{
   .agentos-process-section,
   .agentos-use-cases,
   .agentos-pricing-section,
+  .agentos-join-section,
   .agentos-faq,
   .agentos-final-cta,
   .agentos-problem-card,
   .agentos-outcome-card{
     padding:22px;
     border-radius:24px;
+  }
+
+  .agentos-join-section{
+    grid-template-columns:1fr;
+    border-radius:8px;
+  }
+
+  .agentos-join-features{
+    grid-template-columns:1fr;
   }
 
   .agentos-section-head,

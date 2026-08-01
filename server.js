@@ -522,17 +522,17 @@ function getBearerToken(req) {
 
 const PLAN_FEATURES = {
     free: {
-        ai_content_creator: false,
-        whatsapp_followups: false,
-        ar_builder_demo: false,
-        ar_builder_saved: false,
-        document_vault: false,
-        dsr_calculator: false,
-        viewing_itinerary: false,
-        co_broke_matchmaker: false,
-        auction_slots: 0,
-        referral_autopilot: false,
-        team_setup: false
+        ai_content_creator: true,
+        whatsapp_followups: true,
+        ar_builder_demo: true,
+        ar_builder_saved: true,
+        document_vault: true,
+        dsr_calculator: true,
+        viewing_itinerary: true,
+        co_broke_matchmaker: true,
+        auction_slots: 4,
+        referral_autopilot: true,
+        team_setup: true
     },
     starter_rg: {
         ai_content_creator: true,
@@ -953,16 +953,11 @@ async function createDirectSignup(payload = {}) {
     const name = String(payload.name || payload.fullName || '').trim() || nameFromEmail(email);
     const phone = cleanPhone(payload.phone || payload.whatsapp || payload.mobile || '');
     const productKey = String(payload.productKey || '');
-    const agentFullAccess = role === 'agent' && hasAgentFullAccessKey(productKey);
-    let isFounderAgent = false;
-    if (role === 'agent' && !agentFullAccess) {
-        const existingAgents = await countExistingAgentSignups().catch(() => FOUNDER_AGENT_SLOT_LIMIT);
-        isFounderAgent = existingAgents < FOUNDER_AGENT_SLOT_LIMIT;
-    }
-    const grantsFullAccess = agentFullAccess || isFounderAgent;
-    const status = role === 'agent' && !grantsFullAccess ? 'pending' : 'active';
-    const subscriptionPlan = agentFullAccess ? 'elite_agent' : (isFounderAgent ? 'founder_free' : 'free');
-    const subscriptionStatus = grantsFullAccess ? 'active' : 'inactive';
+    const status = role === 'agent' ? 'pending' : 'active';
+    const subscriptionPlan = 'free';
+    const subscriptionStatus = role === 'agent' ? 'active' : 'inactive';
+    const grantsFullAccess = role === 'agent';
+    const isFounderAgent = false;
 
     if (!['user', 'agent'].includes(role)) return { __status: 403, error: 'Only buyer and agent public signup is allowed.' };
     if (!isValidEmailAddress(email)) return { __status: 400, error: 'Enter a valid email address.' };
@@ -982,13 +977,9 @@ async function createDirectSignup(payload = {}) {
         emailConfirmedByBackend: true,
         founderPromo: isFounderAgent,
         founderListingsRequired: isFounderAgent ? FOUNDER_LISTINGS_REQUIRED : null,
-        launchAccess: agentFullAccess ? {
-            productKey: normalizeProductKey(productKey),
+        launchAccess: role === 'agent' ? {
             grantedAt: new Date().toISOString(),
-            source: 'agent_signup_product_key'
-        } : isFounderAgent ? {
-            grantedAt: new Date().toISOString(),
-            source: 'founder_agent_promo'
+            source: 'free_agent_access'
         } : null
     };
 
@@ -1010,7 +1001,7 @@ async function createDirectSignup(payload = {}) {
         phone,
         role,
         status,
-        plan: grantsFullAccess ? 'elite' : 'free',
+        plan: 'free',
         subscription_plan: subscriptionPlan,
         subscription_status: subscriptionStatus,
         features_unlocked: grantsFullAccess,
@@ -1028,7 +1019,7 @@ async function createDirectSignup(payload = {}) {
     return {
         ok: true,
         confirmationRequired: false,
-        needsApproval: role === 'agent' && !grantsFullAccess,
+        needsApproval: role === 'agent',
         founderPromo: isFounderAgent,
         founderListingsRequired: isFounderAgent ? FOUNDER_LISTINGS_REQUIRED : null,
         profile: profileRow || userRow || profilePayload
@@ -1112,10 +1103,7 @@ async function getAgentMe(req) {
     }
 
     const subscriptionPlan = normalizeStripePlan(row.subscription_plan || row.profile_json?.subscription?.subscriptionPlan || row.plan) || 'free';
-    const subscriptionStatus = String(row.subscription_status || row.profile_json?.subscription?.status || 'inactive').toLowerCase();
-    const active = subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
-    const effectivePlan = active ? subscriptionPlan : 'free';
-    const permissions = PLAN_FEATURES[effectivePlan] || PLAN_FEATURES.free;
+    const permissions = PLAN_FEATURES.free;
 
     const founderPromo = Boolean(row.profile_json?.founderPromo);
     let founderListingsSubmitted = 0;
@@ -1130,14 +1118,14 @@ async function getAgentMe(req) {
             email: row.email || authUser.email,
             full_name: row.name || profile.name,
             role: profile.role,
-            subscription_plan: effectivePlan,
+            subscription_plan: 'free',
             raw_subscription_plan: subscriptionPlan,
-            subscription_status: subscriptionStatus,
+            subscription_status: 'active',
             stripe_customer_id: row.stripe_customer_id || '',
             stripe_subscription_id: row.stripe_subscription_id || '',
             auction_slots_monthly: Number(row.auction_slots_monthly ?? permissions.auction_slots ?? 0),
             permissions,
-            features_unlocked: active && effectivePlan !== 'free',
+            features_unlocked: true,
             founder_promo: founderPromo,
             founder_listings_required: founderPromo ? (row.profile_json?.founderListingsRequired || FOUNDER_LISTINGS_REQUIRED) : 0,
             founder_listings_submitted: founderListingsSubmitted

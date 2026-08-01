@@ -80,7 +80,7 @@
         <nav class="agentos-top-nav" data-panel="overview" aria-label="Agent workspace sections">
           <a href="#agentServices">Services</a>
           <a href="#agentProcess">Process</a>
-          <a href="#agentPricing">Pricing</a>
+          <a href="#agentAccess">Free Access</a>
           <a href="#leadPipeline">Use cases</a>
         </nav>
         <div class="top-actions">
@@ -99,20 +99,6 @@
           </button>
         </div>
       </header>
-
-      <section class="founder-promo-banner" id="founderPromoBanner" hidden aria-label="Free founder features promo">
-        <div class="founder-promo-text">
-          <div class="eyebrow">Free Full Features - Founder Agent</div>
-          <strong>All AgentOS features are unlocked for you, free. Add <span id="founderPromoRequired">10</span> listings to keep it.</strong>
-        </div>
-        <div class="founder-promo-progress">
-          <div class="milestone-bar-track">
-            <div class="milestone-bar-fill" id="founderPromoFill" style="width:0%"></div>
-          </div>
-          <span id="founderPromoLabel">0/10 listings</span>
-        </div>
-        <button class="primary-button" type="button" data-action="open-listing-modal">Add a listing</button>
-      </section>
 
       <section class="milestone-banner" id="firstMillionBanner" aria-label="First RM1M Challenge">
         <div class="milestone-banner-text">
@@ -377,80 +363,24 @@
         </div>
       </section>
 
-      <section class="agentos-pricing-section" id="agentPricing" data-panel="overview">
-        <div class="agentos-section-head">
-          <div>
-            <div class="eyebrow">Agent Plans</div>
-            <h3>Pay for workflow and inquiry context, never ranking or verification</h3>
+      <section class="agentos-join-section agentos-dashboard-join" id="agentAccess" data-panel="overview">
+        <div class="agentos-join-copy">
+          <div class="eyebrow">Full AgentOS Access</div>
+          <h3>Every approved agent can use every tool for free.</h3>
+          <p>Upload listings, create AI marketing content, review buyer intent, prepare viewings, use AR staging, and submit Auction Night properties without selecting a plan.</p>
+          <div class="agentos-join-actions">
+            <button class="primary-button" type="button" data-action="open-listing-modal"><i class="fa-solid fa-plus"></i> Add a Listing</button>
+            <button class="ghost-button" type="button" data-action="jump-section" data-section="listings"><i class="fa-solid fa-list-check"></i> View Listings</button>
           </div>
+          <small>Free access does not bypass admin QC, REN review, or listing evidence requirements.</small>
         </div>
-        <div class="agentos-pricing-grid">
-          <article>
-            <span>FREE</span>
-            <p>For agents testing RealityGenius before upgrading.</p>
-            <strong>RM0 <small>/ mo</small></strong>
-            <ul class="plan-feature-list">
-              <li>Submit listings for admin QC</li>
-              <li>Basic inquiry inbox</li>
-              <li>Listing status and feedback</li>
-              <li>Public agent profile</li>
-            </ul>
-            <button class="ghost-button" type="button" data-action="open-cheat-sheet">Get started</button>
-          </article>
-          <article data-tier="starter">
-            <span>STARTER RG</span>
-            <p>For solo agents who want content and faster listing preparation.</p>
-            <strong id="starterPriceTag">RM29 <small>/ mo</small></strong>
-            <ul class="plan-feature-list">
-              <li>Everything in Free</li>
-              <li>AI Content Creator for captions and WhatsApp drafts</li>
-              <li>Excel and Telegram listing workflow</li>
-              <li>AI AR Builder demo staging and sofa AR preview</li>
-              <li>Smart listing checklist</li>
-            </ul>
-            <button class="ghost-button" type="button" data-action="select-agent-plan" data-plan-id="starter">Upgrade to Starter</button>
-          </article>
-          <article class="featured" data-tier="pro">
-            <span>PRO AGENT</span>
-            <p>For active agents running serious buyer pipelines and premium listings.</p>
-            <strong id="proPriceTag">RM59 <small>/ mo</small></strong>
-            <ul class="plan-feature-list">
-              <li>Everything in Starter RG</li>
-              <li>Buyer intent scoring with visible inputs</li>
-              <li>DSR conversation worksheet</li>
-              <li>Smart viewing itinerary builder</li>
-              <li>Co-broke matchmaker</li>
-              <li>1 Friday Auction Night submission/month</li>
-              <li>AI AR Builder saved projects</li>
-              <li>30 days free trial</li>
-            </ul>
-            <button class="primary-button" type="button" data-action="select-agent-plan" data-plan-id="pro">Upgrade to Pro</button>
-          </article>
-          <article data-tier="elite">
-            <span>ELITE AGENT</span>
-            <p>For agents who want the full automation engine.</p>
-            <strong id="elitePriceTag">RM99 <small>/ mo</small></strong>
-            <ul class="plan-feature-list">
-              <li>Everything in Pro Agent</li>
-              <li>4 Friday Auction Night submissions/month</li>
-              <li>Referral autopilot and lifecycle drafts</li>
-              <li>Team inquiry routing and setup support</li>
-              <li>30 days free trial</li>
-            </ul>
-            <button class="ghost-button" type="button" data-action="select-agent-plan" data-plan-id="elite">Upgrade to Elite</button>
-          </article>
-        </div>
-        <p class="agentos-commercial-note"><strong>Commercial rule:</strong> payment never changes listing QC, REN status, or organic search position. Intent scores are based on submitted details and behaviour signals; the agent must confirm the buyer. RealityGenius does not hold booking fees or complete legal e-signing in this release.</p>
-        <div class="agentos-auction-benefit">
-          <div>
-            <span>Premium Feature</span>
-            <h4>Friday Auction Night slots for agents</h4>
-            <p>Auction submissions are separately reviewed and labelled. A submission does not guarantee selection, approval, buyer activity, or a higher organic search rank.</p>
-          </div>
-          <div class="auction-benefit-buy">
-            <strong>Extra auction slot: RM49/mo <small>30 days free</small></strong>
-            <button class="primary-button" type="button" id="buyExtraAuctionSlotButton">Add slot</button>
-          </div>
+        <div class="agentos-join-features" aria-label="Free AgentOS tools">
+          <span><i class="fa-solid fa-check"></i> AI Content Creator</span>
+          <span><i class="fa-solid fa-check"></i> AI AR Builder</span>
+          <span><i class="fa-solid fa-check"></i> Buyer intent tools</span>
+          <span><i class="fa-solid fa-check"></i> Viewing itinerary</span>
+          <span><i class="fa-solid fa-check"></i> Co-broke workflow</span>
+          <span><i class="fa-solid fa-check"></i> Auction submissions</span>
         </div>
       </section>
 
@@ -1404,19 +1334,6 @@
           <div class="referral-drafts" id="referralDrafts"></div>
         </div>
       </div>
-    </div>
-  </div>
-
-  <div class="modal-backdrop" id="billingModal" aria-hidden="true">
-    <div class="modal-card modal-card-wide">
-      <div class="modal-topbar">
-        <div>
-          <div class="eyebrow">Agent Subscription</div>
-          <h3>Choose the tools you want to unlock</h3>
-        </div>
-        <button class="close-button" data-close="billingModal" type="button"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="billing-tier-grid" id="agentTierGrid"></div>
     </div>
   </div>
 

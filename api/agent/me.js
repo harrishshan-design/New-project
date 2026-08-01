@@ -23,10 +23,7 @@ async function founderListingsSubmitted(agentId) {
 
 async function publicAgentProfile(row = {}, authUser = {}) {
   const subscriptionPlan = normalizePlan(row.subscription_plan || row.profile_json?.subscription?.subscriptionPlan || row.plan) || "free";
-  const status = String(row.subscription_status || row.profile_json?.subscription?.status || "inactive").toLowerCase();
-  const active = status === "active" || status === "trialing";
-  const effectivePlan = active ? subscriptionPlan : "free";
-  const permissions = PLAN_FEATURES[effectivePlan] || PLAN_FEATURES.free;
+  const permissions = PLAN_FEATURES.free;
   const founderPromo = Boolean(row.profile_json?.founderPromo);
 
   return {
@@ -34,14 +31,14 @@ async function publicAgentProfile(row = {}, authUser = {}) {
     email: row.email || authUser.email || "",
     full_name: row.full_name || row.name || authUser.user_metadata?.full_name || authUser.user_metadata?.name || "",
     role: row.role || "",
-    subscription_plan: effectivePlan,
+    subscription_plan: "free",
     raw_subscription_plan: subscriptionPlan,
-    subscription_status: status,
+    subscription_status: "active",
     stripe_customer_id: row.stripe_customer_id || "",
     stripe_subscription_id: row.stripe_subscription_id || "",
     auction_slots_monthly: Number(row.auction_slots_monthly ?? permissions.auction_slots ?? 0),
     permissions,
-    features_unlocked: active && effectivePlan !== "free",
+    features_unlocked: true,
     founder_promo: founderPromo,
     founder_listings_required: founderPromo ? (row.profile_json?.founderListingsRequired || 10) : 0,
     founder_listings_submitted: founderPromo ? await founderListingsSubmitted(row.id) : 0
@@ -67,6 +64,9 @@ module.exports = async function handler(req, res) {
   const profile = await publicAgentProfile(row, authUser);
   if (String(profile.role || "").toLowerCase() !== "agent") {
     return res.status(403).json({ error: "Agent account required." });
+  }
+  if (!["active", "approved"].includes(String(row.status || "").toLowerCase())) {
+    return res.status(403).json({ error: "Agent approval is required before using the workspace." });
   }
 
   return res.status(200).json({ agent: profile });

@@ -1,4 +1,5 @@
 const { test, expect } = require("@playwright/test");
+const { PLAN_FEATURES } = require("../../api/_subscription");
 const apiBase = String(process.env.RG_API_BASE || "").replace(/\/$/, "");
 
 function apiPath(path) {
@@ -45,9 +46,19 @@ test.describe("RealityGenius role access", () => {
 
   test("public agent page explains the commercial and trust model", async ({ page }) => {
     await page.goto("/agents.html");
-    await expect(page.locator("#agentModel")).toContainText("Trust cannot be bought");
-    await expect(page.locator("#agentPricing")).toContainText("not a trust badge or feed position");
-    await expect(page.locator("body")).toContainText("does not hold booking fees");
+    await expect(page.locator("#agentModel")).toContainText("Trust stays independent");
+    await expect(page.locator("#agentJoin")).toContainText("Join as an Agent for Free");
+    await expect(page.locator("#agentJoin")).toContainText("complete AgentOS workspace");
+    await expect(page.locator("body")).not.toContainText(/RM(?:29|49|59|99)|Starter RG|Upgrade to (?:Starter|Pro|Elite)/i);
+    await expect(page.locator("body")).toContainText("does not hold property booking fees");
+  });
+
+  test("agent signup is free and does not ask for a product key", async ({ page }) => {
+    await page.goto("/login.html?role=agent&mode=signup");
+    await expect(page.locator("#optionAgent")).toHaveClass(/active/);
+    await expect(page.locator("#agentProductKey")).toHaveCount(0);
+    await expect(page.locator("#roleNote")).toContainText("Join as an agent for free");
+    await expect(page.locator("#roleNote")).toContainText("Admin approval");
   });
 
   test("public buyer and agent pages do not overflow horizontally", async ({ page }) => {
@@ -69,6 +80,22 @@ test.describe("RealityGenius role access", () => {
 });
 
 test.describe("RealityGenius API fail-closed checks", () => {
+  test("the free agent permission set includes every workspace tool", () => {
+    expect(PLAN_FEATURES.free).toEqual({
+      ai_content_creator: true,
+      whatsapp_followups: true,
+      ar_builder_demo: true,
+      ar_builder_saved: true,
+      document_vault: true,
+      dsr_calculator: true,
+      viewing_itinerary: true,
+      co_broke_matchmaker: true,
+      auction_slots: 4,
+      referral_autopilot: true,
+      team_setup: true
+    });
+  });
+
   test("public inventory stays inside the declared Klang Valley wedge", async ({ request }) => {
     const res = await request.get(apiPath("/api/properties"));
     expect(res.status()).toBe(200);
