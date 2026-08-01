@@ -1,7 +1,7 @@
 const SITE_URL = "https://realitygenius.company";
 const API_BASE = process.env.PROPERTIES_API_BASE || "https://hh-empire.onrender.com/api";
 
-const STATIC_PAGES = ["/", "/user.html", "/agents.html", "/agent-plans.html", "/privacy.html", "/terms.html"];
+const STATIC_PAGES = ["/", "/user.html", "/agents.html", "/privacy.html", "/terms.html"];
 
 module.exports = async function handler(req, res) {
   let propertyUrls = [];

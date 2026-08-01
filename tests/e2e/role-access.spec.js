@@ -61,6 +61,13 @@ test.describe("RealityGenius role access", () => {
     await expect(page.locator("#roleNote")).toContainText("Admin approval");
   });
 
+  test("legacy agent pricing route opens the free agent offer", async ({ page }) => {
+    await page.goto("/agent-plans.html");
+    await page.waitForURL(/\/agents\.html#agentJoin$/);
+    await expect(page.locator("#agentJoin")).toContainText(/Join as an Agent for Free/i);
+    await expect(page.locator("body")).not.toContainText(/RM(?:29|49|59|79|99)|Upgrade to (?:Starter|Pro|Elite)/i);
+  });
+
   test("public buyer and agent pages do not overflow horizontally", async ({ page }) => {
     for (const path of ["/user.html", "/agents.html"]) {
       await page.goto(path);
