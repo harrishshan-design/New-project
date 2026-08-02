@@ -1,10 +1,8 @@
 "use client";
 
 import Script from "next/script";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "./landing.css";
-
-const AREAS = ["KLCC", "Mont Kiara", "Shah Alam", "Petaling Jaya", "Subang Jaya", "Klang"];
 
 const STATS = [
   { num: "Browse", label: "No account needed to search" },
@@ -56,6 +54,83 @@ const FAQS = [
   { q: "Does RealityGenius hold booking fees?", a: "Not in the current buyer preview. Never transfer money based only on a screen status. Confirm the named stakeholder, account holder, written terms and receipt before paying." }
 ];
 
+type AffordabilityInputs = {
+  price: string;
+  income: string;
+  commitments: string;
+  deposit: string;
+  size: string;
+  nearbyPsf: string;
+};
+
+const DEFAULT_AFFORDABILITY: AffordabilityInputs = {
+  price: "650000",
+  income: "9000",
+  commitments: "1200",
+  deposit: "10",
+  size: "1000",
+  nearbyPsf: "650"
+};
+
+const RINGGIT = new Intl.NumberFormat("en-MY", {
+  style: "currency",
+  currency: "MYR",
+  maximumFractionDigits: 0
+});
+
+function numericValue(value: string) {
+  const parsed = Number(String(value).replace(/,/g, ""));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function calculateAffordability(inputs: AffordabilityInputs) {
+  const price = numericValue(inputs.price);
+  const income = numericValue(inputs.income);
+  const commitments = numericValue(inputs.commitments);
+  const depositPercent = Math.min(numericValue(inputs.deposit), 100);
+  const size = numericValue(inputs.size);
+  const nearbyPsf = numericValue(inputs.nearbyPsf);
+  const annualRate = 0.042;
+  const loanYears = 35;
+  const monthlyRate = annualRate / 12;
+  const paymentCount = loanYears * 12;
+  const paymentFactor = monthlyRate * Math.pow(1 + monthlyRate, paymentCount) / (Math.pow(1 + monthlyRate, paymentCount) - 1);
+  const loanAmount = price * (1 - depositPercent / 100);
+  const mortgage = loanAmount > 0 ? loanAmount * paymentFactor : 0;
+  const maintenance = size * 0.35;
+  const ownershipReserve = price * 0.002 / 12;
+  const monthlyCost = mortgage + maintenance + ownershipReserve;
+  const dsr = income > 0 ? (commitments + mortgage) / income * 100 : 0;
+  const fairMid = size * nearbyPsf;
+  const fairLow = fairMid * 0.95;
+  const fairHigh = fairMid * 1.05;
+  const dsrLabel = !income ? "Add monthly income" : dsr <= 60 ? "Comfortable range" : dsr <= 70 ? "Near the benchmark" : "Above the benchmark";
+  const priceLabel = !fairMid
+    ? "Add size and nearby RM/psf"
+    : price < fairLow
+      ? "Below nearby asking context"
+      : price > fairHigh
+        ? "Above nearby asking context"
+        : "Within nearby asking context";
+
+  return {
+    price,
+    depositPercent,
+    size,
+    nearbyPsf,
+    mortgage,
+    maintenance,
+    ownershipReserve,
+    monthlyCost,
+    dsr,
+    hasIncome: income > 0,
+    dsrLabel,
+    fairLow,
+    fairHigh,
+    priceLabel
+  };
+}
+
 export default function Home() {
   const navRef = useRef<HTMLElement>(null);
   const heroContentRef = useRef<HTMLDivElement>(null);
@@ -64,6 +139,21 @@ export default function Home() {
   const stripWrapRef = useRef<HTMLDivElement>(null);
   const stripTrackRef = useRef<HTMLDivElement>(null);
   const stripBarRef = useRef<HTMLDivElement>(null);
+  const [affordabilityInputs, setAffordabilityInputs] = useState(DEFAULT_AFFORDABILITY);
+  const affordability = useMemo(() => calculateAffordability(affordabilityInputs), [affordabilityInputs]);
+  const whatsappHref = useMemo(() => {
+    const message = [
+      "Hi RealityGenius, I used the public affordability check.",
+      `Target home price: ${RINGGIT.format(affordability.price)}`,
+      `Estimated monthly ownership cost: ${RINGGIT.format(affordability.monthlyCost)}`,
+      "Please help me find a suitable home and connect me with the listing representative."
+    ].join("\n");
+    return `https://wa.me/60189676625?text=${encodeURIComponent(message)}`;
+  }, [affordability]);
+
+  const updateAffordability = (field: keyof AffordabilityInputs, value: string) => {
+    setAffordabilityInputs((current) => ({ ...current, [field]: value }));
+  };
 
   useEffect(() => {
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -252,56 +342,110 @@ export default function Home() {
           <a href="/agents.html" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>For agents</a>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <a className="rg-btn rg-btn-secondary rg-nav-explore" href="/user.html" style={{ textDecoration: "none" }}>Explore homes</a>
-          <a className="rg-btn rg-btn-primary" href="/login.html?role=user" style={{ textDecoration: "none" }}>Login / Sign up</a>
+          <a className="rg-btn rg-btn-primary rg-nav-explore" href="/user.html" style={{ textDecoration: "none" }}>Explore homes</a>
+          <a className="rg-btn rg-btn-secondary" href="/login.html?role=user" style={{ textDecoration: "none" }}>Login</a>
         </div>
       </nav>
 
-      <div style={{ position: "relative", zIndex: 1, height: "190vh" }}>
+      <div className="rg-hero-stage" style={{ position: "relative", zIndex: 1, height: "190vh" }}>
         <div
           className="rg-hero-sticky"
           style={{ position: "sticky", top: 0, height: "100vh", display: "flex", alignItems: "center", padding: "76px clamp(20px,5vw,72px) 88px", boxSizing: "border-box" }}
         >
-          <div className="rg-hero-grid" style={{ maxWidth: 1240, margin: "0 auto", width: "100%", display: "grid", gridTemplateColumns: "minmax(0,7fr) minmax(0,4fr)", gap: 48, alignItems: "end" }}>
-            <div ref={heroContentRef} style={{ willChange: "transform,opacity" }}>
+          <div className="rg-hero-grid" style={{ maxWidth: 1240, margin: "0 auto", width: "100%", display: "grid", gridTemplateColumns: "minmax(0,5fr) minmax(480px,5fr)", gap: 48, alignItems: "center" }}>
+            <div ref={heroContentRef} className="rg-hero-copy" style={{ willChange: "transform,opacity" }}>
               <span style={{ display: "block", fontSize: 13, letterSpacing: ".1em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-accent-300)", marginBottom: 12 }}>
-                Klang Valley property search with visible trust states
+                Free buyer check - no login required
               </span>
               <hr style={{ height: 1, border: 0, margin: "0 0 24px", background: "var(--color-divider)", maxWidth: 420 }} />
-              <h1 className="rg-hero-h1" style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(52px,7.6vw,108px)", lineHeight: 1.02, letterSpacing: ".01em", textTransform: "uppercase", margin: "0 0 0 -0.05em" }}>
+              <h1 className="rg-hero-h1" aria-label="Can I afford this home?" style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(52px,7.6vw,108px)", lineHeight: 1.02, letterSpacing: ".01em", textTransform: "uppercase", margin: "0 0 0 -0.05em" }}>
                 <span style={{ display: "block", overflow: "hidden" }}>
-                  <span className="rg-rise-a" style={{ display: "block", animation: "rg-rise .9s cubic-bezier(.22,1,.36,1) both .15s" }}>The right home,</span>
+                  <span className="rg-rise-a" style={{ display: "block", animation: "rg-rise .9s cubic-bezier(.22,1,.36,1) both .15s" }}>Can I afford</span>
                 </span>
                 <span style={{ display: "block", overflow: "hidden" }}>
-                  <span className="rg-rise-a" style={{ display: "block", color: "var(--color-accent-300)", animation: "rg-rise .9s cubic-bezier(.22,1,.36,1) both .32s" }}>found faster.</span>
+                  <span className="rg-rise-a" style={{ display: "block", color: "var(--color-accent-300)", animation: "rg-rise .9s cubic-bezier(.22,1,.36,1) both .32s" }}>this home?</span>
                 </span>
               </h1>
               <p style={{ fontSize: 17, lineHeight: 1.55, maxWidth: "56ch", margin: "26px 0 0", color: "color-mix(in srgb, var(--color-text) 82%, transparent)" }}>
-                Search available homes without an account. Check listing QC, REN status, estimated DSR and asking-price evidence before you contact the listing representative.
+                Estimate your DSR, monthly ownership cost and a nearby asking-price range before speaking to an agent. Your figures stay in this browser.
               </p>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 30 }}>
-                <a className="rg-btn rg-btn-primary" href="/user.html#explore" style={{ textDecoration: "none", fontSize: 15 }}>Search homes</a>
-                <a className="rg-btn rg-btn-secondary" href="/login.html?role=user" style={{ textDecoration: "none", fontSize: 15 }}>Login / Sign up</a>
+                <a className="rg-btn rg-btn-primary" href="#affordability-tool" style={{ textDecoration: "none", fontSize: 15 }}>Check affordability</a>
+                <a className="rg-btn rg-btn-secondary" href="/user.html#explore" style={{ textDecoration: "none", fontSize: 15 }}>Browse homes</a>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 28 }}>
-                <span style={{ fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: "color-mix(in srgb, var(--color-text) 55%, transparent)" }}>Popular</span>
-                {AREAS.map((area) => (
-                  <a key={area} className="rg-tag rg-tag-outline" href="/user.html#explore" style={{ textDecoration: "none" }}>{area}</a>
-                ))}
+              <div className="rg-hero-trust" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginTop: 26 }}>
+                <span>No account</span>
+                <span>Transparent assumptions</span>
+                <span>Not a loan approval</span>
               </div>
             </div>
-            <div ref={heroCardRef} className="rg-hero-card" style={{ alignSelf: "center", marginBottom: "8vh", willChange: "transform,opacity" }}>
-              <div className="rg-blueprint rg-float-a" style={{ background: "color-mix(in srgb, var(--color-bg) 78%, transparent)", backdropFilter: "blur(8px)", padding: 20, animation: "rg-float 7s ease-in-out infinite" }}>
+            <div ref={heroCardRef} className="rg-hero-card" style={{ alignSelf: "center", willChange: "transform,opacity" }}>
+              <section id="affordability-tool" className="rg-blueprint rg-affordability-card" aria-labelledby="affordability-title">
                 <i className="corner tl" /><i className="corner tr" /><i className="corner bl" /><i className="corner br" />
-                <span style={{ display: "block", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--color-accent-300)", fontWeight: 600 }}>Buyer evidence preview</span>
-                <hr style={{ height: 1, border: 0, margin: "10px 0 14px", background: "var(--color-divider)" }} />
-                <p style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 22, textTransform: "uppercase", letterSpacing: ".02em", margin: 0 }}>Mont Kiara, Kuala Lumpur</p>
-                <p style={{ fontSize: 13, margin: "6px 0 14px", color: "color-mix(in srgb, var(--color-text) 70%, transparent)" }}>QC state &middot; REN state &middot; DSR estimate &middot; price context</p>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                  <span className="rg-tag rg-tag-accent">No login to browse</span>
-                  <a href="/user.html#explore" style={{ fontSize: 12, letterSpacing: ".06em", textTransform: "uppercase", fontWeight: 600, textDecoration: "none" }}>Open search &rarr;</a>
+                <header className="rg-affordability-head">
+                  <div>
+                    <span>Public affordability check</span>
+                    <h2 id="affordability-title">Run your numbers</h2>
+                  </div>
+                  <span className="rg-tag rg-tag-accent">Free</span>
+                </header>
+
+                <div className="rg-affordability-fields">
+                  <label>
+                    <span>Home price (RM)</span>
+                    <input data-testid="affordability-price" type="number" min="0" step="1000" inputMode="numeric" value={affordabilityInputs.price} onChange={(event) => updateAffordability("price", event.target.value)} />
+                  </label>
+                  <label>
+                    <span>Net income / month</span>
+                    <input data-testid="affordability-income" type="number" min="0" step="100" inputMode="numeric" value={affordabilityInputs.income} onChange={(event) => updateAffordability("income", event.target.value)} />
+                  </label>
+                  <label>
+                    <span>Monthly commitments</span>
+                    <input data-testid="affordability-commitments" type="number" min="0" step="100" inputMode="numeric" value={affordabilityInputs.commitments} onChange={(event) => updateAffordability("commitments", event.target.value)} />
+                  </label>
+                  <label>
+                    <span>Cash deposit (%)</span>
+                    <input data-testid="affordability-deposit" type="number" min="0" max="100" step="1" inputMode="decimal" value={affordabilityInputs.deposit} onChange={(event) => updateAffordability("deposit", event.target.value)} />
+                  </label>
+                  <label>
+                    <span>Home size (sq ft)</span>
+                    <input data-testid="affordability-size" type="number" min="0" step="10" inputMode="numeric" value={affordabilityInputs.size} onChange={(event) => updateAffordability("size", event.target.value)} />
+                  </label>
+                  <label>
+                    <span>Nearby asking RM/psf</span>
+                    <input data-testid="affordability-psf" type="number" min="0" step="10" inputMode="numeric" value={affordabilityInputs.nearbyPsf} onChange={(event) => updateAffordability("nearbyPsf", event.target.value)} />
+                  </label>
                 </div>
-              </div>
+
+                <div className="rg-affordability-results" aria-live="polite">
+                  <article>
+                    <span>Estimated DSR</span>
+                    <strong data-testid="affordability-dsr">{affordability.hasIncome ? `${affordability.dsr.toFixed(1)}%` : "--"}</strong>
+                    <small>{affordability.dsrLabel}</small>
+                  </article>
+                  <article>
+                    <span>Monthly cost</span>
+                    <strong data-testid="affordability-monthly">{RINGGIT.format(affordability.monthlyCost)}</strong>
+                    <small>{RINGGIT.format(affordability.mortgage)} mortgage + upkeep</small>
+                  </article>
+                  <article className="rg-fair-result">
+                    <span>Fair-price range*</span>
+                    <strong data-testid="affordability-fair">{affordability.fairLow ? `${RINGGIT.format(affordability.fairLow)} - ${RINGGIT.format(affordability.fairHigh)}` : "Add market context"}</strong>
+                    <small>{affordability.priceLabel}</small>
+                  </article>
+                </div>
+
+                <div className="rg-affordability-footer">
+                  <p>
+                    DSR uses take-home income. Estimate assumes 4.2% interest, 35 years, RM0.35/sq ft upkeep, 0.2%/year ownership reserve and a 70% reference. Banks apply their own rules. Fair range uses home size x nearby asking RM/psf, +/-5%; it is not a valuation or loan approval.
+                  </p>
+                  <div className="rg-affordability-actions">
+                    <a className="rg-whatsapp-button" data-testid="affordability-whatsapp" href={whatsappHref} target="_blank" rel="noreferrer">WhatsApp enquiry</a>
+                    <a href="/user.html#explore">Find nearby listings</a>
+                  </div>
+                  <small>Your income and commitments are not included in the WhatsApp message.</small>
+                </div>
+              </section>
             </div>
           </div>
           <div ref={cueRef} className="rg-cue-wrap" style={{ position: "absolute", left: "50%", bottom: 26, transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
