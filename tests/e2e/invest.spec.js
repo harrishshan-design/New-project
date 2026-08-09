@@ -20,7 +20,7 @@ test.describe("RealityGenius Invest pre-launch experience", () => {
     await page.goto("/invest/properties");
     await expect(page.getByRole("heading", { name: "Explore investment opportunity previews." })).toBeVisible();
     await expect(page.locator(".inv-property-card")).toHaveCount(3);
-    await expect(page.getByText("Mont Kiara Skyline Residence")).toBeVisible();
+    await expect(page.getByText("Double-Storey House, Taman Kim Chuan")).toBeVisible();
     await expect(page.getByRole("button", { name: /pay|checkout|buy now/i })).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
   });
@@ -29,14 +29,15 @@ test.describe("RealityGenius Invest pre-launch experience", () => {
     await page.route("**/api/invest/interest", async (route) => {
       await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ success: true, reference: "test-reference" }) });
     });
-    await page.goto("/invest/property/mont-kiara-skyline");
+    await page.goto("/invest/property/taman-kim-chuan-double-storey");
+    await expect(page.getByRole("link", { name: "View the live buyer listing" })).toHaveAttribute("href", "/property/730277");
     await expect(page.getByRole("heading", { name: "Investment scenario calculator" })).toBeVisible();
     await expect(page.getByTestId("investment-amount-output")).toContainText("RM 50,000");
-    await page.waitForTimeout(600);
-    await page.getByTestId("investment-amount").focus();
-    for (let step = 0; step < 10; step += 1) {
-      await page.keyboard.press("ArrowRight");
-    }
+    await page.getByTestId("investment-amount").evaluate((element) => {
+      const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
+      valueSetter.call(element, "100000");
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+    });
     await page.getByRole("button", { name: "Conservative" }).click();
     await expect(page.getByTestId("investment-amount-output")).toContainText("RM 100,000");
     await expect(page.getByText("0.5% annual value movement")).toBeVisible();

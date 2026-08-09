@@ -618,18 +618,18 @@ export default function Home() {
             </div>
             <article className="rg-invest-card" data-reveal={1}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1000&q=84" alt="Illustrative Mont Kiara residence" loading="lazy" />
+              <img src="https://tjmvbgdgddscbilfkggu.supabase.co/storage/v1/object/public/property-media/telegram-imports/5430779409/293a5b10-31bf-41c6-aa5b-6c16445bc4af/892acb5dc8faa6ba.jpg" alt="Interior of the double-storey house in Taman Kim Chuan, Port Klang" loading="lazy" />
               <div>
-                <span>Illustrative opportunity</span>
-                <h3>Mont Kiara Skyline Residence</h3>
-                <p>Mont Kiara, Kuala Lumpur</p>
+                <span>Existing live listing · sample model</span>
+                <h3>Double-Storey House, Taman Kim Chuan</h3>
+                <p>Taman Kim Chuan, Port Klang</p>
                 <dl>
-                  <div><dt>Property value</dt><dd>RM 1.25M</dd></div>
+                  <div><dt>Current asking price</dt><dd>RM 710K</dd></div>
                   <div><dt>Interest from</dt><dd>RM 10K</dd></div>
-                  <div><dt>Target rental yield</dt><dd>4.8% p.a.</dd></div>
-                  <div><dt>Slots indicated</dt><dd>3 / 5</dd></div>
+                  <div><dt>Modelled rental yield</dt><dd>4.2% p.a.</dd></div>
+                  <div><dt>Interest indicated</dt><dd>0 / 5</dd></div>
                 </dl>
-                <a href="/invest/property/mont-kiara-skyline">Open scenario &rarr;</a>
+                <a href="/invest/property/taman-kim-chuan-double-storey">Open sample model &rarr;</a>
               </div>
             </article>
           </div>

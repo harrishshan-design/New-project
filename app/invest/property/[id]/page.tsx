@@ -32,9 +32,9 @@ export default async function InvestmentPropertyPage({ params }: { params: Promi
         <section className="inv-detail-hero">
           <div className="inv-container">
             <nav className="inv-breadcrumbs" aria-label="Breadcrumb"><a href="/invest">Invest</a><ChevronRight size={13} /><a href="/invest/properties">Properties</a><ChevronRight size={13} /><span>{opportunity.name}</span></nav>
-            <div className="inv-detail-title"><div><span className="inv-eyebrow">Illustrative opportunity preview</span><h1>{opportunity.name}</h1><p><MapPin size={14} aria-hidden="true" /> {opportunity.location}</p></div><span className="inv-badge inv-badge-risk">{opportunity.risk} risk</span></div>
+            <div className="inv-detail-title"><div><span className="inv-eyebrow">{opportunity.sourceListing ? "Existing listing · illustrative investment model" : "Illustrative opportunity preview"}</span><h1>{opportunity.name}</h1><p><MapPin size={14} aria-hidden="true" /> {opportunity.location}</p></div><span className="inv-badge inv-badge-risk">{opportunity.risk} risk</span></div>
             <div className="inv-detail-gallery">
-              {opportunity.gallery.map((image, index) => <img key={image} src={image} alt={`${opportunity.name} illustrative view ${index + 1}`} />)}
+              {opportunity.gallery.map((image, index) => <img key={image} src={image} alt={`${opportunity.name} listing view ${index + 1}`} />)}
             </div>
           </div>
         </section>
@@ -44,8 +44,14 @@ export default async function InvestmentPropertyPage({ params }: { params: Promi
             <div>
               <section className="inv-panel">
                 <h2>Property summary</h2><p>{opportunity.summary}</p><p>{opportunity.thesis}</p>
+                {opportunity.sourceListing && (
+                  <div className="inv-education-strip" style={{ margin: "22px 0" }}>
+                    <FileText size={20} aria-hidden="true" />
+                    <p><strong>Source listing #{opportunity.sourceListing.id}:</strong> Updated {opportunity.sourceListing.updatedAt}. {opportunity.sourceListing.reviewScope} <a href={opportunity.sourceListing.href}>View the live buyer listing</a>.</p>
+                  </div>
+                )}
                 <div className="inv-summary-grid">
-                  <div className="inv-summary-item"><span>Indicative value</span><strong>{formatRinggit(opportunity.propertyValue)}</strong></div>
+                  <div className="inv-summary-item"><span>{opportunity.sourceListing ? "Current asking price" : "Indicative value"}</span><strong>{formatRinggit(opportunity.propertyValue)}</strong></div>
                   <div className="inv-summary-item"><span>Interest from</span><strong>{formatRinggit(opportunity.minimumInvestment)}</strong></div>
                   <div className="inv-summary-item"><span>Property type</span><strong>{opportunity.propertyType}</strong></div>
                   <div className="inv-summary-item"><span>Tenure</span><strong>{opportunity.tenure}</strong></div>
@@ -99,7 +105,7 @@ export default async function InvestmentPropertyPage({ params }: { params: Promi
             </div>
             <aside className="inv-detail-aside">
               <InterestForm opportunity={opportunity} />
-              <div className="inv-panel"><h3 style={{ marginTop: 0 }}>Current status</h3><p><CheckCircle2 size={15} aria-hidden="true" /> Research preview published</p><p><FileClock size={15} aria-hidden="true" /> Legal, regulatory and diligence approval pending</p></div>
+              <div className="inv-panel"><h3 style={{ marginTop: 0 }}>Current status</h3><p><CheckCircle2 size={15} aria-hidden="true" /> {opportunity.sourceListing ? "Existing sale listing used as a research sample" : "Research preview published"}</p><p><FileClock size={15} aria-hidden="true" /> Owner consent, legal, regulatory and investment due diligence pending</p></div>
             </aside>
           </div>
         </section>

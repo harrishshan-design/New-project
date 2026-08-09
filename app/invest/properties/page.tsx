@@ -16,7 +16,7 @@ export default function InvestmentPropertiesPage() {
         </header>
         <section className="inv-section">
           <div className="inv-container">
-            <div className="inv-education-strip"><Info size={20} aria-hidden="true" /><p><strong>Illustrative inventory:</strong> images, prices, slots and projected figures below demonstrate the proposed product experience. RealityGenius is not currently accepting investment money or reserving ownership.</p></div>
+            <div className="inv-education-strip"><Info size={20} aria-hidden="true" /><p><strong>Sample inventory:</strong> the Taman Kim Chuan preview uses facts and photos from an existing live sale listing. Its fractional structure and every investment projection remain illustrative. Other previews are concepts. RealityGenius is not accepting investment money or reserving ownership.</p></div>
             <div className="inv-opportunity-grid">{opportunities.map((opportunity) => <OpportunityCard opportunity={opportunity} key={opportunity.id} />)}</div>
           </div>
         </section>

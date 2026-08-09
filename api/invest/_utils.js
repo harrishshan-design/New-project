@@ -1,7 +1,7 @@
 const crypto = require("crypto");
 
 const ALLOWED_OPPORTUNITIES = new Set([
-  "mont-kiara-skyline",
+  "taman-kim-chuan-double-storey",
   "subang-family-courtyard",
   "johor-medini-suites"
 ]);

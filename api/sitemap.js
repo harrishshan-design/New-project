@@ -7,7 +7,7 @@ const STATIC_PAGES = [
   "/agents.html",
   "/invest",
   "/invest/properties",
-  "/invest/property/mont-kiara-skyline",
+  "/invest/property/taman-kim-chuan-double-storey",
   "/invest/property/subang-family-courtyard",
   "/invest/property/johor-medini-suites",
   "/privacy.html",

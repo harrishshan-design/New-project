@@ -5,7 +5,7 @@ import RiskNotice from "../RiskNotice";
 import { formatRinggit } from "../invest-data";
 
 const demoHoldings = [
-  { property: "Mont Kiara Skyline Residence", invested: 50000, current: 52100, distribution: 1520, next: "Illustrative Q4", exit: "5-year review" },
+  { property: "Double-Storey House, Taman Kim Chuan", invested: 50000, current: 52100, distribution: 1520, next: "Illustrative Q4", exit: "5-year review" },
   { property: "Subang Family Courtyard", invested: 25000, current: 25350, distribution: 630, next: "Illustrative Q4", exit: "5-year review" }
 ];
 

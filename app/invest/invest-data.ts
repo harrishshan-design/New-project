@@ -20,7 +20,7 @@ export type InvestmentOpportunity = {
   slotsFilled: number;
   targetHoldYears: number;
   targetRentalYield: number;
-  status: "Open for interest" | "Coming soon" | "Waitlist";
+  status: "Open for interest" | "Coming soon" | "Waitlist" | "Sample model";
   risk: "Medium" | "Medium-high";
   summary: string;
   thesis: string;
@@ -29,39 +29,51 @@ export type InvestmentOpportunity = {
   builtUp: string;
   projectedAnnualRent: number;
   annualCosts: number;
+  sourceListing?: {
+    id: number;
+    href: string;
+    updatedAt: string;
+    reviewScope: string;
+  };
   scenarios: Record<ScenarioKey, InvestmentScenario>;
 };
 
 export const opportunities: InvestmentOpportunity[] = [
   {
-    id: "mont-kiara-skyline",
-    name: "Mont Kiara Skyline Residence",
-    location: "Mont Kiara, Kuala Lumpur",
-    image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1600&q=86",
+    id: "taman-kim-chuan-double-storey",
+    name: "Double-Storey House, Taman Kim Chuan",
+    location: "Taman Kim Chuan, Port Klang",
+    image: "https://tjmvbgdgddscbilfkggu.supabase.co/storage/v1/object/public/property-media/telegram-imports/5430779409/293a5b10-31bf-41c6-aa5b-6c16445bc4af/892acb5dc8faa6ba.jpg",
     gallery: [
-      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1600&q=86",
-      "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=1200&q=84",
-      "https://images.unsplash.com/photo-1600573472550-8090b5e0745e?auto=format&fit=crop&w=1200&q=84"
+      "https://tjmvbgdgddscbilfkggu.supabase.co/storage/v1/object/public/property-media/telegram-imports/5430779409/293a5b10-31bf-41c6-aa5b-6c16445bc4af/892acb5dc8faa6ba.jpg",
+      "https://tjmvbgdgddscbilfkggu.supabase.co/storage/v1/object/public/property-media/telegram-imports/5430779409/293a5b10-31bf-41c6-aa5b-6c16445bc4af/70cf70c95634d78b.jpg",
+      "https://tjmvbgdgddscbilfkggu.supabase.co/storage/v1/object/public/property-media/telegram-imports/5430779409/293a5b10-31bf-41c6-aa5b-6c16445bc4af/f27f2989129b84a1.jpg"
     ],
-    propertyValue: 1250000,
+    propertyValue: 710000,
     minimumInvestment: 10000,
     slots: 5,
-    slotsFilled: 3,
+    slotsFilled: 0,
     targetHoldYears: 5,
-    targetRentalYield: 4.8,
-    status: "Open for interest",
+    targetRentalYield: 4.2,
+    status: "Sample model",
     risk: "Medium",
-    summary: "An illustrative urban-residential opportunity near established international schools, retail and commuter links.",
-    thesis: "The model tests stable long-term rental demand, disciplined acquisition pricing and a five-year review point. It is not a live offer and no property has been acquired for investors.",
-    propertyType: "High-rise residence",
-    tenure: "Freehold",
-    builtUp: "1,326 sq ft",
-    projectedAnnualRent: 60000,
-    annualCosts: 15000,
+    summary: "This sample uses the facts and media from an existing admin-QC-reviewed buyer listing: a fully furnished double-storey home on Jalan Jerai 3, offered at RM710,000 (negotiable), with 4 bedrooms, 3 bathrooms, 1,500 sq ft built-up and 20 ft x 75 ft land.",
+    thesis: "The property remains a normal sale listing. RealityGenius has not confirmed owner consent for shared ownership, completed investment due diligence or made this property available for fractional purchase. All investment figures below are hypothetical.",
+    propertyType: "Fully furnished double-storey house",
+    tenure: "Not provided",
+    builtUp: "1,500 sq ft",
+    projectedAnnualRent: 29820,
+    annualCosts: 9000,
+    sourceListing: {
+      id: 730277,
+      href: "/property/730277",
+      updatedAt: "22 Jun 2026",
+      reviewScope: "Admin QC reviewed listing completeness, media presence and contactability. This does not prove ownership, legal title, current availability or market value."
+    },
     scenarios: {
-      conservative: { label: "Conservative", annualGrowth: 0.5, rentalYield: 3.6, occupancy: 82, note: "Lower occupancy, softer rent and limited capital growth." },
-      base: { label: "Base", annualGrowth: 2.5, rentalYield: 4.8, occupancy: 92, note: "Illustrative assumptions based on stable occupancy and moderate growth." },
-      optimistic: { label: "Optimistic", annualGrowth: 4.0, rentalYield: 5.5, occupancy: 96, note: "Stronger rent and growth; this is not a promised outcome." }
+      conservative: { label: "Conservative", annualGrowth: 0.5, rentalYield: 3.0, occupancy: 80, note: "Lower occupancy, softer rent and limited capital growth." },
+      base: { label: "Base", annualGrowth: 2.5, rentalYield: 4.2, occupancy: 90, note: "Illustrative assumptions only; no rental evidence has been verified for this property." },
+      optimistic: { label: "Optimistic", annualGrowth: 4.0, rentalYield: 5.0, occupancy: 95, note: "Stronger rent and growth assumptions; this is not a promised outcome." }
     }
   },
   {
