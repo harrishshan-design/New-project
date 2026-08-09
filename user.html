@@ -733,7 +733,19 @@
 
         <section class="modal-copy">
           <p class="modal-location" id="modalLocation"></p>
-          <p class="modal-summary" id="modalSummary"></p>
+
+          <section class="property-description-panel" aria-labelledby="propertyDescriptionTitle">
+            <div class="property-description-head">
+              <div>
+                <span class="eyebrow">About this property</span>
+                <h4 id="propertyDescriptionTitle">A clearer look at the home</h4>
+              </div>
+              <span class="description-source-pill">Listing facts</span>
+            </div>
+            <p class="modal-summary" id="modalSummary"></p>
+            <div class="property-description-facts" id="modalDescriptionFacts"></div>
+            <div class="property-description-highlights" id="modalDescriptionHighlights"></div>
+          </section>
 
           <div class="modal-action-bar">
             <button class="ghost-button" id="modalSaveAction" type="button">Save Property</button>

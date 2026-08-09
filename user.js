@@ -41,6 +41,8 @@ const AGENT_LISTING_LAUNCH_CUTOFF = "2026-06-18T08:25:00.000Z";
 const BUYER_FEED_VERSION_KEY = "rg_buyer_feed_version";
 const BUYER_FEED_VERSION = "evidence-led-live-feed-2026-07-30";
 let backendListingFeedReady = FORCE_BACKEND_BUYER_FEED;
+let initialListingId = "";
+let initialListingOpened = false;
 
 function readJsonStore(key, fallback) {
   try {
@@ -299,6 +301,7 @@ function cleanListingLabel(value = "") {
   }
   return repaired
     .replace(/[*_`]+/g, "")
+    .replace(/[\p{Extended_Pictographic}\uFE0F\u200D]+/gu, " ")
     .replace(/[\u0000-\u001f\u007f-\u009f]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -357,6 +360,66 @@ function getPropertyAreaLabel(item = {}) {
     .replace(/[\p{So}\p{Sk}\uFE0F]+$/gu, "")
     .trim()
     .slice(0, 62);
+}
+
+function getPropertyDescriptionModel(property = {}) {
+  const source = cleanListingLabel(property.summary || property.description || "");
+  const labels = ["Property Type", "Type", "Land Size", "Built-up Area", "Built Up", "Built-up", "Condition", "Furnishing", "Tenure", "Maintenance Fee", "Parking", "Floor"];
+  const marker = labels.map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  const pairPattern = new RegExp(`\\b(${marker})\\s*:\\s*(.+?)(?=\\s+(?:${marker}|Location|Address|Selling Price|Asking Price|Rental|Contact)\\s*:|$)`, "gi");
+  const facts = [];
+  let match;
+  while ((match = pairPattern.exec(source))) {
+    const label = match[1].replace(/^Built Up$/i, "Built-up");
+    const value = match[2].trim().replace(/[.;,]+$/, "");
+    if (value && value.length <= 90 && !facts.some((fact) => fact.label.toLowerCase() === label.toLowerCase())) {
+      facts.push({ label, value });
+    }
+  }
+
+  if (property.sqft && !facts.some((fact) => /built/i.test(fact.label))) {
+    facts.push({ label: "Built-up", value: `${Number(property.sqft).toLocaleString("en-MY")} sq ft` });
+  }
+  if (property.propertyType && !facts.some((fact) => /type/i.test(fact.label))) {
+    facts.unshift({ label: "Property type", value: cleanListingLabel(property.propertyType) });
+  }
+
+  const highlightRules = [
+    [/\bfully furnished\b/i, "Fully furnished"],
+    [/\bmove[- ]?in (?:condition|ready)\b/i, "Move-in condition"],
+    [/\bwell[- ]?maintained\b/i, "Well maintained"],
+    [/\bspacious car porch\b/i, "Spacious car porch"],
+    [/\bquiet (?:and|&) mature neighbourhood\b/i, "Quiet, mature neighbourhood"],
+    [/\beasy access to amenities(?: and main roads)?\b/i, "Easy access to amenities"],
+    [/\bguarded (?:and|&) gated\b/i, "Guarded and gated"],
+    [/\b24 hours? security\b/i, "24-hour security"],
+    [/\bfully renovated\b/i, "Fully renovated"],
+    [/\bopen parking\b/i, "Open parking"]
+  ];
+  const highlights = highlightRules.filter(([pattern]) => pattern.test(source)).map(([, label]) => label);
+  const type = facts.find((fact) => /type/i.test(fact.label))?.value || cleanListingLabel(property.propertyType || property.type || "residential property");
+  const rooms = [
+    property.bedrooms ? `${property.bedrooms} bedrooms` : "",
+    property.bathrooms ? `${property.bathrooms} bathrooms` : ""
+  ].filter(Boolean).join(" and ");
+  const purpose = property.purpose === "rent" ? "for rent" : "for sale";
+  const location = cleanListingLabel(property.location || property.area || "Malaysia");
+  const overview = `${type.charAt(0).toUpperCase()}${type.slice(1)} ${purpose} in ${location}${rooms ? ` with ${rooms}` : ""}. Review the facts, photos and listing evidence before arranging a viewing.`;
+  return { overview, facts: facts.slice(0, 6), highlights: [...new Set(highlights)].slice(0, 8) };
+}
+
+function renderPropertyDescription(property) {
+  const model = getPropertyDescriptionModel(property);
+  els.modalSummary.textContent = model.overview;
+  els.modalDescriptionFacts.innerHTML = model.facts.map((fact) => `
+    <div class="property-description-fact">
+      <span>${escapeHtml(fact.label)}</span>
+      <strong>${escapeHtml(fact.value)}</strong>
+    </div>
+  `).join("");
+  els.modalDescriptionFacts.hidden = model.facts.length === 0;
+  els.modalDescriptionHighlights.innerHTML = model.highlights.map((highlight) => `<span>${escapeHtml(highlight)}</span>`).join("");
+  els.modalDescriptionHighlights.hidden = model.highlights.length === 0;
 }
 
 function parseCompactRmAmount(value, suffix = "") {
@@ -433,12 +496,17 @@ function normalizeLiveListingRecord(item = {}) {
   ]);
   const sqft = extractBuiltUpSqft(item);
   const renNumber = extractRenNumber(item);
+  const gallery = Array.isArray(item.gallery) ? item.gallery : [];
+  const preferredTelegramImage = item.source === "telegram_ai_import" && gallery.length >= 4
+    ? String(gallery[3]?.url || gallery[3]?.display || gallery[3]?.image || "")
+    : "";
   return {
     ...item,
     title: getPropertyTitleLabel(item),
     area: getPropertyAreaLabel(item),
     location: getPropertyAreaLabel(item),
     summary: cleanListingLabel(item.summary || item.description || "Listing details pending."),
+    image: preferredTelegramImage || item.image,
     purpose,
     price,
     priceDataSource: sourcePriceValid && price === sourcePrice ? "source_text" : "structured_field",
@@ -630,6 +698,8 @@ const els = {
   modalTitle: document.getElementById("modalTitle"),
   modalLocation: document.getElementById("modalLocation"),
   modalSummary: document.getElementById("modalSummary"),
+  modalDescriptionFacts: document.getElementById("modalDescriptionFacts"),
+  modalDescriptionHighlights: document.getElementById("modalDescriptionHighlights"),
   modalImage: document.getElementById("modalImage"),
   modalGallery: document.getElementById("modalGallery"),
   modalStats: document.getElementById("modalStats"),
@@ -813,6 +883,7 @@ async function hydrateBackendLiveListings() {
     refreshLiveBuyerListings(false);
     resetFeedWindow();
     renderDashboard();
+    openInitialListingFromQuery();
   } catch (error) {
     if (window.RGLogError) window.RGLogError(error, { feature: "buyer_live_listing_hydration" });
   }
@@ -1021,7 +1092,19 @@ function getPropertyGallery(property) {
     verified: Boolean(item.url)
   }));
 
-  return [...normalized, ...extras];
+  const combined = [...normalized, ...extras];
+  if (property.source === "telegram_ai_import" && combined.length >= 8) {
+    const preferred = [combined[3], combined[7], combined[9]].filter(Boolean);
+    const ordered = [...preferred, ...combined];
+    const seen = new Set();
+    return ordered.filter((item) => {
+      const key = item.url || `${item.label}:${item.status}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+  return combined;
 }
 
 function getGalleryCompleteness(property) {
@@ -3156,7 +3239,7 @@ function openPropertyModal(id) {
   els.modalBadge.textContent = `${property.area} · ${(property.purpose || "sale") === "rent" ? "For Rent" : "For Sale"}`;
   els.modalTitle.textContent = property.title;
   els.modalLocation.textContent = property.location;
-  els.modalSummary.textContent = property.summary;
+  renderPropertyDescription(property);
   renderModalGallery(property);
   const { verified, total } = getGalleryCompleteness(property);
   const monthlyEstimate = estimateMonthlyInstallment(property.price);
@@ -4257,6 +4340,7 @@ function applyInitialQueryParams() {
   const params = new URLSearchParams(window.location.search);
   const query = params.get("search") || params.get("area") || "";
   const filter = params.get("filter") || "";
+  initialListingId = String(params.get("listing") || params.get("property") || "").trim();
   if (query) {
     state.search = query;
     if (els.searchInput) els.searchInput.value = query;
@@ -4269,6 +4353,14 @@ function applyInitialQueryParams() {
       chip.setAttribute("aria-pressed", String(isActive));
     });
   }
+}
+
+function openInitialListingFromQuery() {
+  if (!initialListingId || initialListingOpened) return;
+  const property = properties.find((item) => String(item.id) === initialListingId || String(item.agentListingId || "") === initialListingId);
+  if (!property) return;
+  initialListingOpened = true;
+  openPropertyModal(property.id);
 }
 
 const growthState = {
@@ -4707,4 +4799,5 @@ applyInitialQueryParams();
 bindEvents();
 renderBuyerProfileEditor();
 renderDashboard();
+openInitialListingFromQuery();
 hydrateBackendLiveListings();

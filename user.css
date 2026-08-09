@@ -3447,6 +3447,116 @@ a{
   line-height:1.65;
 }
 
+.property-description-panel{
+  padding:18px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:#fffaf5;
+}
+
+.property-description-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  margin-bottom:12px;
+}
+
+.property-description-head .eyebrow{
+  display:block;
+  margin-bottom:4px;
+}
+
+.property-description-head h4{
+  margin:0;
+  font-family:"Space Grotesk",sans-serif;
+  font-size:1.1rem;
+  letter-spacing:-.02em;
+}
+
+.description-source-pill{
+  flex:none;
+  padding:6px 9px;
+  border-radius:999px;
+  background:var(--teal-soft);
+  color:var(--teal);
+  font-size:.66rem;
+  font-weight:900;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+
+.property-description-panel .modal-summary{
+  margin:0;
+  color:var(--text);
+  font-size:.96rem;
+}
+
+.property-description-facts{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-top:15px;
+}
+
+.property-description-fact{
+  min-width:0;
+  padding:11px;
+  border-radius:7px;
+  background:#fff;
+  border:1px solid var(--line);
+}
+
+.property-description-fact span,
+.property-description-fact strong{
+  display:block;
+}
+
+.property-description-fact span{
+  margin-bottom:3px;
+  color:var(--muted);
+  font-size:.66rem;
+  font-weight:900;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+
+.property-description-fact strong{
+  overflow-wrap:anywhere;
+  font-size:.86rem;
+  line-height:1.35;
+}
+
+.property-description-highlights{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:12px;
+}
+
+.property-description-highlights span{
+  padding:7px 9px;
+  border-radius:7px;
+  background:var(--teal-soft);
+  color:var(--teal);
+  font-size:.76rem;
+  font-weight:850;
+}
+
+@media(max-width:560px){
+  .property-description-panel{
+    padding:15px;
+  }
+
+  .property-description-facts{
+    grid-template-columns:1fr;
+  }
+
+  .description-source-pill{
+    display:none;
+  }
+}
+
 .modal-action-bar{
   display:flex;
   gap:12px;
