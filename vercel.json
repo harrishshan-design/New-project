@@ -3,6 +3,11 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "rewrites": [
+    { "source": "/invest", "destination": "/invest.html" },
+    { "source": "/invest/properties", "destination": "/invest/properties.html" },
+    { "source": "/invest/dashboard", "destination": "/invest/dashboard.html" },
+    { "source": "/invest/admin", "destination": "/invest/admin.html" },
+    { "source": "/invest/property/:id", "destination": "/invest/property/:id.html" },
     { "source": "/property/:id", "destination": "/api/property?id=:id" },
     { "source": "/sitemap.xml", "destination": "/api/sitemap" }
   ]

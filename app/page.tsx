@@ -336,10 +336,11 @@ export default function Home() {
           Reality<span style={{ color: "var(--color-accent-300)" }}>Genius</span>
         </span>
         <div className="rg-nav-links" style={{ display: "flex", alignItems: "center", gap: 22 }}>
-          <a href="#benefits" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>Benefits</a>
-          <a href="#toolkit" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>Toolkit</a>
-          <a href="#how" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>How it works</a>
-          <a href="/agents.html" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>For agents</a>
+          <a href="/user.html" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>Buy</a>
+          <a href="/user.html?purpose=rent" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>Rent</a>
+          <a href="/invest" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>Invest</a>
+          <a href="/agents.html" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>Agents</a>
+          <a href="/user.html#ai-search" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>AI Search</a>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <a className="rg-btn rg-btn-primary rg-nav-explore" href="/user.html" style={{ textDecoration: "none" }}>Explore homes</a>
@@ -603,6 +604,37 @@ export default function Home() {
           </div>
         </section>
 
+        <section className="rg-invest-showcase" aria-labelledby="rg-invest-title">
+          <div className="rg-invest-inner">
+            <div data-reveal={0}>
+              <span className="rg-invest-eyebrow">New product preview</span>
+              <h2 id="rg-invest-title">Invest in property differently.</h2>
+              <p>Explore how shared ownership could make selected Malaysian property more accessible. Test rental, cost and value scenarios before registering non-binding interest.</p>
+              <div className="rg-invest-actions">
+                <a className="rg-invest-primary" href="/invest">Explore RealityGenius Invest</a>
+                <a className="rg-invest-secondary" href="/invest#how-it-works">How it works</a>
+              </div>
+              <small>No payment or ownership is created. Pre-launch education and interest registration only.</small>
+            </div>
+            <article className="rg-invest-card" data-reveal={1}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1000&q=84" alt="Illustrative Mont Kiara residence" loading="lazy" />
+              <div>
+                <span>Illustrative opportunity</span>
+                <h3>Mont Kiara Skyline Residence</h3>
+                <p>Mont Kiara, Kuala Lumpur</p>
+                <dl>
+                  <div><dt>Property value</dt><dd>RM 1.25M</dd></div>
+                  <div><dt>Interest from</dt><dd>RM 10K</dd></div>
+                  <div><dt>Target rental yield</dt><dd>4.8% p.a.</dd></div>
+                  <div><dt>Slots indicated</dt><dd>3 / 5</dd></div>
+                </dl>
+                <a href="/invest/property/mont-kiara-skyline">Open scenario &rarr;</a>
+              </div>
+            </article>
+          </div>
+        </section>
+
         <div style={{ height: "60vh", display: "grid", placeItems: "center", position: "relative", overflow: "hidden" }}>
           <span data-plx="0.14" style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(70px,12vw,190px)", letterSpacing: ".06em", textTransform: "uppercase", color: "color-mix(in srgb, var(--color-accent) 26%, transparent)", whiteSpace: "nowrap", willChange: "transform" }}>Evidence</span>
           <span className="rg-tag rg-tag-outline" style={{ background: "var(--color-bg)", letterSpacing: ".12em", textTransform: "uppercase", padding: "6px 16px", position: "relative" }}>QC, REN and source shown separately</span>
@@ -660,6 +692,7 @@ export default function Home() {
             <div style={{ display: "flex", gap: 18 }}>
               <a href="/privacy.html" style={{ color: "inherit" }}>Privacy</a>
               <a href="/terms.html" style={{ color: "inherit" }}>Terms</a>
+              <a href="/invest" style={{ color: "inherit" }}>Invest</a>
               <a href="/agents.html" style={{ color: "inherit" }}>For agents</a>
             </div>
           </div>

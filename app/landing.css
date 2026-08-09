@@ -324,6 +324,136 @@
   background: #8af0b1;
 }
 
+.rg-invest-showcase {
+  padding: 92px clamp(20px,5vw,72px);
+  border-block: 1px solid #cdd9d0;
+  background: #e5efe9;
+  color: #17221b;
+}
+.rg-invest-inner {
+  display: grid;
+  max-width: 1240px;
+  grid-template-columns: minmax(0,0.85fr) minmax(440px,1.15fr);
+  gap: clamp(40px,6vw,88px);
+  align-items: center;
+  margin: 0 auto;
+}
+.rg-invest-eyebrow {
+  display: block;
+  margin-bottom: 12px;
+  color: #185b44;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.rg-invest-inner > div h2 {
+  margin: 0 0 18px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(42px,5vw,70px);
+  font-weight: 400;
+  line-height: 1.02;
+  text-transform: none;
+}
+.rg-invest-inner > div > p {
+  max-width: 55ch;
+  margin: 0 0 28px;
+  color: #58665d;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.rg-invest-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.rg-invest-actions a {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 18px;
+  border: 1px solid #185b44;
+  border-radius: 6px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.rg-invest-primary {
+  background: #103c30;
+  color: #fff !important;
+}
+.rg-invest-secondary {
+  color: #185b44 !important;
+}
+.rg-invest-inner > div small {
+  display: block;
+  max-width: 56ch;
+  margin-top: 16px;
+  color: #68736b;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.rg-invest-card {
+  display: grid;
+  grid-template-columns: .9fr 1.1fr;
+  overflow: hidden;
+  border: 1px solid #c4d1c7;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 22px 55px rgba(21,61,43,.12);
+}
+.rg-invest-card > img {
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  object-fit: cover;
+}
+.rg-invest-card > div {
+  min-width: 0;
+  padding: 26px;
+}
+.rg-invest-card > div > span {
+  color: #9a6828;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.rg-invest-card h3 {
+  margin: 12px 0 5px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 1.1;
+  text-transform: none;
+}
+.rg-invest-card > div > p {
+  margin: 0 0 20px;
+  color: #68736b;
+  font-size: 13px;
+}
+.rg-invest-card dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 0 0 22px;
+}
+.rg-invest-card dt {
+  color: #7a837c;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+.rg-invest-card dd {
+  margin: 3px 0 0;
+  color: #17221b;
+  font-weight: 700;
+}
+.rg-invest-card a {
+  color: #185b44;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .rg-reveal {
   opacity: 0;
   transform: translateY(28px);
@@ -382,6 +512,9 @@
   .rg-offer-grid {
     grid-template-columns: 1fr !important;
   }
+  .rg-invest-inner {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 480px) {
@@ -419,6 +552,20 @@
     align-items: stretch;
     flex-direction: column;
     gap: 8px;
+  }
+  .rg-invest-showcase {
+    padding-block: 68px;
+  }
+  .rg-invest-card {
+    grid-template-columns: 1fr;
+  }
+  .rg-invest-card > img {
+    min-height: 220px;
+    aspect-ratio: 16/10;
+  }
+  .rg-invest-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 
