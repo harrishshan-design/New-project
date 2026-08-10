@@ -339,6 +339,7 @@ export default function Home() {
           <a href="/user.html" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>Buy</a>
           <a href="/user.html?purpose=rent" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>Rent</a>
           <a href="/invest" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>Invest</a>
+          <a href="/tycoon" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>Play Tycoon</a>
           <a href="/agents.html" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>Agents</a>
           <a href="/user.html#ai-search" style={{ color: "inherit", textDecoration: "none", fontSize: 14 }}>AI Search</a>
         </div>
@@ -662,6 +663,21 @@ export default function Home() {
           </div>
         </section>
 
+        <section style={{ background: "#07100e", borderTop: "1px solid rgba(174,213,195,.18)", borderBottom: "1px solid rgba(174,213,195,.18)", color: "#f4f1e8", padding: "84px clamp(20px,5vw,72px)" }}>
+          <div style={{ maxWidth: 1240, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", alignItems: "center", gap: 48 }}>
+            <div data-reveal={0}>
+              <span style={{ display: "block", fontSize: 12, letterSpacing: ".12em", textTransform: "uppercase", fontWeight: 700, color: "#4dd7e7", marginBottom: 12 }}>New: free property strategy game</span>
+              <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "clamp(38px,5vw,72px)", lineHeight: 1.02, textTransform: "uppercase", letterSpacing: ".01em", margin: "0 0 16px" }}>Build your property empire.</h2>
+              <p style={{ fontSize: 16, lineHeight: 1.6, margin: "0 0 28px", maxWidth: "56ch", color: "#aebfb8" }}>Start with RM1 million virtual cash. Research Klang Valley, collect rent, survive market events and learn what the numbers actually mean. No signup and no real money.</p>
+              <a className="rg-btn" href="/tycoon" style={{ textDecoration: "none", fontSize: 15, color: "#07100e", background: "#4bd299", borderColor: "#4bd299" }}>Play Property Tycoon &rarr;</a>
+            </div>
+            <div data-reveal={1} style={{ minHeight: 280, position: "relative", overflow: "hidden", border: "1px solid rgba(174,213,195,.2)", borderRadius: 8, background: "radial-gradient(circle at 50% 45%,rgba(77,215,231,.18),transparent 30%),linear-gradient(145deg,#15332a,#08130f)", display: "grid", placeItems: "center" }}>
+              <div style={{ width: "68%", aspectRatio: "1.6", transform: "rotate(-12deg) skewX(8deg)", border: "1px solid rgba(77,215,231,.5)", background: "repeating-linear-gradient(45deg,transparent 0 24px,rgba(77,215,231,.06) 25px 26px)", boxShadow: "0 28px 60px rgba(0,0,0,.35)" }} />
+              <span style={{ position: "absolute", left: 24, bottom: 20, color: "#e8bd69", fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase", fontWeight: 700 }}>Klang Valley strategy map</span>
+            </div>
+          </div>
+        </section>
+
         <section style={{ background: "var(--color-accent-900)", borderTop: "1px solid var(--color-divider)", borderBottom: "1px solid var(--color-divider)", color: "#f2f2f3", padding: "72px clamp(20px,5vw,72px)" }}>
           <div style={{ maxWidth: 1240, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 36, flexWrap: "wrap" }}>
             <div data-reveal={0} style={{ maxWidth: "60ch" }}>
@@ -693,6 +709,7 @@ export default function Home() {
               <a href="/privacy.html" style={{ color: "inherit" }}>Privacy</a>
               <a href="/terms.html" style={{ color: "inherit" }}>Terms</a>
               <a href="/invest" style={{ color: "inherit" }}>Invest</a>
+              <a href="/tycoon" style={{ color: "inherit" }}>Property Tycoon</a>
               <a href="/agents.html" style={{ color: "inherit" }}>For agents</a>
             </div>
           </div>

@@ -5,6 +5,7 @@ const STATIC_PAGES = [
   "/",
   "/user.html",
   "/agents.html",
+  "/tycoon",
   "/invest",
   "/invest/properties",
   "/invest/property/taman-kim-chuan-double-storey",

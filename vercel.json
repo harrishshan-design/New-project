@@ -3,6 +3,8 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "rewrites": [
+    { "source": "/tycoon", "destination": "/assets/property-tycoon/index.html" },
+    { "source": "/property-tycoon", "destination": "/assets/property-tycoon/index.html" },
     { "source": "/invest", "destination": "/invest.html" },
     { "source": "/invest/properties", "destination": "/invest/properties.html" },
     { "source": "/invest/dashboard", "destination": "/invest/dashboard.html" },
